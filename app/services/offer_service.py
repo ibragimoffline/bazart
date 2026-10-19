@@ -24,7 +24,6 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models.deal import Deal
 from app.models.enums import (
     ItemStatus,
     ListingType,
@@ -37,10 +36,10 @@ from app.models.item import Item
 from app.models.offer import Offer
 from app.models.user import User
 from app.money import format_soum_text
-from app.repositories.deal_repository import DealRepository
 from app.repositories.offer_repository import OfferRepository
 from app.schemas.item import ItemPublish
 from app.schemas.offer import OfferCounter, OfferCreate
+from app.services.deal_service import DealService
 from app.services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
@@ -226,7 +225,7 @@ class OfferService:
                 quantity=offer.quantity,
                 unit_price=offer.unit_price,
             )
-            deal = DealRepository(self.db).create_for_offer(offer)
+            deal = DealService(self.db).create_for_offer(offer)
 
             notifier = NotificationService(self.db)
             total = _som(deal.final_price)
@@ -347,24 +346,6 @@ class OfferService:
         """E'lon bekor qilinganda / rad etilganda ochiq takliflarni yopadi. COMMIT QILMAYDI."""
         for offer in self.offers.list_open_for_item(item.id):
             self._close(offer, OfferStatus.REJECTED, action, item)
-
-    def restore_stock(self, deal: Deal) -> None:
-        """Bekor qilingan deal (to'lanmadi / hold qaytarildi) donalarini zaxiraga qaytaradi.
-
-        COMMIT QILMAYDI — deal holatini o'zgartirgan tranzaksiya ichida chaqiriladi.
-        Auksion deal'lari uchun hech narsa qilmaydi.
-        """
-        if deal.offer_id is None:
-            return
-        item = self.offers.lock_item(deal.item_id)
-        if item is None:
-            return
-        item.quantity_available = min(item.quantity_total, item.quantity_available + deal.quantity)
-        if item.status == ItemStatus.SOLD:
-            ends = item.listing_ends_at
-            still_open = ends is not None and _as_utc(ends) > datetime.now(UTC)
-            item.status = ItemStatus.ACTIVE if still_open else ItemStatus.EXPIRED
-        self.db.add(item)
 
     # --- Fon vazifasi ---------------------------------------------------------
 

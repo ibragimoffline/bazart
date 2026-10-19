@@ -6,11 +6,13 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.auction import Auction
 from app.models.deal import Deal
-from app.models.enums import DealCancelReason, DealStatus, is_admin
+from app.models.enums import DealCancelReason, DealStatus, ItemStatus, is_admin
+from app.models.offer import Offer
 from app.models.user import User
+from app.money import Tiyin, calc_line_total
 from app.repositories.deal_repository import DealRepository
+from app.repositories.offer_repository import OfferRepository
 from app.services.deal_state import InvalidDealTransition, assert_deal_transition
-from app.services.offer_service import OfferService
 
 
 class DealService:
@@ -20,15 +22,67 @@ class DealService:
         self.db = db
         self.deals = DealRepository(db)
 
-    def create_deal_for_winning_auction(self, auction: Auction) -> Deal | None:
+    # --- Yaratish: YAGONA kirish nuqtasi (E2.4) ---------------------------------
+
+    def create_deal(
+        self,
+        *,
+        item_id: int,
+        buyer_id: int,
+        seller_id: int,
+        unit_price: Tiyin,
+        quantity: int = 1,
+        auction_id: int | None = None,
+        offer_id: int | None = None,
+    ) -> Deal:
+        """Kelishuvni yaratadi. Barcha manbalar (taklif qabuli, auksion g'olibi, buy-now,
+        tushuvchi narx, keyingi bidderga taklif) SHU yerdan o'tadi — E5 komissiyasi va
+        bildirishnomalar aynan shu nuqtaga ulanadi. Boshqa joyda `Deal(...)` yaratilmaydi
+        (test_deal_entry_point qo'riqlaydi).
+
+        COMMIT QILMAYDI: chaqiruvchining tranzaksiyasi (zaxira kamayishi, auksion yopilishi)
+        bilan birga atomik yoziladi. Kelishuv `agreed` da tug'iladi — kontaktlar shu lahzada
+        ochiladi (`contacts_revealed_at`).
+        """
+        deal = Deal(
+            item_id=item_id,
+            buyer_id=buyer_id,
+            seller_id=seller_id,
+            auction_id=auction_id,
+            offer_id=offer_id,
+            quantity=quantity,
+            unit_price=unit_price,
+            final_price=calc_line_total(unit_price, quantity),
+            status=DealStatus.AGREED,
+            contacts_revealed_at=datetime.now(UTC),
+        )
+        return self.deals.add(deal)
+
+    def create_for_winning_auction(self, auction: Auction) -> Deal | None:
+        """Auksion g'olibi (yopilish, buy-now, tushuvchi narx, keyingi bidder). Idempotent."""
         if auction.winner_id is None or auction.winning_bid is None:
             return None
+        existing = self.deals.get_by_auction_id(auction.id)
+        if existing is not None:
+            return existing
+        return self.create_deal(
+            item_id=auction.item_id,
+            buyer_id=auction.winner_id,
+            seller_id=auction.seller_id,
+            unit_price=auction.winning_bid.amount,
+            auction_id=auction.id,
+        )
 
-        existing_order = self.deals.get_by_auction_id(auction.id)
-        if existing_order is not None:
-            return existing_order
-
-        return self.deals.create_for_auction(auction)
+    def create_for_offer(self, offer: Offer) -> Deal:
+        """Qabul qilingan taklif: miqdor x kelishilgan dona narxi."""
+        return self.create_deal(
+            item_id=offer.item_id,
+            buyer_id=offer.buyer_id,
+            seller_id=offer.seller_id,
+            unit_price=offer.unit_price,
+            quantity=offer.quantity,
+            offer_id=offer.id,
+        )
 
     def get_deal_for_user(self, deal_id: int, user: User) -> Deal:
         deal = self.deals.get(deal_id)
@@ -104,7 +158,7 @@ class DealService:
         deal.cancelled_by_id = actor.id
         deal.cancel_reason = reason
         deal.at_fault_id = at_fault_for(deal, actor.id, reason)
-        OfferService(self.db).restore_stock(deal)
+        self._restore_stock(deal)
         return self._save(deal)
 
     # --- Ichki ------------------------------------------------------------------
@@ -132,6 +186,24 @@ class DealService:
         except InvalidDealTransition as exc:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
         deal.status = target
+
+    def _restore_stock(self, deal: Deal) -> None:
+        """Bekor qilingan taklif kelishuvining donalarini zaxiraga qaytaradi. COMMIT QILMAYDI.
+
+        Auksion kelishuvlarida hech narsa qilmaydi (mahsulot holati E3.7 da). Qulf tartibi:
+        kelishuv (allaqachon qulflangan), keyin e'lon.
+        """
+        if deal.offer_id is None:
+            return
+        item = OfferRepository(self.db).lock_item(deal.item_id)
+        if item is None:
+            return
+        item.quantity_available = min(item.quantity_total, item.quantity_available + deal.quantity)
+        if item.status == ItemStatus.SOLD:
+            ends = item.listing_ends_at
+            still_open = ends is not None and _aware(ends) > datetime.now(UTC)
+            item.status = ItemStatus.ACTIVE if still_open else ItemStatus.EXPIRED
+        self.db.add(item)
 
     def _save(self, deal: Deal) -> Deal:
         self.db.add(deal)

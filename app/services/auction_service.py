@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from app.models.auction import Auction
 from app.models.bid import Bid
-from app.models.deal import Deal
 from app.models.enums import (
     AuctionStatus,
     BidStatus,
@@ -28,7 +27,6 @@ from app.schemas.auction import (
     AuctionRelist,
     buy_now_window_open,
 )
-from app.schemas.deal import DealRead
 from app.services.auction_state import (
     SELLER_ALLOWED_TARGETS,
     InvalidAuctionTransition,
@@ -380,7 +378,7 @@ class AuctionService:
             auction.item.status = ItemStatus.SOLD
             self.db.add(auction)
             self.db.flush()
-            DealService(self.db).create_deal_for_winning_auction(auction)
+            DealService(self.db).create_for_winning_auction(auction)
 
             notifier = NotificationService(self.db)
             notifier.create(
@@ -642,7 +640,7 @@ class AuctionService:
             auction.item.status = ItemStatus.SOLD
             self.db.add(auction)
             self.db.flush()
-            DealService(self.db).create_deal_for_winning_auction(auction)
+            DealService(self.db).create_for_winning_auction(auction)
             # G'olib va sotuvchi xabardor qilinadi (tranzaksiya ichida, atomik).
             notifier = NotificationService(self.db)
             notifier.create(
@@ -785,7 +783,7 @@ class AuctionService:
             auction.item.status = ItemStatus.SOLD
             self.db.add(auction)
             self.db.flush()
-            DealService(self.db).create_deal_for_winning_auction(auction)
+            DealService(self.db).create_for_winning_auction(auction)
 
             notifier = NotificationService(self.db)
             notifier.create(
@@ -809,17 +807,6 @@ class AuctionService:
 
         self.db.refresh(auction)
         return auction
-
-    def get_or_create_order_for_winner(self, auction: Auction) -> Deal | None:
-        if auction.winner_id is None:
-            return None
-        return DealService(self.db).create_deal_for_winning_auction(auction)
-
-
-def serialize_order(deal: Deal | None) -> DealRead | None:
-    if deal is None:
-        return None
-    return DealRead.model_validate(deal)
 
 
 AuctionSettlementService = AuctionService
