@@ -73,7 +73,13 @@ Maqsad: keyingi ishlar uchun ishonchli zamin. Busiz atomiklikni **sinab bo'lmayd
 **Faza C ✅ BAJARILDI.** Qolgan mayda ishlar (`duration_days` ni to'liq majburiy
 qilib `end_time` yo'lini olib tashlash) frontend tayyor bo'lganda.
 
-## Faza D — Escrow, idempotentlik, audit  (asosan BAJARILDI)
+## Faza D — Escrow, idempotentlik, audit  (QAMROVDAN CHIQARILDI — Faza E)
+
+> **2026-10:** Bazart to'lovda ishtirok etmaydi (Faza E qarori). Escrow, PSP, buyer premium,
+> topshirish va nizolar E1 da kodda o'chiriladi. Quyidagi bandlar tarix sifatida qoldirilgan;
+> ochiq bandlar endi bajarilmaydi. Saqlanadiganlar: `core/webhook.py` + `webhook_events`
+> (hamyon to'ldirish, E5.4), `audit_log` (admin harakatlari).
+
 
 - [ ] **Yurist bilan tekshirish**: hold/capture modeli litsenziya talab qiladimi (BLOKER, biznes)
 - [x] `PaymentStatus`: `HELD` / `RELEASED` / `CANCELLED_HOLD` (migratsiya 202607170012)
@@ -89,7 +95,27 @@ qilib `end_time` yo'lini olib tashlash) frontend tayyor bo'lganda.
 - [ ] Real PSP adapteri (Payme/Click) — huquqiy tekshiruvdan keyin
 - [ ] Mock provayderni prod build'dan butunlay olib tashlash (real PSP kelganda)
 
-**Faza D yadrosi ✅.** Qolgani tashqi bog'liq: yurist xulosasi + real PSP shartnomasi.
+**Faza D yadrosi kodda bor edi; Faza E da olib tashlanadi** (E1). Ochiq bandlar — qamrovdan tashqarida.
+
+---
+
+## Faza E — To'lovsiz kelishuv modeli va soddalashtirish  (JARAYONDA)
+
+Bajarish tartibi, tekshiruvlar va belgilangan holat: `docs/FAZA_E_BAJARISH_TARTIBI.md`.
+Kelishuv modeli: `docs/DEALS.md`. Ish branch'i `faza-e`, boshlang'ich teg `pre-faza-e`.
+
+| Bosqich | Nima | Holat |
+|---|---|---|
+| P | Baseline, teg, branch, hajm ro'yxati | ✅ (P.1 push — egasi qiladi) |
+| E0 | Hujjatlar va qoidalar | ✅ |
+| E1 | To'lov, topshirish, nizo modullarini kesish | [ ] (E2 bilan bitta reliz) |
+| E2 | Buyurtma o'rniga kelishuv: kontaktlar, tasdiqlash, bekor qilish, hisoblagichlar | [ ] |
+| E3 | Mahsulot hayot sikli: `unsold`/`removed`/`rejected`, olib tashlash, qayta joylash | [ ] |
+| E4 | Rezerv va soddalashtirishlar (`floor_price`, buy-now, qadam, retract, push, `seller` roli) | [ ] (E4.10 ✅) |
+| E5 | Daromad: sotuvchi hamyoni, komissiya, ko'tarish (bayroq bilan, stavka 0 dan) | [ ] |
+| E6 | Frontend soddalashtirish: 3 tayyor tanlov, yagona mahsulot sahifasi | [ ] |
+
+**Reliz qoidasi:** E1 va E2 bitta relizda (oralig'ida deploy yo'q — buyurtmalar qotib qoladi).
 
 ---
 
@@ -133,24 +159,24 @@ webhook secret prod guard, order state machine, proxy tie-break, WS auth.
 **Hali ochiq:**
 - [ ] `close_auction` manual end_time qattiqlashtirish (auto-closer to'g'ri; manual
       yo'l sotuvchiga erta yopishga ruxsat beradi — test churn sababli keyinga surildi)
-- [ ] Webhook event -> payment holatini yangilash (dedup/replay yadrosi bor; event
-      turiga qarab payment mutatsiyasi real PSP kelganda)
-- [ ] Push/SMS ni notification_service.create() ga ulash (adapter tayyor)
+- [ ] ~~Webhook event -> payment holatini yangilash~~ — Faza E: to'lov yo'q; webhook yadrosi hamyon
+      to'ldirishga (E5.4) ulanadi
+- [ ] ~~Push/SMS ni ulash~~ — Faza E: push abstraksiyasi olib tashlanadi (E4.8); Telegram + in-app qoladi
 - [ ] Redis fan-out (ko'p instansiya WS), `X-Forwarded-For` ishonchli proxy ro'yxati
-- [ ] Real PSP adapteri, yurist xulosasi (tashqi bog'liq)
+- [ ] ~~Real PSP adapteri~~ — Faza E: to'lov yo'q. Yurist: foydalanuvchi shartlari (E2.14) va hamyon
+      provayderi (E5.4)
 - [ ] Auksion dvigateli: proxy max rezervni qoplasa, ko'rinadigan narx rezervgacha KO'TARILMAYDI
       (eBay ko'taradi). Natija: yagona bidder max=6000, rezerv=5000 bo'lsa auksion 1100 da
-      RESERVE_NOT_MET bilan yopiladi. Buy-now (Option B) buni qulf ostida hisobga oladi, lekin
-      yopilish mantig'i hali tuzatilmagan
-- [ ] Taklif order'i to'lanmasa avtomatik bekor qilish (hozir auksion order'lari kabi muddatsiz
-      kutadi — sotilgan donalar to'lovsiz band bo'lib qolishi mumkin)
-- [ ] Taklifli e'lonlar uchun kuzatuv ro'yxati va "tugashiga oz qoldi" (hozir faqat auksion)
+      RESERVE_NOT_MET bilan yopiladi. → Faza E: rezerv olib tashlanadi (E4.2), muammo o'zi yo'qoladi
+- [ ] Taklif order'i to'lanmasa avtomatik bekor qilish → Faza E: kelishuv modeli (E2): bog'lanish
+      oynasi, bekor qilish sababi, zaxira qaytishi
+- [ ] Taklifli e'lonlar uchun kuzatuv ro'yxati va "tugashiga oz qoldi" → Faza E E6.3
 - [ ] `message-thread.tsx`: suhbatdagi havola `/lot/{item_id}` — auksion id kutiladi (oldindan bor xato)
 - [ ] Moderatsiya: auksioni **allaqachon sotilmay tugagan** e'lonni admin rad etsa, rad
       etish hech qayerda saqlanmaydi (closer item'ni baribir `CANCELLED` qiladi) — sotuvchi
       uni `POST /auctions/{id}/relist` bilan qaytara oladi. Jonli auksion rad etilganda bu
       yopiq (auksion `CANCELLED` -> relist 409). Yechim: `items.rejected_at` (yoki moderatsiya
-      holati) ustuni + relist'da tekshiruv
+      holati) ustuni + relist'da tekshiruv. → Faza E E3.8 (`rejected` holati)
 
 ## Qat'iy tartib qoidasi
 
@@ -160,4 +186,7 @@ Fazalar **ketma-ket**. Sabab:
 - Faza D (escrow) Faza B'siz — Numeric/int aralashmasi pul hisobida xatoga olib keladi.
 - Real-time Faza C'siz — noto'g'ri narxni tez tarqatishdan boshqa foyda yo'q.
 
-Yangi feature Faza A–D tugamasdan qo'shilmaydi.
+Faza D qamrovdan chiqarildi (Faza E). Endi: **Faza E bosqichlari ketma-ket** —
+P → E0 → (E1 + E2, bitta reliz) → E3 → E4 → E5 / E6. Faza E tugamasdan bosqichlarga kirmagan
+yangi feature qo'shilmaydi. Har bosqichdan keyin parallel bid, parallel buy-now va parallel taklif
+qabuli testlari o'zgarishsiz yashil bo'lishi shart.

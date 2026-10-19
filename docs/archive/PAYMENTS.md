@@ -1,5 +1,9 @@
 # To'lovlar va escrow
 
+> **ARXIV (2026-10).** Faza E qarori: Bazart to'lovda ishtirok etmaydi. Bu hujjat escrow/PSP dizaynini
+> tarix sifatida saqlaydi; kod E1 da olib tashlanadi. Saqlanadiganlar: `core/webhook.py` va
+> `webhook_events` (hamyon to'ldirish, E5.4). Joriy model: `docs/DEALS.md`.
+
 Kod: `app/services/payment_service.py`, `app/services/payment_providers.py`,
 `app/models/payment.py`, `app/api/v1/endpoints/payments.py`.
 

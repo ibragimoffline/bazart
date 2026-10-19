@@ -2,8 +2,11 @@
 
 ## 1. Nima quriladi
 
-Bazart — C2C muddatli auksion marketplace. Har e'londa majburiy deadline (3/5/7 kun),
-narx auksion orqali aniqlanadi, pul escrow (PSP hold) orqali himoyalanadi.
+Bazart — C2C muddatli marketplace. Har e'londa majburiy deadline (3/5/7 kun), narx erkin
+takliflar (asosiy) yoki auksion (ixtiyoriy) orqali aniqlanadi. Savdo **kelishuv** bilan tugaydi:
+Bazart to'lovda ishtirok etmaydi, tomonlarga tasdiqlangan kontaktlar ochiladi (Faza E).
+
+> **Faza E (o'tish davri).** Bazart to'lovsiz kelishuv modeliga o'tmoqda (`docs/FAZA_E_BAJARISH_TARTIBI.md`, `docs/DEALS.md`). Quyida "[E1]"/"[E2]"/"[E4]" belgili qismlar shu bosqichlarda olib tashlanadi yoki almashtiriladi; ungacha kod ularni hali o'z ichiga oladi.
 
 Asosiy farq OLX'dan: **e'lon muzlab qololmaydi** — deadline keladi, lot yopiladi.
 
@@ -54,8 +57,8 @@ Endpoint'dan to'g'ridan-to'g'ri `models` bilan biznes qaror qabul qilish TAQIQ.
 | items | `/api/v1/items` | `item_service`, `storage_service` | Ishlaydi (rasm yuklash lokal disk) |
 | auctions | `/api/v1/auctions` | `auction_service` | Qisman — yopish QO'LDA |
 | bids | `/api/v1/bids` | `bid_service` | Qisman — atomiklik va proxy YO'Q |
-| payments | `/api/v1/payments` | `payment_service`, `payment_providers` | Skelet — faqat Mock PSP |
-| orders | `/api/v1/orders` | `order_service` | Skelet |
+| payments | `/api/v1/payments` | `payment_service`, `payment_providers` | Mock PSP — **E1 da olib tashlanadi** |
+| orders | `/api/v1/orders` | `order_service` | **E2 da `deals` bilan almashadi** |
 | messages | `/api/v1/messages` | `message_service` | Ishlaydi |
 | admin | `/api/v1/admin` | `admin_service` | Ishlaydi (moderatsiya + statistika) |
 
@@ -68,27 +71,31 @@ Sotuvchi: item yaratadi (draft)
 
 Xaridor: POST /api/v1/bids/{auction_id}
    → validatsiya (shill? active? deadline? min qadam?)
-   → [KERAK] auksion qatorini FOR UPDATE bilan lock
+   → auksion qatorini FOR UPDATE bilan lock
    → bid yoziladi, current_price yangilanadi, eski bid OUTBID
    → anti-sniping: <120s qolgan bo'lsa end_time += 120s
 
 end_time keladi
-   → [KERAK] closer worker: active → ended
+   → closer (Celery beat): active → ended
    → g'olib aniqlanadi (eng yuqori VALID bid)
-   → reserve bajarilmasa → reserve_not_met
-   → aks holda → Order yaratiladi (pending_payment)
+   → reserve bajarilmasa → reserve_not_met            [E4: reserve olib tashlanadi]
+   → aks holda → Order yaratiladi (pending_payment)   [E2: → Deal (agreed), kontaktlar ochiladi]
 
-To'lov
-   → payment intent (PSP)
-   → [KERAK] PSP HOLD (escrow)
-   → tovar topshiriladi
-   → [KERAK] CAPTURE/RELEASE → sotuvchiga
-   → 72 soat sukut → auto-complete
+To'lov oqimi                                        [E1: butunlay olib tashlanadi]
+   → payment intent (PSP, faqat mock) → topshirish kodi → nizo
+
+Maqsad (E2): Deal agreed
+   → sotuvchi "Sotildi" + xaridor tasdiqlaydi → completed
+   → "Sotildi" dan 72 soat sukut, ochiq shikoyat yo'q → avto-tasdiq
+   → istalgan tomon sabab bilan bekor qiladi → cancelled
 ```
 
-`[KERAK]` = hali yo'q, ROADMAP'da.
+Batafsil: `docs/DEALS.md`.
 
-## 6. Hozirgi arxitektura teshiklari
+## 6. Arxitektura teshiklari (tarixiy)
+
+> Quyidagi jadval Faza A oldidagi holat. Hammasi yopilgan: Celery beat closer, `FOR UPDATE` +
+> shartli UPDATE, Redis, testlar real Postgres'da, GitHub Actions CI.
 
 | Teshik | Ta'sir |
 |---|---|

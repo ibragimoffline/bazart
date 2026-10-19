@@ -3,6 +3,12 @@
 > Boshidan oxirigacha: nima qurildi, qanday ishlaydi, nima bajarildi, nima qoldi.
 > Holat sanasi: **2026-09-06**. Manba — kod (`app/`, `frontend/`, `tests/`, `alembic/`),
 > git tarixi (54 kommit) va `docs/`.
+>
+> **Faza E (2026-10).** Bazart to'lovsiz kelishuv modeliga o'tmoqda: escrow, topshirish kodi va
+> nizolar (§8, §9) E1 da olib tashlanadi, order E2 da kelishuv (deal) bilan almashadi, reserve narx
+> E4 da yo'qoladi. Bu hujjat o'tishdan oldingi holatni tasvirlaydi; joriy reja va holat —
+> `docs/FAZA_E_BAJARISH_TARTIBI.md`, maqsadli model — `docs/DEALS.md`. Telefon narx ko'rsatkichi
+> (migratsiya 0028) olib tashlangan.
 
 ---
 
@@ -293,6 +299,8 @@ uchun kompozit index, `test_bid_index.py` qalqoni bilan.
 
 ## 8. Escrow va to'lovlar
 
+> **[E1] olib tashlanadi.** Bazart to'lovda ishtirok etmaydi; arxiv: `docs/archive/PAYMENTS.md`.
+
 ### 8.1 PSP abstraksiyasi (`payment_providers.py`)
 
 `BasePaymentProvider` (ABC) shartnomasi: `create_payment`, `confirm_payment`,
@@ -355,6 +363,10 @@ yuboradi. In-process poller (default o'chiq) yoki Celery beat orqali.
 ---
 
 ## 9. Order, topshirish, nizo
+
+> **[E1/E2] almashadi.** Topshirish kodi va nizolar E1 da olib tashlanadi; order E2 da
+> kelishuvga aylanadi (sotuvchi "Sotildi" + xaridor tasdig'i, 72 soat avto-tasdiq, sabab bilan
+> bekor qilish) — `docs/DEALS.md`.
 
 ### Order (`order_service.py`, `order_state.py`)
 Auksion yopilganda avtomatik yaratiladi (`auction_id` unique — ikki marta yaratilmaydi).

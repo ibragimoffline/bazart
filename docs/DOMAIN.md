@@ -1,7 +1,11 @@
 # Domen modeli
 
-Manba: `app/models/*.py` + `alembic/versions/` (8 migratsiya, head = `202606210008`).
-Bu hujjat **real kodni** aks ettiradi. Maqsadli o'zgarishlar alohida belgilangan.
+Manba: `app/models/*.py` + `alembic/versions/` (28 migratsiya, head = `202610200028`).
+Bu hujjat asosan Faza A–C davridagi holatni yozadi; keyingi jadvallar (offers, pricing_mode va h.k.)
+`docs/OFFERS.md`, `docs/AUCTION_ENGINE.md` va `docs/PROJECT_OVERVIEW.md` §5 da. Pul ustunlari
+allaqachon BIGINT tiyin (Faza B).
+
+> **Faza E (o'tish davri).** Bazart to'lovsiz kelishuv modeliga o'tmoqda (`docs/FAZA_E_BAJARISH_TARTIBI.md`, `docs/DEALS.md`). Quyida "[E1]"/"[E2]"/"[E4]" belgili qismlar shu bosqichlarda olib tashlanadi yoki almashtiriladi; ungacha kod ularni hali o'z ichiga oladi.
 
 ## 0. Umumiy qoidalar
 
@@ -107,6 +111,9 @@ Bog'lanishlar: `items`, `auctions` (seller_id), `won_auctions` (winner_id), `bid
 
 ## 6. orders
 
+> **[E2]** `orders` jadvali `deals` bilan almashadi (holatlar `agreed`/`completed`/`cancelled`,
+> keyin `fee_pending`). Quyidagi "Maqsadli" ustunlar (buyer premium, handover) endi rejada YO'Q.
+
 | Ustun | Tur | Izoh |
 |---|---|---|
 | id | int PK | |
@@ -119,6 +126,9 @@ Bog'lanishlar: `items`, `auctions` (seller_id), `won_auctions` (winner_id), `bid
 final_price + buyer_premium), `auto_complete_at` (72 soat), `handover_confirmed_at`.
 
 ## 7. payments / payment_methods
+
+> **[E1]** To'lov jadvallari olib tashlanadi — Bazart to'lovda ishtirok etmaydi. Tarixiy
+> loyiha: `docs/archive/PAYMENTS.md`.
 
 `payment_methods`: `id`, `user_id` FK, `provider` String(80), `label`, `token_reference` String(255),
 `is_default`, `created_at`.

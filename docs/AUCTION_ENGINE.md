@@ -1,5 +1,11 @@
 # Auksion dvigateli
 
+> **Faza E (2026-10):** rezerv narx, `RESERVE_NOT_MET` va rezervli second chance **E4.2 da o'chadi**;
+> tushuvchi narx chegarasi `floor_price` ga ko'chadi (E4.1); Dutch-fallback (§11) va rejalashtirilgan
+> boshlash (§12) **E3 da o'chadi**. Quyida har bandga belgi qo'yilgan. §1–§8 sarlavhalaridagi "YO'Q"
+> dastlabki holatni bildiradi — proxy bidding, closer va state machine hozir kodda BOR.
+> Kelishuv modeli: `docs/DEALS.md`; bajarish tartibi: `docs/FAZA_E_BAJARISH_TARTIBI.md`.
+
 Bu — mahsulotning yuragi. Bu yerdagi xato = noto'g'ri g'olib = ishonch yo'qolishi.
 Kod: `app/services/bid_service.py`, `app/services/auction_service.py`,
 `app/repositories/bid_repository.py`.
@@ -183,6 +189,8 @@ async def close_expired_auctions(db: Session) -> None:
 
 ## 7. State machine — YO'Q, qilinadi
 
+> **E4.2 da o'chadi:** `reserve_not_met` holati va unga o'tishlar.
+
 Ruxsat etilgan o'tishlar (`AuctionStatus`):
 
 ```
@@ -244,6 +252,11 @@ beradi. Race testi yozishdan **oldin** test bazasi Postgres'ga ko'chirilishi sha
 
 ## 9. Buy-now, qayta joylash, "tugashiga oz qoldi" — BOR
 
+> **E4.3:** buy-now birinchi valid bidda yopiladi; rezerv va yashirin proxy max tekshiruvi o'chadi.
+> **E3.6:** qayta joylash `POST /items/{id}/relist` ga o'tadi (uch rejim, "faqat bir marta" cheklovisiz).
+> **E4.2:** rezervli second chance o'chadi; second-chance mexanizmi faqat "g'olib javob bermadi"
+> holatida keyingi bidderga taklif uchun qoladi (`docs/DEALS.md` §6).
+
 **Buy-now** (`AuctionService.buy_now`, `POST /auctions/{id}/buy-now`):
 - Sotuvchi auksion ochishda `buy_now_price` beradi (ixtiyoriy). Qoida (`_validate_pricing`):
   `buy_now > starting_price` va rezerv bo'lsa `buy_now >= reserve_price` — aks holda 400.
@@ -277,6 +290,8 @@ beradi. Race testi yozishdan **oldin** test bazasi Postgres'ga ko'chirilishi sha
 
 ## 10. Pasayuvchi (golland) auksion — BOR
 
+> **E4.1:** pastki chegara `reserve_price` dan alohida `floor_price` ustuniga ko'chadi.
+
 `auctions.pricing_mode`: `ascending` (klassik) | `descending`. Pasayuvchida:
 
 - **Narx vaqtdan hisoblanadi, bazada saqlanmaydi:**
@@ -302,6 +317,8 @@ beradi. Race testi yozishdan **oldin** test bazasi Postgres'ga ko'chirilishi sha
 
 ## 11. Gibrid model: taklifsiz auksion -> pasayuvchi bosqich — BOR
 
+> **E3.3 da o'chadi** (yashirin avtomatik Dutch-fallback yo'q; sotuvchi o'zi qayta joylaydi).
+
 Sotuvchi o'suvchi auksion yaratishda **oldindan rozilik** beradi:
 `dutch_fallback_floor` (o'sha bosqichning eng past narxi, boshlang'ichdan past; aks holda 400).
 Pasayuvchi auksionga berilmaydi (422).
@@ -321,6 +338,9 @@ Pasayuvchi auksionga berilmaydi (422).
 - Davom etgan lotni qo'lda qayta joylash — 409 (bitta tovar ikki marta joylanmaydi).
 
 ## 12. Holatga qarab standart rejim, boshlanishgacha o'zgartirish, narx jadvali — BOR
+
+> **E3.2 da o'chadi:** `SCHEDULED`, "Keyinroq boshlash", `PATCH /auctions/{id}/pricing`.
+> Narx jadvali (`price_forecast`) va holatga qarab tavsiya qoladi (E6.1 dagi tayyor tanlovlarga o'tadi).
 
 - **Standart rejim (UI, sotish formasi):** yangi mahsulot -> pasayuvchi (tavsiya: chegara 80%,
   muddat oxiridan ~12 soat oldin chegaraga yetadigan soatlik qadam); ishlatilgan/tiklangan ->
