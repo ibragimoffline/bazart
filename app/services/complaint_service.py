@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.complaint import Complaint
+from app.models.deal import Deal
 from app.models.enums import ComplaintStatus, ComplaintTargetType, is_admin
 from app.models.user import User
 from app.repositories.complaint_repository import ComplaintRepository
@@ -32,6 +33,12 @@ class ComplaintService:
         reason: str,
         description: str | None,
     ) -> Complaint:
+        if target_type == ComplaintTargetType.DEAL:
+            # Kelishuv shikoyati avto-tasdiqni to'xtatadi — begona shikoyat bilan istalgan
+            # kelishuvni muzlatib bo'lmasin. Ishtirokchi emas yoki yo'q — 404 (IDOR).
+            deal = self.db.get(Deal, target_id)
+            if deal is None or reporter.id not in {deal.buyer_id, deal.seller_id}:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deal not found")
         complaint = self.complaints.create(
             reporter_id=reporter.id,
             target_type=target_type,

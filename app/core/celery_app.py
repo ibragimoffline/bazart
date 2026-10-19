@@ -46,6 +46,10 @@ if settings.celery_beat_enabled:
             "task": "app.tasks.scheduled.close_due_auctions_task",
             "schedule": schedule(settings.auction_closer_interval_seconds),
         },
+        "auto-confirm-deals": {
+            "task": "app.tasks.scheduled.auto_confirm_deals_task",
+            "schedule": schedule(settings.deal_auto_confirm_interval_seconds),
+        },
         "notify-ending-soon": {
             "task": "app.tasks.scheduled.notify_ending_soon_task",
             "schedule": schedule(settings.ending_soon_interval_seconds),

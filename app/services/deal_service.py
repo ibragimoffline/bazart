@@ -1,12 +1,21 @@
 from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
+from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.auction import Auction
+from app.models.complaint import Complaint
 from app.models.deal import Deal
-from app.models.enums import DealCancelReason, DealStatus, ItemStatus, is_admin
+from app.models.enums import (
+    ComplaintStatus,
+    ComplaintTargetType,
+    DealCancelReason,
+    DealStatus,
+    ItemStatus,
+    is_admin,
+)
 from app.models.offer import Offer
 from app.models.user import User
 from app.money import Tiyin, calc_line_total
@@ -179,6 +188,41 @@ class DealService:
         deal.at_fault_id = at_fault_for(deal, actor.id, reason)
         self._restore_stock(deal)
         return self._save(deal)
+
+    # --- Fon vazifasi (E2.7) -----------------------------------------------------
+
+    def auto_confirm_due(self, now: datetime | None = None) -> int:
+        """ "Sotildi" dan `deal_auto_confirm_hours` o'tgan, xaridor jim va ochiq shikoyat
+        yo'q kelishuvlarni yakunlaydi. Yakunlanganlar soni.
+
+        Ochiq (OPEN/REVIEWING) shikoyat avto-tasdiqni to'xtatadi — aks holda nizoli kelishuv
+        "muvaffaqiyatli" hisoblanib, sharh va hisoblagichlarga tushardi. `SKIP LOCKED`: shu
+        payt foydalanuvchi amali qulflagan kelishuv keyingi tik'ka qoladi, ikki worker
+        bir kelishuvni ikki marta yakunlamaydi.
+        """
+        now = now or datetime.now(UTC)
+        cutoff = now - timedelta(hours=settings.deal_auto_confirm_hours)
+        open_complaint = exists().where(
+            Complaint.target_type == ComplaintTargetType.DEAL,
+            Complaint.target_id == Deal.id,
+            Complaint.status.in_([ComplaintStatus.OPEN, ComplaintStatus.REVIEWING]),
+        )
+        due = self.db.scalars(
+            select(Deal)
+            .where(
+                Deal.status == DealStatus.AGREED,
+                Deal.seller_marked_sold_at.is_not(None),
+                Deal.seller_marked_sold_at <= cutoff,
+                ~open_complaint,
+            )
+            .with_for_update(skip_locked=True)
+        ).all()
+        for deal in due:
+            self._transition(deal, DealStatus.COMPLETED)
+            deal.completed_at = now
+            self.db.add(deal)
+        self.db.commit()
+        return len(due)
 
     # --- Ichki ------------------------------------------------------------------
 

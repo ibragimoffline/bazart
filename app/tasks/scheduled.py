@@ -12,6 +12,7 @@ import logging
 from app.core.celery_app import celery_app
 from app.db.session import SessionLocal
 from app.services.auction_closer import close_due_auctions
+from app.services.deal_service import DealService
 from app.services.ending_soon import notify_ending_soon
 from app.services.offer_service import OfferService
 from app.services.price_alerts import notify_price_drops
@@ -28,6 +29,19 @@ def close_due_auctions_task() -> int:
         if closed:
             logger.info("Celery: %s ta auksion yopildi", closed)
         return closed
+    finally:
+        db.close()
+
+
+@celery_app.task(name="app.tasks.scheduled.auto_confirm_deals_task")
+def auto_confirm_deals_task() -> int:
+    """72 soatlik avto-tasdiq (docs/DEALS.md §5). Yakunlangan kelishuvlar soni."""
+    db = SessionLocal()
+    try:
+        done = DealService(db).auto_confirm_due()
+        if done:
+            logger.info("Celery: %s ta kelishuv avtomatik tasdiqlandi", done)
+        return done
     finally:
         db.close()
 

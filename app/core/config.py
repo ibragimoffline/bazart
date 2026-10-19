@@ -72,6 +72,9 @@ class Settings(BaseSettings):
     # Kelishuv (Faza E2, docs/DEALS.md).
     # Kelishuvdan keyin bog'lanish oynasi: shundan keyingina "javob bermadi" bilan bekor qilinadi.
     deal_contact_window_hours: int = 48
+    # "Sotildi" dan keyin xaridor jim tursa (va ochiq shikoyat bo'lmasa) avto-tasdiq.
+    deal_auto_confirm_hours: int = 72
+    deal_auto_confirm_interval_seconds: int = 300
 
     # Redis (token blacklist, keyin kesh/pub-sub). Bo'sh bo'lsa in-memory fallback.
     redis_url: str = "redis://localhost:6379/0"
