@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 
 from app.models.auction import Auction
 from app.models.bid import Bid
-from app.models.enums import AuctionStatus, ItemStatus, ListingType, OrderStatus, UserRole
+from app.models.deal import Deal
+from app.models.enums import AuctionStatus, DealStatus, ItemStatus, ListingType, UserRole
 from app.models.item import Item
-from app.models.order import Order
 from app.models.user import User
 from app.services.auction_service import AuctionService
 from app.services.offer_service import OfferService
@@ -177,22 +177,22 @@ class AdminService:
             statement = statement.where(Bid.bidder_id == bidder_id)
         return list(self.db.scalars(statement))
 
-    def list_orders(
+    def list_deals(
         self,
         *,
-        status_filter: OrderStatus | None = None,
+        status_filter: DealStatus | None = None,
         buyer_id: int | None = None,
         seller_id: int | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> list[Order]:
-        statement = select(Order).order_by(Order.created_at.desc()).offset(skip).limit(limit)
+    ) -> list[Deal]:
+        statement = select(Deal).order_by(Deal.created_at.desc()).offset(skip).limit(limit)
         if status_filter is not None:
-            statement = statement.where(Order.status == status_filter)
+            statement = statement.where(Deal.status == status_filter)
         if buyer_id is not None:
-            statement = statement.where(Order.buyer_id == buyer_id)
+            statement = statement.where(Deal.buyer_id == buyer_id)
         if seller_id is not None:
-            statement = statement.where(Order.seller_id == seller_id)
+            statement = statement.where(Deal.seller_id == seller_id)
         return list(self.db.scalars(statement))
 
     def get_statistics(self) -> dict[str, int]:
@@ -204,16 +204,15 @@ class AdminService:
             )
             or 0
         )
-        total_completed_orders = (
-            self.db.scalar(
-                select(func.count(Order.id)).where(Order.status == OrderStatus.COMPLETED)
-            )
+        total_completed_deals = (
+            self.db.scalar(select(func.count(Deal.id)).where(Deal.status == DealStatus.COMPLETED))
             or 0
         )
         total_sales_amount = (
             self.db.scalar(
-                select(func.coalesce(func.sum(Order.final_price), 0)).where(
-                    Order.status.in_([OrderStatus.PICKUP_PENDING, OrderStatus.COMPLETED])
+                # Faqat yakunlangan kelishuvlar: `agreed` hali bekor bo'lishi mumkin.
+                select(func.coalesce(func.sum(Deal.final_price), 0)).where(
+                    Deal.status == DealStatus.COMPLETED
                 )
             )
             or 0
@@ -223,7 +222,7 @@ class AdminService:
         return {
             "total_users": total_users,
             "total_active_auctions": total_active_auctions,
-            "total_completed_orders": total_completed_orders,
+            "total_completed_deals": total_completed_deals,
             "total_sales_amount": total_sales_amount,
         }
 

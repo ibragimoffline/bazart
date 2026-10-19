@@ -1,6 +1,6 @@
 """Taklifli savdo: erkin narx, miqdor bo'yicha taklif, muzokara, zaxira va poyga.
 
-Bu oqim pulga (order summasi) va zaxiraga tegadi — har qoida chekka holatlar
+Bu oqim pulga (deal summasi) va zaxiraga tegadi — har qoida chekka holatlar
 bilan sinaladi. Haqiqiy parallel qabul qilish testi alohida ulanishlarda.
 """
 
@@ -12,10 +12,10 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.models.deal import Deal
 from app.models.enums import ItemStatus, OfferStatus, UserRole
 from app.models.item import Item
 from app.models.offer import Offer
-from app.models.order import Order
 from app.models.user import User
 from app.services.offer_service import OfferService
 from tests.conftest import AuthenticatedUser, create_user
@@ -183,7 +183,7 @@ def test_offer_validation(client: TestClient, db_session: Session) -> None:
     assert _offer(client, buyer, draft["id"], 1, ASKING).status_code == 409
 
 
-# --- Qabul qilish, zaxira, order -------------------------------------------------
+# --- Qabul qilish, zaxira, deal -------------------------------------------------
 
 
 def test_accept_creates_order_and_decrements_stock(client: TestClient, db_session: Session) -> None:
@@ -197,15 +197,15 @@ def test_accept_creates_order_and_decrements_stock(client: TestClient, db_sessio
     accepted = _act(client, seller, offer["id"], "accept")
     assert accepted.status_code == 200, accepted.text
     assert accepted.json()["status"] == "accepted"
-    assert accepted.json()["order_id"] is not None
+    assert accepted.json()["deal_id"] is not None
 
-    order = db_session.scalar(select(Order).where(Order.offer_id == offer["id"]))
-    assert order is not None
-    assert order.auction_id is None
-    assert order.quantity == 2
-    assert order.unit_price == 12_000_000
-    assert order.final_price == 24_000_000
-    assert order.buyer_id == buyer.id
+    deal = db_session.scalar(select(Deal).where(Deal.offer_id == offer["id"]))
+    assert deal is not None
+    assert deal.auction_id is None
+    assert deal.quantity == 2
+    assert deal.unit_price == 12_000_000
+    assert deal.final_price == 24_000_000
+    assert deal.buyer_id == buyer.id
 
     after = _item(client, item["id"])
     assert after["quantity_available"] == 8
@@ -237,11 +237,11 @@ def test_cancelled_order_restores_stock(client: TestClient, db_session: Session)
     seller, buyer = _users(client, db_session, "seller", "buyer")
     item = _listing(client, seller, quantity=2)
     offer = _offer(client, buyer, item["id"], 2, ASKING).json()
-    order_id = _act(client, seller, offer["id"], "accept").json()["order_id"]
+    deal_id = _act(client, seller, offer["id"], "accept").json()["deal_id"]
     assert _item(client, item["id"])["status"] == "sold"
 
     cancel = client.patch(
-        f"/api/v1/orders/{order_id}/status", headers=seller.headers, json={"status": "cancelled"}
+        f"/api/v1/deals/{deal_id}/status", headers=seller.headers, json={"status": "cancelled"}
     )
     assert cancel.status_code == 200, cancel.text
     after = _item(client, item["id"])
@@ -250,17 +250,17 @@ def test_cancelled_order_restores_stock(client: TestClient, db_session: Session)
 
 
 def test_offer_order_records_line_total(client: TestClient, db_session: Session) -> None:
-    """Order jami = miqdor x dona narxi (to'lov oqimi yo'q — Faza E)."""
+    """Deal jami = miqdor x dona narxi (to'lov oqimi yo'q — Faza E)."""
     seller, buyer = _users(client, db_session, "seller", "buyer")
     item = _listing(client, seller, quantity=5)
     offer = _offer(client, buyer, item["id"], 3, 1_000_000).json()
-    order_id = _act(client, seller, offer["id"], "accept").json()["order_id"]
+    deal_id = _act(client, seller, offer["id"], "accept").json()["deal_id"]
 
-    order = client.get(f"/api/v1/orders/{order_id}", headers=buyer.headers).json()
-    assert order["quantity"] == 3
-    assert order["unit_price"] == "1000000"
-    assert order["final_price"] == "3000000"
-    assert order["offer_id"] == offer["id"]
+    deal = client.get(f"/api/v1/deals/{deal_id}", headers=buyer.headers).json()
+    assert deal["quantity"] == 3
+    assert deal["unit_price"] == "1000000"
+    assert deal["final_price"] == "3000000"
+    assert deal["offer_id"] == offer["id"]
 
 
 # --- Muzokara -------------------------------------------------------------------
@@ -295,8 +295,8 @@ def test_counter_offer_round_trip(client: TestClient, db_session: Session) -> No
 
     done = _act(client, seller, offer["id"], "accept")
     assert done.status_code == 200
-    order = db_session.scalar(select(Order).where(Order.offer_id == offer["id"]))
-    assert (order.quantity, order.unit_price, order.final_price) == (3, 12_000_000, 36_000_000)
+    deal = db_session.scalar(select(Deal).where(Deal.offer_id == offer["id"]))
+    assert (deal.quantity, deal.unit_price, deal.final_price) == (3, 12_000_000, 36_000_000)
 
 
 def test_reject_and_withdraw_rules(client: TestClient, db_session: Session) -> None:
@@ -390,13 +390,13 @@ def test_expiry_job_closes_stale_offers(client: TestClient, db_session: Session)
 # --- Bekor qilish va moderatsiya -------------------------------------------------
 
 
-def test_cancel_listing_closes_offers_and_keeps_orders(
+def test_cancel_listing_closes_offers_and_keeps_deals(
     client: TestClient, db_session: Session
 ) -> None:
     seller, a, b = _users(client, db_session, "seller", "a", "b")
     item = _listing(client, seller, quantity=5)
     sold = _offer(client, a, item["id"], 1, ASKING).json()
-    order_id = _act(client, seller, sold["id"], "accept").json()["order_id"]
+    deal_id = _act(client, seller, sold["id"], "accept").json()["deal_id"]
     open_offer = _offer(client, b, item["id"], 1, ASKING).json()
 
     resp = client.delete(f"/api/v1/items/{item['id']}", headers=seller.headers)
@@ -407,7 +407,7 @@ def test_cancel_listing_closes_offers_and_keeps_orders(
         == "rejected"
     )
     # Tuzilgan bitim o'z kuchida.
-    assert client.get(f"/api/v1/orders/{order_id}", headers=a.headers).status_code == 200
+    assert client.get(f"/api/v1/deals/{deal_id}", headers=a.headers).status_code == 200
 
 
 def test_admin_reject_cannot_be_republished(client: TestClient, db_session: Session) -> None:
@@ -505,7 +505,7 @@ def test_parallel_accepts_never_oversell(
         stored = check.get(Item, item["id"])
         assert stored.quantity_available == 0
         assert stored.status == ItemStatus.SOLD
-        orders = check.scalars(select(Order).where(Order.item_id == item["id"])).all()
-        assert sum(o.quantity for o in orders) == 3
+        deals = check.scalars(select(Deal).where(Deal.item_id == item["id"])).all()
+        assert sum(o.quantity for o in deals) == 3
     finally:
         check.close()

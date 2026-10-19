@@ -130,7 +130,7 @@ export function acceptSecondChance(auctionId: number): Promise<Auction> {
 
 // --- Orders ------------------------------------------------------------
 export function buyerOrders(): Promise<Order[]> {
-  return apiFetch<Order[]>("/orders/buyer");
+  return apiFetch<Order[]>("/deals/buyer");
 }
 
 // --- Lots (auksion + item join) ---------------------------------------

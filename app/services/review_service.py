@@ -3,10 +3,10 @@ from decimal import ROUND_HALF_UP, Decimal
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models.enums import OrderStatus
+from app.models.enums import DealStatus
 from app.models.review import Review
 from app.models.user import User
-from app.repositories.order_repository import OrderRepository
+from app.repositories.deal_repository import DealRepository
 from app.repositories.review_repository import ReviewRepository
 from app.repositories.user_repository import UserRepository
 
@@ -14,7 +14,7 @@ from app.repositories.user_repository import UserRepository
 class ReviewService:
     """Ikki tomonlama sharh + sotuvchi reytingi.
 
-    Order COMPLETED bo'lgach xaridor va sotuvchi bir-birini baholaydi
+    Deal COMPLETED bo'lgach xaridor va sotuvchi bir-birini baholaydi
     (1-5 yulduz). Har sharhdan keyin qabul qiluvchining `seller_rating`
     (o'rtacha) va `seller_rating_count` UNGA kelgan barcha sharhlardan
     qayta hisoblanadi — bitta izchil tranzaksiyada.
@@ -23,44 +23,44 @@ class ReviewService:
     def __init__(self, db: Session) -> None:
         self.db = db
         self.reviews = ReviewRepository(db)
-        self.orders = OrderRepository(db)
+        self.deals = DealRepository(db)
         self.users = UserRepository(db)
 
     def create_review(
-        self, order_id: int, author: User, stars: int, text: str | None = None
+        self, deal_id: int, author: User, stars: int, text: str | None = None
     ) -> Review:
-        """Order ishtirokchisi ikkinchi tomonni baholaydi.
+        """Deal ishtirokchisi ikkinchi tomonni baholaydi.
 
-        Shartlar: order mavjud, COMPLETED (aks holda 400), muallif order
-        ishtirokchisi (buyer/seller, aks holda 403), shu order+muallif uchun
+        Shartlar: deal mavjud, COMPLETED (aks holda 400), muallif deal
+        ishtirokchisi (buyer/seller, aks holda 403), shu deal+muallif uchun
         sharh hali yo'q (aks holda 409). `to_id` — orderning ikkinchi tomoni;
         o'ziga sharh imkonsiz (ishtirokchi tekshiruvidan kelib chiqadi).
         """
-        order = self.orders.get(order_id)
-        if order is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+        deal = self.deals.get(deal_id)
+        if deal is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deal not found")
 
-        if author.id not in {order.buyer_id, order.seller_id}:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your order")
+        if author.id not in {deal.buyer_id, deal.seller_id}:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your deal")
 
-        if order.status != OrderStatus.COMPLETED:
+        if deal.status != DealStatus.COMPLETED:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Order COMPLETED holatida emas",
+                detail="Deal COMPLETED holatida emas",
             )
 
         # Muallif buyer bo'lsa -> sotuvchini, sotuvchi bo'lsa -> xaridorni baholaydi.
-        to_id = order.seller_id if author.id == order.buyer_id else order.buyer_id
+        to_id = deal.seller_id if author.id == deal.buyer_id else deal.buyer_id
 
-        existing = self.reviews.get_by_order_and_author(order_id, author.id)
+        existing = self.reviews.get_by_order_and_author(deal_id, author.id)
         if existing is not None:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Bu order uchun sharh allaqachon qoldirilgan",
+                detail="Bu deal uchun sharh allaqachon qoldirilgan",
             )
 
         review = Review(
-            order_id=order_id,
+            deal_id=deal_id,
             from_id=author.id,
             to_id=to_id,
             stars=stars,

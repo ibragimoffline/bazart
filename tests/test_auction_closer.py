@@ -13,8 +13,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.auction import Auction
+from app.models.deal import Deal
 from app.models.enums import AuctionStatus, UserRole
-from app.models.order import Order
 from app.services.auction_closer import close_due_auctions
 from tests.conftest import create_auction, create_bid, create_item, create_user
 
@@ -35,7 +35,7 @@ def _expire_end_time(db_session: Session, auction_id: int) -> None:
 
 
 def test_close_due_auction_with_bid_creates_order(client: TestClient, db_session: Session) -> None:
-    """Muddati o'tgan bidli faol auksion → ENDED + order, qaytgan son 1."""
+    """Muddati o'tgan bidli faol auksion → ENDED + deal, qaytgan son 1."""
     seller = create_user(client, db_session, email="seller@example.com", role=UserRole.SELLER)
     bidder = create_user(client, db_session, email="bidder@example.com")
 
@@ -56,11 +56,11 @@ def test_close_due_auction_with_bid_creates_order(client: TestClient, db_session
     assert closed_auction.status == AuctionStatus.ENDED
     assert closed_auction.winner_id == bidder.id
 
-    order = db_session.execute(
-        select(Order).where(Order.auction_id == auction["id"])
+    deal = db_session.execute(
+        select(Deal).where(Deal.auction_id == auction["id"])
     ).scalar_one_or_none()
-    assert order is not None
-    assert order.buyer_id == bidder.id
+    assert deal is not None
+    assert deal.buyer_id == bidder.id
 
 
 def test_close_does_not_touch_future_auction(client: TestClient, db_session: Session) -> None:

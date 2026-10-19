@@ -1,6 +1,6 @@
 """Buy-now, sotilmagan lotni qayta joylash va "tugashiga oz qoldi" eslatmasi.
 
-Buy-now pul oqimiga kiradi (order + yakuniy narx), relist esa bitta tovarni
+Buy-now pul oqimiga kiradi (deal + yakuniy narx), relist esa bitta tovarni
 ikki marta sotish teshigini ochishi mumkin edi — shuning uchun ikkalasi ham
 chekka holatlar bilan sinaladi.
 """
@@ -13,10 +13,10 @@ from sqlalchemy.orm import Session
 
 from app.models.auction import Auction
 from app.models.bid import Bid
+from app.models.deal import Deal
 from app.models.enums import AuctionStatus, BidStatus, NotificationType, UserRole
 from app.models.item import ItemImage
 from app.models.notification import Notification
-from app.models.order import Order
 from app.services.auction_closer import close_due_auctions
 from app.services.ending_soon import notify_ending_soon
 from tests.conftest import AuthenticatedUser, create_bid, create_item, create_user
@@ -96,10 +96,10 @@ def test_buy_now_ends_auction_and_creates_order(client: TestClient, db_session: 
     assert body["current_price"] == "5000"
     assert body["buy_now_available"] is False
 
-    order = db_session.scalar(select(Order).where(Order.auction_id == auction["id"]))
-    assert order is not None
-    assert order.buyer_id == buyer.id
-    assert order.final_price == 5000
+    deal = db_session.scalar(select(Deal).where(Deal.auction_id == auction["id"]))
+    assert deal is not None
+    assert deal.buyer_id == buyer.id
+    assert deal.final_price == 5000
     assert client.get(f"/api/v1/items/{item['id']}").json()["status"] == "sold"
 
     types = {(n.user_id, n.type) for n in db_session.scalars(select(Notification)).all()}
@@ -141,8 +141,8 @@ def test_second_buy_now_conflicts(client: TestClient, db_session: Session) -> No
     url = f"/api/v1/auctions/{auction['id']}/buy-now"
     assert client.post(url, headers=first.headers).status_code == 200
     assert client.post(url, headers=second.headers).status_code == 409
-    orders = db_session.scalars(select(Order).where(Order.auction_id == auction["id"])).all()
-    assert len(orders) == 1
+    deals = db_session.scalars(select(Deal).where(Deal.auction_id == auction["id"])).all()
+    assert len(deals) == 1
 
 
 def test_buy_now_without_price_conflicts(client: TestClient, db_session: Session) -> None:
@@ -251,7 +251,7 @@ def test_relist_closes_open_second_chance(client: TestClient, db_session: Sessio
         f"/api/v1/auctions/{auction['id']}/second-chance/accept", headers=seller.headers
     )
     assert accept.status_code == 409
-    assert db_session.scalar(select(Order).where(Order.auction_id == auction["id"])) is None
+    assert db_session.scalar(select(Deal).where(Deal.auction_id == auction["id"])) is None
 
 
 # --- Seller filtri (My listings) ----------------------------------------------
@@ -442,7 +442,7 @@ def test_buy_now_rejected_after_end_time_before_closer(
 
     response = client.post(f"/api/v1/auctions/{auction['id']}/buy-now", headers=buyer.headers)
     assert response.status_code == 409
-    assert db_session.scalar(select(Order).where(Order.auction_id == auction["id"])) is None
+    assert db_session.scalar(select(Deal).where(Deal.auction_id == auction["id"])) is None
 
 
 def test_buy_now_rejected_before_start_time(client: TestClient, db_session: Session) -> None:
@@ -509,8 +509,8 @@ def test_buy_now_stays_open_below_reserve_and_outbids_existing_bids(
     assert body["winner_id"] == buyer.id
     assert body["current_price"] == "8000"
 
-    order = db_session.scalar(select(Order).where(Order.auction_id == auction["id"]))
-    assert order is not None and order.buyer_id == buyer.id and order.final_price == 8000
+    deal = db_session.scalar(select(Deal).where(Deal.auction_id == auction["id"]))
+    assert deal is not None and deal.buyer_id == buyer.id and deal.final_price == 8000
 
     db_session.expire_all()
     assert db_session.get(Bid, first["id"]).status == BidStatus.OUTBID
@@ -567,7 +567,7 @@ def test_buy_now_respects_hidden_proxy_max_covering_reserve(
     assert response.status_code == 409
     assert "6000" not in response.text
     assert client.get(f"/api/v1/auctions/{auction['id']}").json()["status"] == "active"
-    assert db_session.scalar(select(Order).where(Order.auction_id == auction["id"])) is None
+    assert db_session.scalar(select(Deal).where(Deal.auction_id == auction["id"])) is None
 
 
 def test_buy_now_still_allows_later_bids_below_reserve(

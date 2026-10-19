@@ -20,7 +20,7 @@ ALLOWED_TRANSITIONS: dict[AuctionStatus, frozenset[AuctionStatus]] = {
         {AuctionStatus.ENDED, AuctionStatus.RESERVE_NOT_MET, AuctionStatus.CANCELLED}
     ),
     # RESERVE_NOT_MET -> ENDED: second-chance offer. Sotuvchi rezervga yetmagan
-    # eng yuqori bidderga sotishga rozi bo'lsa, auksion ENDED bo'lib order
+    # eng yuqori bidderga sotishga rozi bo'lsa, auksion ENDED bo'lib deal
     # yaratiladi. Bu YAGONA chiqish yo'li — boshqa holatga o'tib bo'lmaydi.
     AuctionStatus.RESERVE_NOT_MET: frozenset({AuctionStatus.ENDED}),
     # Yakuniy holatlar — bu yerdan hech qayerga o'tilmaydi.
@@ -30,7 +30,7 @@ ALLOWED_TRANSITIONS: dict[AuctionStatus, frozenset[AuctionStatus]] = {
 
 # Sotuvchi PATCH orqali qo'lda faqat bekor qila oladi. ENDED/RESERVE_NOT_MET
 # faqat close oqimi (g'olib aniqlangach), ACTIVE faqat aktivlashtirish
-# orqali qo'yiladi — aks holda sotuvchi order/g'olib mantiqini chetlab o'tadi.
+# orqali qo'yiladi — aks holda sotuvchi deal/g'olib mantiqini chetlab o'tadi.
 SELLER_ALLOWED_TARGETS: frozenset[AuctionStatus] = frozenset({AuctionStatus.CANCELLED})
 
 

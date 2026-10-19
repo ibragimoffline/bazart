@@ -16,15 +16,13 @@ type BadgeVariant =
   | "outline"
 
 const ORDER_LABEL: Record<OrderStatus, string> = {
-  pending_payment: "Kelishildi",
-  pickup_pending: "Uchrashuv kutilmoqda",
+  agreed: "Kelishildi",
   completed: "Yakunlangan",
   cancelled: "Bekor qilingan",
 }
 
 const ORDER_VARIANT: Record<OrderStatus, BadgeVariant> = {
-  pending_payment: "warning",
-  pickup_pending: "default",
+  agreed: "warning",
   completed: "success",
   cancelled: "neutral",
 }

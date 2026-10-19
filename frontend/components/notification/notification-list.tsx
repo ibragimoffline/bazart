@@ -42,11 +42,11 @@ function payloadId(payload: Notification["payload"], key: string): number | null
 }
 
 /**
- * Bildirishnoma qayerga olib boradi. Buyurtma konteksti aniqroq — order_id
+ * Bildirishnoma qayerga olib boradi. Kelishuv konteksti aniqroq — deal_id
  * bo'lsa u ustun; aks holda lot sahifasi.
  */
 function notificationHref(item: Notification): string | null {
-  const orderId = payloadId(item.payload, "order_id")
+  const orderId = payloadId(item.payload, "deal_id")
   if (orderId !== null) return `/orders/${orderId}`
   const offerId = payloadId(item.payload, "offer_id")
   if (offerId !== null) return `/offers?focus=${offerId}`

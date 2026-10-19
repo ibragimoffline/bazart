@@ -58,7 +58,7 @@ export interface Offer {
   /** Kimning javobi kutilmoqda. */
   awaiting: OfferParty;
   expires_at: string;
-  order_id: number | null;
+  deal_id: number | null;
   events: OfferEvent[];
   created_at: string;
   updated_at: string;

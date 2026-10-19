@@ -8,7 +8,7 @@ Modullar:
 """
 
 # Worker faqat vazifa modullarini yuklaydi — barcha modellar ro'yxatdan o'tmasa
-# SQLAlchemy mapper'lari sozlanmaydi (masalan Auction -> Item, Order -> Offer munosabatlari) va beat
+# SQLAlchemy mapper'lari sozlanmaydi (masalan Auction -> Item, Deal -> Offer munosabatlari) va beat
 # vazifalarining birinchi ORM so'rovida yiqiladi. Web ilova, testlar va scripts/ buni
 # app.db.base orqali qiladi; worker uchun ham shu yerda.
 import app.db.base  # noqa: E402, F401

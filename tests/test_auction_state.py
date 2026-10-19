@@ -1,7 +1,7 @@
 """Auksion state machine: qo'lda holat o'zgartirish teshigini yopish.
 
 Audit topilmasi: PATCH /auctions/{id}/status sotuvchiga ISTALGAN holatni
-yozishga ruxsat berardi. Sotuvchi jonli auksionni `ended` qilib order/g'olib
+yozishga ruxsat berardi. Sotuvchi jonli auksionni `ended` qilib deal/g'olib
 oqimini chetlab o'tishi, yoki bidli auksionni `cancelled` qilib bidlarni
 kuydirishi mumkin edi.
 """
@@ -81,7 +81,7 @@ def test_forbidden_transitions_raise() -> None:
 
 
 def test_seller_cannot_manually_end_auction(client: TestClient) -> None:
-    """Sotuvchi jonli auksionni `ended` qila olmaydi (order oqimini chetlab o'tish)."""
+    """Sotuvchi jonli auksionni `ended` qila olmaydi (deal oqimini chetlab o'tish)."""
     seller_token = _register_and_login(client, "seller@example.com")
     auction_id = _create_active_auction(client, seller_token)
 

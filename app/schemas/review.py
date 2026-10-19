@@ -10,7 +10,7 @@ class ReviewCreate(BaseModel):
     serverda aniqlanadi (muallif buyer bo'lsa -> seller, aksincha).
     """
 
-    order_id: int
+    deal_id: int
     stars: int = Field(ge=1, le=5)  # 1..5; chegaradan tashqari -> 422
     text: str | None = Field(default=None, max_length=1000)
 
@@ -19,7 +19,7 @@ class ReviewRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    order_id: int
+    deal_id: int
     from_id: int
     to_id: int
     stars: int

@@ -85,7 +85,7 @@ def dropped_by_at_least(previous: Tiyin, current: Tiyin, min_bps: int) -> bool:
 
 
 def calc_line_total(unit_price: Tiyin, quantity: int) -> Tiyin:
-    """Dona narxi x miqdor = jami (taklif / order qatori).
+    """Dona narxi x miqdor = jami (taklif / deal qatori).
 
     Narxlar har doim DONA uchun saqlanadi; jami faqat shu yerda hisoblanadi —
     butun son ko'paytmasi, yaxlitlash yo'q.

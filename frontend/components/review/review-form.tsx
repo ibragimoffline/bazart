@@ -53,7 +53,7 @@ function ReviewForm({ orderId }: { orderId: number }) {
     setServerError(null)
     try {
       await createReview({
-        order_id: orderId,
+        deal_id: orderId,
         stars: values.stars,
         text: values.text?.trim() ? values.text.trim() : undefined,
       })

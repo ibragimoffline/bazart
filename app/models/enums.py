@@ -102,16 +102,16 @@ class NotificationType(StrEnum):
     ENDING_SOON = "ending_soon"  # auksion tugashiga oz qoldi
     OFFER_RECEIVED = "offer_received"  # sotuvchiga yangi taklif
     OFFER_COUNTERED = "offer_countered"  # qarshi taklif keldi
-    OFFER_ACCEPTED = "offer_accepted"  # taklif qabul qilindi -> order
+    OFFER_ACCEPTED = "offer_accepted"  # taklif qabul qilindi -> deal
     OFFER_CLOSED = "offer_closed"  # rad etildi / muddati o'tdi / zaxira tugadi
     PRICE_DROPPED = "price_dropped"  # pasayuvchi auksionda narx sezilarli tushdi
     DUTCH_STARTED = "dutch_started"  # taklifsiz auksion pasayuvchi bosqichga o'tdi
 
 
-class OrderStatus(StrEnum):
-    # Faza E o'tish davri: to'lov yo'q; E2 da kelishuv (deal) holatlari bilan almashadi.
-    PENDING_PAYMENT = "pending_payment"
-    PICKUP_PENDING = "pickup_pending"
+class DealStatus(StrEnum):
+    """Kelishuv holati (docs/DEALS.md). O'tishlar faqat `deal_state` orqali."""
+
+    AGREED = "agreed"  # narx kelishildi, kontaktlar ochiq
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
@@ -121,7 +121,7 @@ class ComplaintTargetType(StrEnum):
     USER = "user"
     AUCTION = "auction"
     MESSAGE = "message"
-    ORDER = "order"
+    DEAL = "deal"
 
 
 class ComplaintStatus(StrEnum):

@@ -305,7 +305,7 @@ class BidService:
              high_bidder_max = uning max_amount'i.
 
         Har holatda winning_bid.amount == current_price bo'lib qoladi, shu
-        sababli close/order mantig'i o'zgarmaydi (yakuniy narx = winning bid).
+        sababli close/deal mantig'i o'zgarmaydi (yakuniy narx = winning bid).
         """
         amount = payload.amount
         max_amount = payload.max_amount if payload.max_amount is not None else payload.amount

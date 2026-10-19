@@ -2,7 +2,7 @@
 
 NEGA ALOHIDA JARAYON: pytest jarayonida ilova (va barcha modellar) allaqachon yuklangan —
 xato ko'rinmaydi. Worker esa faqat `app.tasks.*` ni yuklaydi; model ro'yxatdan o'tmasa
-(masalan Order -> Offer) beat vazifalarining birinchi ORM so'rovi yiqiladi. Bu aynan
+(masalan Deal -> Offer) beat vazifalarining birinchi ORM so'rovi yiqiladi. Bu aynan
 shunday bo'lgan — toza interpreter'da tekshiramiz.
 """
 

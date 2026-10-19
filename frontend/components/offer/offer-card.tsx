@@ -227,9 +227,9 @@ function OfferCard({
         </div>
       )}
 
-      {offer.status === "accepted" && offer.order_id != null && (
+      {offer.status === "accepted" && offer.deal_id != null && (
         <Button asChild size="sm" variant="outline" className="w-fit">
-          <Link href={`/orders/${offer.order_id}`}>
+          <Link href={`/orders/${offer.deal_id}`}>
             <ReceiptTextIcon aria-hidden="true" />
             Buyurtmaga oʻtish
           </Link>

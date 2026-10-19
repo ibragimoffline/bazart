@@ -65,13 +65,13 @@ class User(Base):
         foreign_keys="Auction.winner_id",
         back_populates="winner",
     )
-    orders_as_buyer = relationship(
-        "Order",
-        foreign_keys="Order.buyer_id",
+    deals_as_buyer = relationship(
+        "Deal",
+        foreign_keys="Deal.buyer_id",
         back_populates="buyer",
     )
-    orders_as_seller = relationship(
-        "Order",
-        foreign_keys="Order.seller_id",
+    deals_as_seller = relationship(
+        "Deal",
+        foreign_keys="Deal.seller_id",
         back_populates="seller",
     )

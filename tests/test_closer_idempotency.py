@@ -1,5 +1,5 @@
 """Closer idempotentligi: bir auksion ikki marta parallel yopilsa ham AYNAN
-BITTA order yaratiladi.
+BITTA deal yaratiladi.
 
 NEGA ALOHIDA FAYL: qolgan testlar bitta ulashilgan sessiya (bitta ulanish)
 orqali ketma-ket ishlaydi — ular haqiqiy parallellikni SINAB KO'RA OLMAYDI.
@@ -9,11 +9,11 @@ holda hech qanday raqobat yuzaga kelmaydi.
 Ssenariy: muddati o'tgan (end_time o'tmishda), bidli FAOL auksion. Ikkita
 alohida sessiya `threading.Barrier` bilan bir vaqtda auksionni yopishga
 uriladi. `close_auction` auksion qatorini FOR UPDATE bilan qulflaydi va faqat
-ACTIVE holatni yopadi: birinchi urinish g'olib/order yaratib ENDED qiladi,
+ACTIVE holatni yopadi: birinchi urinish g'olib/deal yaratib ENDED qiladi,
 ikkinchisi qulf bo'shagach ACTIVE emasligini ko'radi va HTTPException oladi
-(closer buni jimgina yutadi). Natijada order jadvalida `auction_id` UNIQUE —
-ikki order INSERT bo'lsa DB xato beradi. Regressiyada (qulf yo'q yoki status
-tekshiruvi buzuq) ikkinchi yopish ham order yaratmoqchi bo'lib bu test yiqiladi.
+(closer buni jimgina yutadi). Natijada deal jadvalida `auction_id` UNIQUE —
+ikki deal INSERT bo'lsa DB xato beradi. Regressiyada (qulf yo'q yoki status
+tekshiruvi buzuq) ikkinchi yopish ham deal yaratmoqchi bo'lib bu test yiqiladi.
 """
 
 import threading
@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.security import hash_password
 from app.models.auction import Auction
 from app.models.bid import Bid
+from app.models.deal import Deal
 from app.models.enums import (
     AuctionStatus,
     BidStatus,
@@ -35,9 +36,8 @@ from app.models.enums import (
     UserRole,
 )
 from app.models.item import Item
-from app.models.order import Order
 from app.models.user import User
-from app.repositories.order_repository import OrderRepository
+from app.repositories.deal_repository import DealRepository
 from app.services.auction_service import AuctionService
 from tests.conftest import TEST_PASSWORD
 
@@ -144,27 +144,27 @@ def test_parallel_close_creates_exactly_one_order(db_session: Session, db_engine
 
     successes = [w for w, o in results.items() if o == "ok"]
 
-    # 1) Kamida bittasi yopdi; UNIQUE buzilishi (dublikat order INSERT) yoki
+    # 1) Kamida bittasi yopdi; UNIQUE buzilishi (dublikat deal INSERT) yoki
     #    kutilmagan xato bo'lmasligi kerak.
     assert len(successes) >= 1, f"hech biri yopmadi: {results}"
     unexpected = {w: o for w, o in results.items() if o not in ("ok", "http_error")}
     assert not unexpected, f"kutilmagan xatolar (idempotent emas?): {unexpected}"
 
-    # 2) Toza sessiyada tekshirish: auksion ENDED va AYNAN bitta order bor.
+    # 2) Toza sessiyada tekshirish: auksion ENDED va AYNAN bitta deal bor.
     check = SessionMaker()
     try:
         auction = check.get(Auction, auction_id)
         assert auction.status == AuctionStatus.ENDED
 
         order_count = check.scalar(
-            select(func.count()).select_from(Order).where(Order.auction_id == auction_id)
+            select(func.count()).select_from(Deal).where(Deal.auction_id == auction_id)
         )
-        assert order_count == 1, f"kutilgan 1 order, aslida {order_count}"
+        assert order_count == 1, f"kutilgan 1 deal, aslida {order_count}"
 
         # get_by_auction_id ham bittani qaytaradi (dublikat bo'lsa u yerda ham
         # MultipleResultsFound bo'lardi).
-        order = OrderRepository(check).get_by_auction_id(auction_id)
-        assert order is not None
-        assert order.final_price == BID_AMOUNT
+        deal = DealRepository(check).get_by_auction_id(auction_id)
+        assert deal is not None
+        assert deal.final_price == BID_AMOUNT
     finally:
         check.close()

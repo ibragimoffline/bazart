@@ -3,7 +3,7 @@
 from app.core.webhook import compute_signature, is_fresh, verify_signature
 
 _SECRET = "psp_super_secret"
-_BODY = b'{"event":"payment.captured","order_id":"42","amount":"6200050"}'
+_BODY = b'{"event":"payment.captured","deal_id":"42","amount":"6200050"}'
 
 
 def test_verify_signature_valid() -> None:

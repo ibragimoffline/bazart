@@ -13,7 +13,7 @@ import { ConfirmDialog } from "@/components/lot/confirm-dialog"
 
 export type OrderRole = "buyer" | "seller" | "other"
 
-const OPEN: OrderStatus[] = ["pending_payment", "pickup_pending"]
+const OPEN: OrderStatus[] = ["agreed"]
 
 /**
  * Buyurtma harakatlari (Faza E oʻtish davri). Toʻlov yoʻq: tomonlar oʻzlari

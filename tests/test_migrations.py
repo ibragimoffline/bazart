@@ -35,7 +35,7 @@ MONEY_COLUMNS = [
     ("auctions", "minimum_bid_increment"),
     ("auctions", "reserve_price"),
     ("bids", "amount"),
-    ("orders", "final_price"),
+    ("deals", "final_price"),
 ]
 
 
@@ -88,7 +88,7 @@ def test_migrations_run_on_clean_database(migrated_url: str) -> None:
     finally:
         engine.dispose()
 
-    assert {"users", "items", "auctions", "bids", "orders", "offers"} <= tables
+    assert {"users", "items", "auctions", "bids", "deals", "offers"} <= tables
     # Faza E1: to'lov, topshirish va nizo jadvallari olib tashlangan.
     assert not {"payments", "payment_methods", "handovers", "disputes"} & tables
 

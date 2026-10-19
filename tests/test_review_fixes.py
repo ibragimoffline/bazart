@@ -24,7 +24,7 @@ def _login(client: TestClient, email: str) -> str:
     return r.json()["access_token"]
 
 
-def _order(client: TestClient, seller: str, buyer: str) -> dict:
+def _deal(client: TestClient, seller: str, buyer: str) -> dict:
     item = client.post(
         "/api/v1/items",
         headers={"Authorization": f"Bearer {seller}"},
@@ -48,29 +48,27 @@ def _order(client: TestClient, seller: str, buyer: str) -> dict:
         json={"amount": "12000"},
     )
     client.post(f"/api/v1/auctions/{aid}/close", headers={"Authorization": f"Bearer {seller}"})
-    return client.get("/api/v1/orders/buyer", headers={"Authorization": f"Bearer {buyer}"}).json()[
-        0
-    ]
+    return client.get("/api/v1/deals/buyer", headers={"Authorization": f"Bearer {buyer}"}).json()[0]
 
 
 def test_order_status_invalid_transition_rejected(client: TestClient, db_session: Session) -> None:
-    """Order holati state machine: taqiqlangan o'tish 409."""
+    """Deal holati state machine: taqiqlangan o'tish 409."""
     seller = _login(client, "seller@example.com")
     buyer = _login(client, "buyer@example.com")
     admin = create_user(client, db_session, email="admin@example.com", role=UserRole.ADMIN)
-    order = _order(client, seller, buyer)
+    deal = _deal(client, seller, buyer)
 
     done = client.patch(
-        f"/api/v1/orders/{order['id']}/status",
+        f"/api/v1/deals/{deal['id']}/status",
         headers=admin.headers,
         json={"status": "completed"},
     )
     assert done.status_code == 200, done.text
     # COMPLETED — yakuniy holat: orqaga qaytish taqiqlangan.
     resp = client.patch(
-        f"/api/v1/orders/{order['id']}/status",
+        f"/api/v1/deals/{deal['id']}/status",
         headers=admin.headers,
-        json={"status": "pending_payment"},
+        json={"status": "agreed"},
     )
     assert resp.status_code == 409
 

@@ -2,11 +2,11 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import OrderStatus
+from app.models.enums import DealStatus
 from app.money.fields import TiyinAmount
 
 
-class OrderRead(BaseModel):
+class DealRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -19,10 +19,10 @@ class OrderRead(BaseModel):
     # Dona narxi va jami (final_price = quantity x unit_price), tiyinda.
     unit_price: TiyinAmount
     final_price: TiyinAmount
-    status: OrderStatus
+    status: DealStatus
     created_at: datetime
     updated_at: datetime
 
 
-class OrderStatusUpdate(BaseModel):
-    status: OrderStatus
+class DealStatusUpdate(BaseModel):
+    status: DealStatus

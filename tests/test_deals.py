@@ -63,13 +63,13 @@ def _create_closed_auction_order(client: TestClient, seller_token: str, buyer_to
     assert close_response.status_code == 200
 
     buyer_orders_response = client.get(
-        "/api/v1/orders/buyer",
+        "/api/v1/deals/buyer",
         headers={"Authorization": f"Bearer {buyer_token}"},
     )
     assert buyer_orders_response.status_code == 200
-    orders = buyer_orders_response.json()
-    assert len(orders) == 1
-    return orders[0]
+    deals = buyer_orders_response.json()
+    assert len(deals) == 1
+    return deals[0]
 
 
 def test_order_creation_after_auction_close_and_role_views(
@@ -84,41 +84,33 @@ def test_order_creation_after_auction_close_and_role_views(
     assert admin_user is not None
     UserRepository(db_session).set_role(admin_user, UserRole.ADMIN)
 
-    order = _create_closed_auction_order(client, seller_token, buyer_token)
-    assert order["final_price"] == "12000"
-    assert order["status"] == "pending_payment"
+    deal = _create_closed_auction_order(client, seller_token, buyer_token)
+    assert deal["final_price"] == "12000"
+    assert deal["status"] == "agreed"
 
     buyer_orders_response = client.get(
-        "/api/v1/orders/buyer",
+        "/api/v1/deals/buyer",
         headers={"Authorization": f"Bearer {buyer_token}"},
     )
     assert buyer_orders_response.status_code == 200
-    assert [entry["id"] for entry in buyer_orders_response.json()] == [order["id"]]
+    assert [entry["id"] for entry in buyer_orders_response.json()] == [deal["id"]]
 
     seller_orders_response = client.get(
-        "/api/v1/orders/seller",
+        "/api/v1/deals/seller",
         headers={"Authorization": f"Bearer {seller_token}"},
     )
     assert seller_orders_response.status_code == 200
-    assert [entry["id"] for entry in seller_orders_response.json()] == [order["id"]]
+    assert [entry["id"] for entry in seller_orders_response.json()] == [deal["id"]]
 
     admin_orders_response = client.get(
-        "/api/v1/orders/admin",
+        "/api/v1/deals/admin",
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert admin_orders_response.status_code == 200
-    assert [entry["id"] for entry in admin_orders_response.json()] == [order["id"]]
-
-    seller_status_update = client.patch(
-        f"/api/v1/orders/{order['id']}/status",
-        headers={"Authorization": f"Bearer {seller_token}"},
-        json={"status": "pickup_pending"},
-    )
-    assert seller_status_update.status_code == 200
-    assert seller_status_update.json()["status"] == "pickup_pending"
+    assert [entry["id"] for entry in admin_orders_response.json()] == [deal["id"]]
 
     admin_status_update = client.patch(
-        f"/api/v1/orders/{order['id']}/status",
+        f"/api/v1/deals/{deal['id']}/status",
         headers={"Authorization": f"Bearer {admin_token}"},
         json={"status": "completed"},
     )
@@ -131,16 +123,16 @@ def test_unauthorized_user_cannot_view_or_manage_another_users_order(client: Tes
     buyer_token = _register_and_login(client, "buyer@example.com")
     stranger_token = _register_and_login(client, "stranger@example.com")
 
-    order = _create_closed_auction_order(client, seller_token, buyer_token)
+    deal = _create_closed_auction_order(client, seller_token, buyer_token)
 
     read_response = client.get(
-        f"/api/v1/orders/{order['id']}",
+        f"/api/v1/deals/{deal['id']}",
         headers={"Authorization": f"Bearer {stranger_token}"},
     )
     assert read_response.status_code == 403
 
     update_response = client.patch(
-        f"/api/v1/orders/{order['id']}/status",
+        f"/api/v1/deals/{deal['id']}/status",
         headers={"Authorization": f"Bearer {buyer_token}"},
         json={"status": "cancelled"},
     )

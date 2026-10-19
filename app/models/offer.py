@@ -72,7 +72,7 @@ class Offer(Base):
         cascade="all, delete-orphan",
         order_by="OfferEvent.id",
     )
-    order = relationship("Order", back_populates="offer", uselist=False)
+    deal = relationship("Deal", back_populates="offer", uselist=False)
 
     @property
     def total_price(self) -> Tiyin:

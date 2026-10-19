@@ -122,7 +122,7 @@ export interface AdminOrderFilter {
 }
 
 export function listAdminOrders(filter: AdminOrderFilter = {}): Promise<Order[]> {
-  return apiFetch<Order[]>(`/admin/orders${qs({ ...filter })}`);
+  return apiFetch<Order[]>(`/admin/deals${qs({ ...filter })}`);
 }
 
 // --- Statistika --------------------------------------------------------------

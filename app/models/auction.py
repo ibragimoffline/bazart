@@ -146,4 +146,4 @@ class Auction(Base):
         foreign_keys="Bid.auction_id",
     )
     winning_bid = relationship("Bid", foreign_keys=[winning_bid_id], post_update=True)
-    order = relationship("Order", back_populates="auction", uselist=False)
+    deal = relationship("Deal", back_populates="auction", uselist=False)

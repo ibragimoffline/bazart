@@ -9,7 +9,7 @@ Asosiy qoidalar (docs/OFFERS.md):
   qarshi taklif beradi. Javobsiz taklif OFFER_TTL dan keyin muddati o'tadi.
 - E'londa majburiy muddat bor (3/5/7 kun) — Bazart'ning asosiy g'oyasi.
 
-ZAXIRA va POYGA: qabul qilish e'lon qatorini FOR UPDATE bilan qulflaydi va order'ni
+ZAXIRA va POYGA: qabul qilish e'lon qatorini FOR UPDATE bilan qulflaydi va deal'ni
 shu tranzaksiyada yaratadi. Zaxira esa shartli UPDATE bilan ayiriladi
 (`take_stock`: `WHERE quantity_available >= q`) — qulf bo'lmasa ham lost update
 bo'lmaydi. Qulf tartibi har joyda bir xil — avval item, keyin offer (deadlock yo'q).
@@ -24,6 +24,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.models.deal import Deal
 from app.models.enums import (
     ItemStatus,
     ListingType,
@@ -34,11 +35,10 @@ from app.models.enums import (
 )
 from app.models.item import Item
 from app.models.offer import Offer
-from app.models.order import Order
 from app.models.user import User
 from app.money import format_soum_text
+from app.repositories.deal_repository import DealRepository
 from app.repositories.offer_repository import OfferRepository
-from app.repositories.order_repository import OrderRepository
 from app.schemas.item import ItemPublish
 from app.schemas.offer import OfferCounter, OfferCreate
 from app.services.notification_service import NotificationService
@@ -208,7 +208,7 @@ class OfferService:
         return self._reload(offer.id)
 
     def accept(self, offer_id: int, actor: User) -> Offer:
-        """Navbatdagi tomon shartlarni qabul qiladi: zaxira kamayadi, order yaratiladi."""
+        """Navbatdagi tomon shartlarni qabul qiladi: zaxira kamayadi, deal yaratiladi."""
         try:
             item, offer, party = self._lock_for_response(offer_id, actor)
             self._ensure_turn(offer, party)
@@ -226,10 +226,10 @@ class OfferService:
                 quantity=offer.quantity,
                 unit_price=offer.unit_price,
             )
-            order = OrderRepository(self.db).create_for_offer(offer)
+            deal = DealRepository(self.db).create_for_offer(offer)
 
             notifier = NotificationService(self.db)
-            total = _som(order.final_price)
+            total = _som(deal.final_price)
             notifier.create(
                 user_id=offer.buyer_id,
                 type=NotificationType.OFFER_ACCEPTED,
@@ -238,7 +238,7 @@ class OfferService:
                     f"«{item.title}»: {offer.quantity} dona, jami {total}. "
                     "Sotuvchi bilan bogʻlanib, uchrashuvni kelishing."
                 ),
-                payload={"offer_id": offer.id, "item_id": item.id, "order_id": order.id},
+                payload={"offer_id": offer.id, "item_id": item.id, "deal_id": deal.id},
             )
             notifier.create(
                 user_id=offer.seller_id,
@@ -248,7 +248,7 @@ class OfferService:
                     f"«{item.title}»: {offer.quantity} dona, jami {total}. "
                     "Xaridor toʻlovi kutilmoqda."
                 ),
-                payload={"offer_id": offer.id, "item_id": item.id, "order_id": order.id},
+                payload={"offer_id": offer.id, "item_id": item.id, "deal_id": deal.id},
             )
 
             if item.quantity_available == 0:
@@ -321,7 +321,7 @@ class OfferService:
 
     def cancel_listing(self, item_id: int) -> Item:
         """Taklifli e'lonni olib tashlaydi: qolgan zaxira sotuvdan chiqadi, ochiq
-        takliflar yopiladi. Allaqachon tuzilgan bitimlar (order'lar) o'z kuchida qoladi.
+        takliflar yopiladi. Allaqachon tuzilgan bitimlar (deal'lar) o'z kuchida qoladi.
 
         Qabul qilish bilan bir xil qulf (item FOR UPDATE) — bekor qilish va parallel
         qabul qilish poyga qilmaydi. Huquq tekshiruvi chaqiruvchida (ItemService).
@@ -348,18 +348,18 @@ class OfferService:
         for offer in self.offers.list_open_for_item(item.id):
             self._close(offer, OfferStatus.REJECTED, action, item)
 
-    def restore_stock(self, order: Order) -> None:
-        """Bekor qilingan order (to'lanmadi / hold qaytarildi) donalarini zaxiraga qaytaradi.
+    def restore_stock(self, deal: Deal) -> None:
+        """Bekor qilingan deal (to'lanmadi / hold qaytarildi) donalarini zaxiraga qaytaradi.
 
-        COMMIT QILMAYDI — order holatini o'zgartirgan tranzaksiya ichida chaqiriladi.
-        Auksion order'lari uchun hech narsa qilmaydi.
+        COMMIT QILMAYDI — deal holatini o'zgartirgan tranzaksiya ichida chaqiriladi.
+        Auksion deal'lari uchun hech narsa qilmaydi.
         """
-        if order.offer_id is None:
+        if deal.offer_id is None:
             return
-        item = self.offers.lock_item(order.item_id)
+        item = self.offers.lock_item(deal.item_id)
         if item is None:
             return
-        item.quantity_available = min(item.quantity_total, item.quantity_available + order.quantity)
+        item.quantity_available = min(item.quantity_total, item.quantity_available + deal.quantity)
         if item.status == ItemStatus.SOLD:
             ends = item.listing_ends_at
             still_open = ends is not None and _as_utc(ends) > datetime.now(UTC)

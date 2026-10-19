@@ -63,7 +63,7 @@ class OfferRead(BaseModel):
     status: OfferStatus
     awaiting: OfferParty
     expires_at: datetime
-    order_id: int | None = None
+    deal_id: int | None = None
     events: list[OfferEventRead] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
@@ -76,7 +76,7 @@ class OfferRead(BaseModel):
         buyer = getattr(data, "buyer", None)
         full_name = getattr(buyer, "full_name", None)
         accepted = data.status == OfferStatus.ACCEPTED
-        order = getattr(data, "order", None)
+        deal = getattr(data, "deal", None)
         return {
             "id": data.id,
             "item_id": data.item_id,
@@ -90,7 +90,7 @@ class OfferRead(BaseModel):
             "status": data.status,
             "awaiting": data.awaiting,
             "expires_at": data.expires_at,
-            "order_id": order.id if order is not None else None,
+            "deal_id": deal.id if deal is not None else None,
             "events": list(data.events),
             "created_at": data.created_at,
             "updated_at": data.updated_at,

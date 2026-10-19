@@ -1,6 +1,6 @@
 """Ikki tomonlama sharh + sotuvchi reytingi endpointlari.
 
-Order COMPLETED bo'lgach ishtirokchilar bir-birini baholaydi (1-5 yulduz).
+Deal COMPLETED bo'lgach ishtirokchilar bir-birini baholaydi (1-5 yulduz).
 Har sharh qabul qiluvchining `seller_rating`/`seller_rating_count`ini yangilaydi.
 """
 
@@ -20,7 +20,7 @@ def create_review(
     db: DbSession,
 ) -> ReviewRead:
     review = ReviewService(db).create_review(
-        order_id=payload.order_id,
+        deal_id=payload.deal_id,
         author=current_user,
         stars=payload.stars,
         text=payload.text,

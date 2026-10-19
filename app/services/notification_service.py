@@ -13,8 +13,9 @@ def _deep_link(payload: dict | None) -> str | None:
     base = settings.public_site_url.rstrip("/")
     if not base or not payload:
         return None
-    if payload.get("order_id"):
-        return f"{base}/orders/{payload['order_id']}"
+    if payload.get("deal_id"):
+        # Frontend sahifasi E2.13 gacha /orders/{id} da.
+        return f"{base}/orders/{payload['deal_id']}"
     if payload.get("offer_id"):
         return f"{base}/offers?focus={payload['offer_id']}"
     if payload.get("auction_id"):

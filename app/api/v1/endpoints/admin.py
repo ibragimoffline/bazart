@@ -5,15 +5,15 @@ from fastapi import APIRouter, Depends, Query
 from app.core.dependencies import DbSession, current_admin_user, current_superadmin_user
 from app.models.auction import Auction
 from app.models.bid import Bid
-from app.models.enums import AuctionStatus, ItemStatus, OrderStatus, UserRole
+from app.models.deal import Deal
+from app.models.enums import AuctionStatus, DealStatus, ItemStatus, UserRole
 from app.models.item import Item
-from app.models.order import Order
 from app.models.user import User
 from app.schemas.admin import AdminStatsRead, UserRoleUpdate
 from app.schemas.auction import AuctionRead
 from app.schemas.bid import BidRead
+from app.schemas.deal import DealRead
 from app.schemas.item import ItemRead
-from app.schemas.order import OrderRead
 from app.schemas.user import UserRead
 from app.services.admin_service import AdminService
 
@@ -139,17 +139,17 @@ def admin_read_bids(
     )
 
 
-@router.get("/orders", response_model=list[OrderRead])
-def admin_read_orders(
+@router.get("/deals", response_model=list[DealRead])
+def admin_read_deals(
     _admin: AdminUser,
     db: DbSession,
-    status_filter: Annotated[OrderStatus | None, Query(alias="status")] = None,
+    status_filter: Annotated[DealStatus | None, Query(alias="status")] = None,
     buyer_id: int | None = None,
     seller_id: int | None = None,
     skip: SkipQuery = 0,
     limit: LimitQuery = 100,
-) -> list[Order]:
-    return AdminService(db).list_orders(
+) -> list[Deal]:
+    return AdminService(db).list_deals(
         status_filter=status_filter,
         buyer_id=buyer_id,
         seller_id=seller_id,

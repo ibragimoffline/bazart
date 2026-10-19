@@ -222,7 +222,7 @@ def test_admin_can_view_orders_and_statistics(client: TestClient, db_session: Se
     buyer_token = _register_and_login(client, "buyer@example.com")
     _make_admin(db_session, "admin@example.com")
 
-    item = _create_item(client, seller_token, title="Order item")
+    item = _create_item(client, seller_token, title="Deal item")
     auction = _create_auction(client, seller_token, item["id"])
 
     bid_response = client.post(
@@ -239,7 +239,7 @@ def test_admin_can_view_orders_and_statistics(client: TestClient, db_session: Se
     assert close_response.status_code == 200
 
     orders_response = client.get(
-        "/api/v1/admin/orders?status=pending_payment",
+        "/api/v1/admin/deals?status=agreed",
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert orders_response.status_code == 200
@@ -252,5 +252,5 @@ def test_admin_can_view_orders_and_statistics(client: TestClient, db_session: Se
     assert stats_response.status_code == 200
     stats = stats_response.json()
     assert stats["total_users"] == 3
-    assert stats["total_completed_orders"] == 0
+    assert stats["total_completed_deals"] == 0
     assert stats["total_sales_amount"] == "0"

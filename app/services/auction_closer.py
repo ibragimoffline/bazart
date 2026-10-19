@@ -6,7 +6,7 @@ yopilardi. Bu manfaatlar to'qnashuvi: agar natija sotuvchiga yoqmasa
 yopmasligi mumkin edi — g'olib esa lotni kuta-kuta qoladi.
 
 Yechim: `end_time` o'tgan har bir ACTIVE auksionni fon vazifasi
-avtomatik yopadi. Yopish mantig'i (g'olib aniqlash, order yaratish,
+avtomatik yopadi. Yopish mantig'i (g'olib aniqlash, deal yaratish,
 FOR UPDATE qulf, state machine) `AuctionService.close_auction` da —
 bu modul faqat "muddati o'tganlarni top va yop" orkestratsiyasini qiladi.
 """

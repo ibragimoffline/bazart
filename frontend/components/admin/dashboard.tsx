@@ -61,7 +61,7 @@ function AdminDashboard() {
         <AnimatedInteger value={data.total_active_auctions} />
       </StatCard>
       <StatCard icon={CheckCircle2Icon} label="Yakunlangan buyurtmalar">
-        <AnimatedInteger value={data.total_completed_orders} />
+        <AnimatedInteger value={data.total_completed_deals} />
       </StatCard>
       <StatCard icon={BanknoteIcon} label="Umumiy savdo">
         <AnimatedInteger value={tiyinToSoum(data.total_sales_amount)} som />

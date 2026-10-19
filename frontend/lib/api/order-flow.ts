@@ -2,7 +2,7 @@
  * Buyurtma oqimi uchun API funksiyalari (Faza E oʻtish davri).
  *
  * Bazart toʻlovda ishtirok etmaydi: escrow, topshirish kodi va nizo olib tashlangan.
- * Sotuvchi buyurtmani oʻzi yakunlaydi yoki bekor qiladi (`PATCH /orders/{id}/status`,
+ * Sotuvchi buyurtmani oʻzi yakunlaydi yoki bekor qiladi (`PATCH /deals/{id}/status`,
  * ruxsat etilgan oʻtishlar serverda — app/services/order_state.py). E2 da buyurtma
  * kelishuv (deal) bilan almashadi (docs/DEALS.md).
  */
@@ -10,27 +10,27 @@
 import { apiFetch } from "@/lib/api/client";
 import type { Order, OrderStatus } from "@/lib/api/types";
 
-/** GET /orders/buyer — joriy foydalanuvchi xaridor boʻlgan buyurtmalar. */
+/** GET /deals/buyer — joriy foydalanuvchi xaridor boʻlgan buyurtmalar. */
 export function buyerOrders(): Promise<Order[]> {
-  return apiFetch<Order[]>("/orders/buyer");
+  return apiFetch<Order[]>("/deals/buyer");
 }
 
-/** GET /orders/seller — joriy foydalanuvchi sotuvchi boʻlgan buyurtmalar. */
+/** GET /deals/seller — joriy foydalanuvchi sotuvchi boʻlgan buyurtmalar. */
 export function sellerOrders(): Promise<Order[]> {
-  return apiFetch<Order[]>("/orders/seller");
+  return apiFetch<Order[]>("/deals/seller");
 }
 
-/** GET /orders/{id} — bitta buyurtma (egalik tekshiruvi server tomonda). */
+/** GET /deals/{id} — bitta buyurtma (egalik tekshiruvi server tomonda). */
 export function getOrder(id: number): Promise<Order> {
-  return apiFetch<Order>(`/orders/${id}`);
+  return apiFetch<Order>(`/deals/${id}`);
 }
 
 /**
- * PATCH /orders/{id}/status — sotuvchi (yoki admin) holatni oʻzgartiradi.
+ * PATCH /deals/{id}/status — sotuvchi (yoki admin) holatni oʻzgartiradi.
  * Taqiqlangan oʻtish 409 qaytaradi; bekor qilinganda donalar zaxiraga qaytadi.
  */
 export function updateOrderStatus(id: number, status: OrderStatus): Promise<Order> {
-  return apiFetch<Order>(`/orders/${id}/status`, {
+  return apiFetch<Order>(`/deals/${id}/status`, {
     method: "PATCH",
     body: { status },
   });

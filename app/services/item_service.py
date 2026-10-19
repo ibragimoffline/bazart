@@ -53,7 +53,7 @@ class ItemService:
 
         Ilgari faqat item.status yozilardi — jonli auksion esa ishlashda
         davom etar, bid qabul qilar va yopilganda bekor qilingan tovarga
-        order yaratardi. Endi jonli auksion bo'lsa bekor qilish auksion
+        deal yaratardi. Endi jonli auksion bo'lsa bekor qilish auksion
         oqimi orqali o'tadi: qator FOR UPDATE bilan qulflanadi, state machine
         tekshiriladi va bidli auksion bekor qilinmaydi (bidlar kuymaydi).
         Yakunlangan auksion yoki sotilgan tovar bekor qilinmaydi.

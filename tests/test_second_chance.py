@@ -1,7 +1,7 @@
 """Second-chance offer testlari: reserve bajarilmaganda sotuvchiga taklif.
 
 Oqim: eng yuqori bid reserve'dan past -> close -> RESERVE_NOT_MET + taklif.
-Sotuvchi 24 soat ichida qabul qilsa -> ENDED + order. Muddat o'tsa -> rad.
+Sotuvchi 24 soat ichida qabul qilsa -> ENDED + deal. Muddat o'tsa -> rad.
 """
 
 from datetime import UTC, datetime, timedelta
@@ -11,8 +11,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.auction import Auction
+from app.models.deal import Deal
 from app.models.enums import AuctionStatus, UserRole
-from app.models.order import Order
 from tests.conftest import create_auction, create_item, create_user
 
 
@@ -73,12 +73,12 @@ def test_seller_accepts_second_chance_creates_order(
     assert resp.json()["status"] == "ended"
     assert resp.json()["winner_id"] == bidder.id
 
-    order = db_session.execute(
-        select(Order).where(Order.auction_id == auction["id"])
+    deal = db_session.execute(
+        select(Deal).where(Deal.auction_id == auction["id"])
     ).scalar_one_or_none()
-    assert order is not None
-    assert order.buyer_id == bidder.id
-    assert order.final_price == 6_000_000
+    assert deal is not None
+    assert deal.buyer_id == bidder.id
+    assert deal.final_price == 6_000_000
 
 
 def test_expired_second_chance_rejected(client: TestClient, db_session: Session) -> None:

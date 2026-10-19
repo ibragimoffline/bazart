@@ -49,8 +49,7 @@ export type BidStatus =
 export type UserRole = "user" | "seller" | "admin" | "superadmin";
 
 export type OrderStatus =
-  | "pending_payment"
-  | "pickup_pending"
+  | "agreed"
   | "completed"
   | "cancelled";
 
@@ -231,7 +230,7 @@ export interface Lot {
 export interface AdminStats {
   total_users: number;
   total_active_auctions: number;
-  total_completed_orders: number;
+  total_completed_deals: number;
   /** tiyin (string) */
   total_sales_amount: string;
 }

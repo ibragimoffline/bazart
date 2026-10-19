@@ -1,6 +1,6 @@
 """Ikki tomonlama sharh + sotuvchi reytingi.
 
-Order COMPLETED bo'lgach (hold -> capture) ishtirokchilar bir-birini
+Deal COMPLETED bo'lgach (hold -> capture) ishtirokchilar bir-birini
 baholaydi (1-5 yulduz). Qabul qiluvchining `seller_rating` (o'rtacha) va
 `seller_rating_count` UNGA kelgan barcha sharhlardan qayta hisoblanadi.
 """
@@ -24,7 +24,7 @@ def _register_and_login(client: TestClient, email: str) -> tuple[str, int]:
 
 
 def _completed_order(client: TestClient, seller_token: str, buyer_token: str) -> dict:
-    """Auksion -> bid -> close -> sotuvchi yakunlaydi orqali COMPLETED order."""
+    """Auksion -> bid -> close -> sotuvchi yakunlaydi orqali COMPLETED deal."""
     item = client.post(
         "/api/v1/items",
         headers={"Authorization": f"Bearer {seller_token}"},
@@ -52,26 +52,26 @@ def _completed_order(client: TestClient, seller_token: str, buyer_token: str) ->
         f"/api/v1/auctions/{auction_id}/close",
         headers={"Authorization": f"Bearer {seller_token}"},
     )
-    orders = client.get("/api/v1/orders/buyer", headers={"Authorization": f"Bearer {buyer_token}"})
-    order = orders.json()[0]
+    deals = client.get("/api/v1/deals/buyer", headers={"Authorization": f"Bearer {buyer_token}"})
+    deal = deals.json()[0]
 
-    # Faza E: to'lov yo'q — sotuvchi order'ni o'zi yakunlaydi (E2 da kelishuv tasdig'i).
+    # Faza E: to'lov yo'q — sotuvchi deal'ni o'zi yakunlaydi (E2 da kelishuv tasdig'i).
     finish = client.patch(
-        f"/api/v1/orders/{order['id']}/status",
+        f"/api/v1/deals/{deal['id']}/status",
         headers={"Authorization": f"Bearer {seller_token}"},
         json={"status": "completed"},
     )
     assert finish.status_code == 200, finish.text
 
     done = client.get(
-        f"/api/v1/orders/{order['id']}", headers={"Authorization": f"Bearer {buyer_token}"}
+        f"/api/v1/deals/{deal['id']}", headers={"Authorization": f"Bearer {buyer_token}"}
     )
     assert done.json()["status"] == "completed"
-    return order
+    return deal
 
 
 def _pending_order(client: TestClient, seller_token: str, buyer_token: str) -> dict:
-    """Faqat auksion -> close orqali order (PENDING_PAYMENT, COMPLETED emas)."""
+    """Faqat auksion -> close orqali deal (AGREED, COMPLETED emas)."""
     item = client.post(
         "/api/v1/items",
         headers={"Authorization": f"Bearer {seller_token}"},
@@ -98,19 +98,19 @@ def _pending_order(client: TestClient, seller_token: str, buyer_token: str) -> d
         f"/api/v1/auctions/{auction_id}/close",
         headers={"Authorization": f"Bearer {seller_token}"},
     )
-    orders = client.get("/api/v1/orders/buyer", headers={"Authorization": f"Bearer {buyer_token}"})
-    return orders.json()[0]
+    deals = client.get("/api/v1/deals/buyer", headers={"Authorization": f"Bearer {buyer_token}"})
+    return deals.json()[0]
 
 
 def test_buyer_reviews_seller_updates_rating(client: TestClient) -> None:
     seller, seller_id = _register_and_login(client, "seller@example.com")
     buyer, _ = _register_and_login(client, "buyer@example.com")
-    order = _completed_order(client, seller, buyer)
+    deal = _completed_order(client, seller, buyer)
 
     resp = client.post(
         "/api/v1/reviews",
         headers={"Authorization": f"Bearer {buyer}"},
-        json={"order_id": order["id"], "stars": 5, "text": "Zo'r sotuvchi"},
+        json={"deal_id": deal["id"], "stars": 5, "text": "Zo'r sotuvchi"},
     )
     assert resp.status_code == 201
     body = resp.json()
@@ -126,18 +126,18 @@ def test_buyer_reviews_seller_updates_rating(client: TestClient) -> None:
 def test_duplicate_review_conflicts(client: TestClient) -> None:
     seller, _ = _register_and_login(client, "seller@example.com")
     buyer, _ = _register_and_login(client, "buyer@example.com")
-    order = _completed_order(client, seller, buyer)
+    deal = _completed_order(client, seller, buyer)
 
     first = client.post(
         "/api/v1/reviews",
         headers={"Authorization": f"Bearer {buyer}"},
-        json={"order_id": order["id"], "stars": 5},
+        json={"deal_id": deal["id"], "stars": 5},
     )
     assert first.status_code == 201
     second = client.post(
         "/api/v1/reviews",
         headers={"Authorization": f"Bearer {buyer}"},
-        json={"order_id": order["id"], "stars": 4},
+        json={"deal_id": deal["id"], "stars": 4},
     )
     assert second.status_code == 409
 
@@ -145,12 +145,12 @@ def test_duplicate_review_conflicts(client: TestClient) -> None:
 def test_review_on_non_completed_order_400(client: TestClient) -> None:
     seller, _ = _register_and_login(client, "seller@example.com")
     buyer, _ = _register_and_login(client, "buyer@example.com")
-    order = _pending_order(client, seller, buyer)
+    deal = _pending_order(client, seller, buyer)
 
     resp = client.post(
         "/api/v1/reviews",
         headers={"Authorization": f"Bearer {buyer}"},
-        json={"order_id": order["id"], "stars": 5},
+        json={"deal_id": deal["id"], "stars": 5},
     )
     assert resp.status_code == 400
 
@@ -159,12 +159,12 @@ def test_non_participant_forbidden(client: TestClient) -> None:
     seller, _ = _register_and_login(client, "seller@example.com")
     buyer, _ = _register_and_login(client, "buyer@example.com")
     intruder, _ = _register_and_login(client, "intruder@example.com")
-    order = _completed_order(client, seller, buyer)
+    deal = _completed_order(client, seller, buyer)
 
     resp = client.post(
         "/api/v1/reviews",
         headers={"Authorization": f"Bearer {intruder}"},
-        json={"order_id": order["id"], "stars": 5},
+        json={"deal_id": deal["id"], "stars": 5},
     )
     assert resp.status_code == 403
 
@@ -172,12 +172,12 @@ def test_non_participant_forbidden(client: TestClient) -> None:
 def test_stars_out_of_range_422(client: TestClient) -> None:
     seller, _ = _register_and_login(client, "seller@example.com")
     buyer, _ = _register_and_login(client, "buyer@example.com")
-    order = _completed_order(client, seller, buyer)
+    deal = _completed_order(client, seller, buyer)
 
     resp = client.post(
         "/api/v1/reviews",
         headers={"Authorization": f"Bearer {buyer}"},
-        json={"order_id": order["id"], "stars": 6},
+        json={"deal_id": deal["id"], "stars": 6},
     )
     assert resp.status_code == 422
 
@@ -194,13 +194,13 @@ def test_average_of_two_reviews(client: TestClient) -> None:
     r1 = client.post(
         "/api/v1/reviews",
         headers={"Authorization": f"Bearer {buyer1}"},
-        json={"order_id": order1["id"], "stars": 5},
+        json={"deal_id": order1["id"], "stars": 5},
     )
     assert r1.status_code == 201
     r2 = client.post(
         "/api/v1/reviews",
         headers={"Authorization": f"Bearer {buyer2}"},
-        json={"order_id": order2["id"], "stars": 4},
+        json={"deal_id": order2["id"], "stars": 4},
     )
     assert r2.status_code == 201
 
@@ -217,12 +217,12 @@ def test_average_of_two_reviews(client: TestClient) -> None:
 def test_list_user_reviews_returns_reviews(client: TestClient) -> None:
     seller, seller_id = _register_and_login(client, "seller@example.com")
     buyer, _ = _register_and_login(client, "buyer@example.com")
-    order = _completed_order(client, seller, buyer)
+    deal = _completed_order(client, seller, buyer)
 
     client.post(
         "/api/v1/reviews",
         headers={"Authorization": f"Bearer {buyer}"},
-        json={"order_id": order["id"], "stars": 3, "text": "Yaxshi"},
+        json={"deal_id": deal["id"], "stars": 3, "text": "Yaxshi"},
     )
     resp = client.get(f"/api/v1/reviews/user/{seller_id}")
     assert resp.status_code == 200

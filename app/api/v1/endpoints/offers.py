@@ -31,7 +31,7 @@ def read_offer(offer_id: int, current_user: CurrentUser, db: DbSession) -> Offer
 
 @router.post("/{offer_id}/accept", response_model=OfferRead)
 def accept_offer(offer_id: int, current_user: CurrentVerifiedUser, db: DbSession) -> Offer:
-    """Navbatdagi tomon shartlarni qabul qiladi — zaxira kamayadi, order yaratiladi."""
+    """Navbatdagi tomon shartlarni qabul qiladi — zaxira kamayadi, deal yaratiladi."""
     return OfferService(db).accept(offer_id, current_user)
 
 

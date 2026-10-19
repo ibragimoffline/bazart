@@ -14,9 +14,9 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models.auction import Auction
+from app.models.deal import Deal
 from app.models.enums import AuctionStatus, NotificationType, PricingMode
 from app.models.notification import Notification
-from app.models.order import Order
 from app.models.user import User
 from app.money import calc_descending_price
 from app.services.auction_closer import close_due_auctions
@@ -183,8 +183,8 @@ def test_buy_now_pays_live_price_and_freezes_it(client: TestClient, db_session: 
     assert body["buy_now_available"] is False
     assert body["next_price_drop_at"] is None
 
-    order = db_session.scalar(select(Order).where(Order.auction_id == auction["id"]))
-    assert order is not None and order.final_price == 7_000 and order.buyer_id == buyer.id
+    deal = db_session.scalar(select(Deal).where(Deal.auction_id == auction["id"]))
+    assert deal is not None and deal.final_price == 7_000 and deal.buyer_id == buyer.id
 
     # Vaqt o'tsa ham sotuv narxi o'zgarmaydi.
     _age(db_session, auction["id"], minutes=60 * 20)
@@ -214,7 +214,7 @@ def test_unsold_descending_auction_closes_without_order(
     assert closed["status"] == "ended"
     assert closed["winner_id"] is None
     assert closed["current_price"] == str(FLOOR)  # tugash paytidagi narx
-    assert db_session.scalar(select(Order).where(Order.auction_id == auction["id"])) is None
+    assert db_session.scalar(select(Deal).where(Deal.auction_id == auction["id"])) is None
 
 
 def test_ending_soon_quotes_live_price(client: TestClient, db_session: Session) -> None:
@@ -276,8 +276,8 @@ def test_parallel_buy_now_only_one_wins(
         stored = check.get(Auction, auction_id)
         assert stored.status == AuctionStatus.ENDED
         assert stored.pricing_mode == PricingMode.DESCENDING
-        orders = check.scalars(select(Order).where(Order.auction_id == auction_id)).all()
-        assert len(orders) == 1
-        assert orders[0].buyer_id == stored.winner_id
+        deals = check.scalars(select(Deal).where(Deal.auction_id == auction_id)).all()
+        assert len(deals) == 1
+        assert deals[0].buyer_id == stored.winner_id
     finally:
         check.close()

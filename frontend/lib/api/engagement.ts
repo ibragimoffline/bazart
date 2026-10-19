@@ -19,7 +19,7 @@ export type NotificationType =
   | "second_chance"
   /** Kuzatilayotgan auksion tugashiga oz qoldi. */
   | "ending_soon"
-  /** Taklifli savdo: payload — offer_id, item_id (qabulda order_id ham). */
+  /** Taklifli savdo: payload — offer_id, item_id (qabulda deal_id ham). */
   | "offer_received"
   | "offer_countered"
   | "offer_accepted"
@@ -35,7 +35,7 @@ export interface Notification {
   type: NotificationType;
   title: string;
   body: string | null;
-  /** Ixtiyoriy kontekst (masalan auction_id/order_id) — turi erkin. */
+  /** Ixtiyoriy kontekst (masalan auction_id/deal_id) — turi erkin. */
   payload: Record<string, unknown> | null;
   is_read: boolean;
   read_at: string | null;
@@ -74,7 +74,7 @@ export function markAllNotificationsRead(): Promise<number> {
 /** ReviewRead sxemasi. `to_id` — orderning ikkinchi tomoni (serverda aniqlanadi). */
 export interface Review {
   id: number;
-  order_id: number;
+  deal_id: number;
   from_id: number;
   to_id: number;
   stars: number;
@@ -84,7 +84,7 @@ export interface Review {
 
 /** ReviewCreate — `to_id` klientdan olinmaydi. */
 export interface ReviewCreateInput {
-  order_id: number;
+  deal_id: number;
   /** 1..5; chegaradan tashqari -> 422. */
   stars: number;
   text?: string;

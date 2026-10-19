@@ -15,10 +15,10 @@ class ReviewRepository:
         self.db.flush()
         return review
 
-    def get_by_order_and_author(self, order_id: int, from_id: int) -> Review | None:
-        """Shu order uchun shu muallif qoldirgan sharh (UNIQUE order_id+from_id)."""
+    def get_by_order_and_author(self, deal_id: int, from_id: int) -> Review | None:
+        """Shu deal uchun shu muallif qoldirgan sharh (UNIQUE deal_id+from_id)."""
         statement = select(Review).where(
-            Review.order_id == order_id,
+            Review.deal_id == deal_id,
             Review.from_id == from_id,
         )
         return self.db.scalar(statement)

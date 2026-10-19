@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models.auction import Auction
 from app.models.bid import Bid
+from app.models.deal import Deal
 from app.models.enums import (
     AuctionStatus,
     BidStatus,
@@ -14,7 +15,6 @@ from app.models.enums import (
     PricingMode,
 )
 from app.models.item import Item
-from app.models.order import Order
 from app.models.user import User
 from app.money import calc_dutch_step
 from app.realtime import manager
@@ -28,14 +28,14 @@ from app.schemas.auction import (
     AuctionRelist,
     buy_now_window_open,
 )
-from app.schemas.order import OrderRead
+from app.schemas.deal import DealRead
 from app.services.auction_state import (
     SELLER_ALLOWED_TARGETS,
     InvalidAuctionTransition,
     assert_transition,
 )
+from app.services.deal_service import DealService
 from app.services.notification_service import NotificationService
-from app.services.order_service import OrderService
 from app.services.price_schedule import descending_price_at
 
 # Second-chance offer amal qilish muddati: reserve bajarilmagach sotuvchiga
@@ -270,7 +270,7 @@ class AuctionService:
         Option B: rezerv narxga yetilguncha ochiq (rezervsiz auksionda — birinchi
         taklifgacha); qoida `buy_now_window_open` da. Mavjud bidlar OUTBID bo'ladi.
         Natija oddiy g'alaba bilan bir xil: buy-now narxida VALID bid yoziladi,
-        auksion ENDED bo'ladi va mavjud order oqimi o'zgarishsiz ishlaydi.
+        auksion ENDED bo'ladi va mavjud deal oqimi o'zgarishsiz ishlaydi.
 
         Auksion qatori FOR UPDATE bilan qulflanadi — parallel bid yoki ikkinchi
         buy-now poyga qilmaydi: kechikkani qulfdan keyin ENDED holatni ko'rib 409 oladi.
@@ -380,7 +380,7 @@ class AuctionService:
             auction.item.status = ItemStatus.SOLD
             self.db.add(auction)
             self.db.flush()
-            OrderService(self.db).create_order_for_winning_auction(auction)
+            DealService(self.db).create_deal_for_winning_auction(auction)
 
             notifier = NotificationService(self.db)
             notifier.create(
@@ -510,7 +510,7 @@ class AuctionService:
         """Sotuvchi qo'lda holat o'zgartiradi (amalda: bekor qilish).
 
         Ilgari bu endpoint sotuvchiga ISTALGAN holatni yozishga ruxsat
-        berardi — jonli auksionni `ended` qilib order/g'olib oqimini
+        berardi — jonli auksionni `ended` qilib deal/g'olib oqimini
         chetlab o'tish, yoki bidli auksionni `cancelled` qilib bidlarni
         kuydirish mumkin edi. Endi:
           - faqat SELLER_ALLOWED_TARGETS (bekor qilish) ruxsat etiladi
@@ -559,7 +559,7 @@ class AuctionService:
         return auction
 
     def close_auction(self, auction_id: int) -> Auction:
-        """Auksionni yopadi: g'olibni aniqlab, order yaratadi.
+        """Auksionni yopadi: g'olibni aniqlab, deal yaratadi.
 
         # TODO: fon vazifasiga ko'chirilsin (end_time bo'yicha avtomatik).
 
@@ -610,7 +610,7 @@ class AuctionService:
             if auction.reserve_price is not None and winning_bid.amount < auction.reserve_price:
                 # Reserve bajarilmadi: auksionni RESERVE_NOT_MET qilamiz va
                 # sotuvchiga second-chance taklif beramiz — u eng yuqori bidderga
-                # sotishga rozi bo'lsa (24 soat ichida) order yaratiladi.
+                # sotishga rozi bo'lsa (24 soat ichida) deal yaratiladi.
                 assert_transition(auction.status, AuctionStatus.RESERVE_NOT_MET)
                 auction.status = AuctionStatus.RESERVE_NOT_MET
                 auction.closed_at = now
@@ -642,7 +642,7 @@ class AuctionService:
             auction.item.status = ItemStatus.SOLD
             self.db.add(auction)
             self.db.flush()
-            OrderService(self.db).create_order_for_winning_auction(auction)
+            DealService(self.db).create_deal_for_winning_auction(auction)
             # G'olib va sotuvchi xabardor qilinadi (tranzaksiya ichida, atomik).
             notifier = NotificationService(self.db)
             notifier.create(
@@ -737,7 +737,7 @@ class AuctionService:
 
         Reserve bajarilmagach (RESERVE_NOT_MET) sotuvchi taklif muddati (24 soat)
         ichida rozi bo'lsa: auksion ENDED bo'ladi, g'olib = eng yuqori VALID
-        bidder, order yaratiladi (mavjud close oqimi bilan bir xil), g'olib va
+        bidder, deal yaratiladi (mavjud close oqimi bilan bir xil), g'olib va
         sotuvchi xabardor qilinadi. Muddat o'tgan yoki holat noto'g'ri bo'lsa 409.
 
         Auksion qatori FOR UPDATE bilan qulflanadi.
@@ -785,7 +785,7 @@ class AuctionService:
             auction.item.status = ItemStatus.SOLD
             self.db.add(auction)
             self.db.flush()
-            OrderService(self.db).create_order_for_winning_auction(auction)
+            DealService(self.db).create_deal_for_winning_auction(auction)
 
             notifier = NotificationService(self.db)
             notifier.create(
@@ -810,16 +810,16 @@ class AuctionService:
         self.db.refresh(auction)
         return auction
 
-    def get_or_create_order_for_winner(self, auction: Auction) -> Order | None:
+    def get_or_create_order_for_winner(self, auction: Auction) -> Deal | None:
         if auction.winner_id is None:
             return None
-        return OrderService(self.db).create_order_for_winning_auction(auction)
+        return DealService(self.db).create_deal_for_winning_auction(auction)
 
 
-def serialize_order(order: Order | None) -> OrderRead | None:
-    if order is None:
+def serialize_order(deal: Deal | None) -> DealRead | None:
+    if deal is None:
         return None
-    return OrderRead.model_validate(order)
+    return DealRead.model_validate(deal)
 
 
 AuctionSettlementService = AuctionService
