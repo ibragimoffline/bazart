@@ -1,4 +1,8 @@
+import logging
+from collections.abc import Callable
+
 from fastapi import HTTPException, status
+from sqlalchemy import event
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -6,6 +10,32 @@ from app.models.enums import NotificationType
 from app.models.notification import Notification
 from app.models.user import User
 from app.repositories.notification_repository import NotificationRepository
+
+logger = logging.getLogger(__name__)
+
+# Tashqi yetkazish (Telegram, push) tranzaksiya COMMIT bo'lgandan keyin yuboriladi. Ilgari
+# `create` ichida darhol navbatga qo'yilardi: broker yo'q muhitda inline yuborilib, keyin
+# tranzaksiya bekor bo'lsa ham (masalan kelishuv yaratish yiqilsa) foydalanuvchiga "kelishuv
+# tuzildi" xabari ketib qolardi — DB'da esa bunday bildirishnoma yo'q.
+_PENDING_DELIVERIES = "pending_notification_deliveries"
+
+
+@event.listens_for(Session, "after_commit")
+def _deliver_after_commit(session: Session) -> None:
+    for job in session.info.pop(_PENDING_DELIVERIES, []):
+        try:
+            job()
+        except Exception:  # best-effort: yetkazish xatosi asosiy oqimni buzmaydi
+            logger.exception("Bildirishnomani yetkazib bo'lmadi")
+
+
+@event.listens_for(Session, "after_rollback")
+def _discard_after_rollback(session: Session) -> None:
+    session.info.pop(_PENDING_DELIVERIES, None)
+
+
+def _defer(session: Session, job: Callable[[], None]) -> None:
+    session.info.setdefault(_PENDING_DELIVERIES, []).append(job)
 
 
 def _deep_link(payload: dict | None) -> str | None:
@@ -60,24 +90,24 @@ class NotificationService:
         from app.tasks.dispatch import enqueue
         from app.tasks.notifications import deliver_push, deliver_telegram
 
-        enqueue(
-            deliver_push,
-            user_id=user_id,
-            title=title,
-            body=body,
-            data={"type": type.value, **(payload or {})},
+        _defer(
+            self.db,
+            lambda: enqueue(
+                deliver_push,
+                user_id=user_id,
+                title=title,
+                body=body,
+                data={"type": type.value, **(payload or {})},
+            ),
         )
 
         # Telegram — O'zbekistonda asosiy kanal. Foydalanuvchi bot bilan
         # bog'langan (telegram_chat_id bor) bo'lsa, o'sha yerga ham yetkazamiz.
-        # Best-effort: yetkazilmasa ham asosiy oqim (bid/to'lov) davom etadi.
+        # Best-effort: yetkazilmasa ham asosiy oqim (bid, kelishuv) davom etadi.
         chat_id = self._telegram_chat_id(user_id)
         if chat_id:
-            enqueue(
-                deliver_telegram,
-                chat_id=chat_id,
-                text=self._telegram_text(title, body, payload),
-            )
+            text = self._telegram_text(title, body, payload)
+            _defer(self.db, lambda: enqueue(deliver_telegram, chat_id=chat_id, text=text))
         return created
 
     def _telegram_chat_id(self, user_id: int) -> str | None:

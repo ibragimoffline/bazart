@@ -1,5 +1,8 @@
 import {
   BellIcon,
+  CircleCheckBigIcon,
+  CircleSlashIcon,
+  PackageCheckIcon,
   ClockAlertIcon,
   HandCoinsIcon,
   HandshakeIcon,
@@ -27,16 +30,19 @@ type NotificationMeta = {
 
 const META: Record<NotificationType, NotificationMeta> = {
   outbid: { label: "Sizni ortda qoldirishdi", Icon: TrendingDownIcon, tone: "text-warning" },
-  won: { label: "Auksionda gʻalaba", Icon: TrophyIcon, tone: "text-success" },
-  sold: { label: "Mahsulotingiz sotildi", Icon: GavelIcon, tone: "text-success" },
+  won: { label: "Kelishuv tuzildi", Icon: TrophyIcon, tone: "text-success" },
+  sold: { label: "Xaridor topildi", Icon: GavelIcon, tone: "text-success" },
   second_chance: { label: "Ikkinchi imkoniyat", Icon: HandCoinsIcon, tone: "text-primary" },
   ending_soon: { label: "Tugashiga oz qoldi", Icon: ClockAlertIcon, tone: "text-warning" },
   offer_received: { label: "Yangi taklif", Icon: TagIcon, tone: "text-primary" },
   offer_countered: { label: "Qarshi taklif", Icon: MessageSquareReplyIcon, tone: "text-warning" },
-  offer_accepted: { label: "Bitim tuzildi", Icon: HandshakeIcon, tone: "text-success" },
+  offer_accepted: { label: "Kelishuv tuzildi", Icon: HandshakeIcon, tone: "text-success" },
   offer_closed: { label: "Taklif yopildi", Icon: XCircleIcon, tone: "text-muted-foreground" },
   dutch_started: { label: "Narx pasaymoqda", Icon: TrendingDownIcon, tone: "text-primary" },
   price_dropped: { label: "Narx tushdi", Icon: TrendingDownIcon, tone: "text-success" },
+  deal_marked_sold: { label: "Sotuvchi «Sotildi» dedi", Icon: PackageCheckIcon, tone: "text-warning" },
+  deal_completed: { label: "Kelishuv yakunlandi", Icon: CircleCheckBigIcon, tone: "text-success" },
+  deal_cancelled: { label: "Kelishuv bekor qilindi", Icon: CircleSlashIcon, tone: "text-muted-foreground" },
 }
 
 const FALLBACK: NotificationMeta = {

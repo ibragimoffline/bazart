@@ -14,15 +14,17 @@ from app.models.enums import (
     DealCancelReason,
     DealStatus,
     ItemStatus,
+    NotificationType,
     is_admin,
 )
 from app.models.offer import Offer
 from app.models.user import User
-from app.money import Tiyin, calc_line_total
+from app.money import Tiyin, calc_line_total, format_soum_text
 from app.repositories.deal_repository import DealRepository
 from app.repositories.offer_repository import OfferRepository
 from app.schemas.deal import DealContact, DealDetail
 from app.services.deal_state import InvalidDealTransition, assert_deal_transition
+from app.services.notification_service import NotificationService
 
 
 class DealService:
@@ -66,7 +68,9 @@ class DealService:
             status=DealStatus.AGREED,
             contacts_revealed_at=datetime.now(UTC),
         )
-        return self.deals.add(deal)
+        self.deals.add(deal)
+        _notify_created(self.db, deal)
+        return deal
 
     def create_for_winning_auction(self, auction: Auction) -> Deal | None:
         """Auksion g'olibi (yopilish, buy-now, tushuvchi narx, keyingi bidder). Idempotent."""
@@ -142,11 +146,13 @@ class DealService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Faqat sotuvchi belgilay oladi"
             )
-        if deal.seller_marked_sold_at is None:
+        first_mark = deal.seller_marked_sold_at is None
+        if first_mark:
             deal.seller_marked_sold_at = datetime.now(UTC)
         if deal.buyer_confirmed_at is not None:
-            self._transition(deal, DealStatus.COMPLETED)
-            deal.completed_at = datetime.now(UTC)
+            self._complete(deal)
+        elif first_mark:
+            _notify_marked_sold(self.db, deal)
         return self._save(deal)
 
     def confirm(self, deal_id: int, actor: User) -> Deal:
@@ -160,8 +166,7 @@ class DealService:
         if deal.buyer_confirmed_at is None:
             deal.buyer_confirmed_at = datetime.now(UTC)
         if deal.seller_marked_sold_at is not None:
-            self._transition(deal, DealStatus.COMPLETED)
-            deal.completed_at = datetime.now(UTC)
+            self._complete(deal)
         return self._save(deal)
 
     def cancel(self, deal_id: int, actor: User, reason: DealCancelReason) -> Deal:
@@ -188,6 +193,7 @@ class DealService:
         deal.cancel_reason = reason
         deal.at_fault_id = at_fault_for(deal, actor.id, reason)
         self._restore_stock(deal)
+        _notify_cancelled(self.db, deal, actor.id)
         return self._save(deal)
 
     # --- Fon vazifasi (E2.7) -----------------------------------------------------
@@ -219,8 +225,7 @@ class DealService:
             .with_for_update(skip_locked=True)
         ).all()
         for deal in due:
-            self._transition(deal, DealStatus.COMPLETED)
-            deal.completed_at = now
+            self._complete(deal, now, auto=True)
             self.db.add(deal)
         self.db.commit()
         return len(due)
@@ -243,6 +248,12 @@ class DealService:
                 detail=f"Kelishuv {deal.status.value} holatida — amal mumkin emas",
             )
         return deal
+
+    def _complete(self, deal: Deal, now: datetime | None = None, *, auto: bool = False) -> None:
+        """agreed -> completed + ikkala tomonga xabar (bir marta: o'tish faqat agreed'dan)."""
+        self._transition(deal, DealStatus.COMPLETED)
+        deal.completed_at = now or datetime.now(UTC)
+        _notify_completed(self.db, deal, auto=auto)
 
     def _transition(self, deal: Deal, target: DealStatus) -> None:
         try:
@@ -296,3 +307,106 @@ def at_fault_for(deal: Deal, actor_id: int, reason: DealCancelReason) -> int | N
 def _aware(value: datetime) -> datetime:
     """Eski ustunlar (timestamp without time zone) UTC deb hisoblanadi."""
     return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+
+
+# --- Bildirishnomalar (E2.12) -------------------------------------------------------------
+#
+# Matnda va payload'da telefon/Telegram YO'Q: bildirishnoma Telegram'ga ketadi va DB'da oddiy
+# matn sifatida saqlanadi. Kontakt faqat IDOR-himoyali GET /deals/{id} orqali. Hammasi
+# chaqiruvchining tranzaksiyasida (commit yo'q) — kelishuv bekor bo'lsa xabar ham yo'q,
+# tashqi yetkazish esa commit'dan keyin (notification_service).
+
+CANCEL_REASON_TEXT: dict[DealCancelReason, str] = {
+    # Betaraf: "javob bermadi" ayblovi o'rniga — xaridor ham, sotuvchi ham shuni o'qiydi.
+    DealCancelReason.NO_RESPONSE: "tomonlar bog'lana olmadi",
+    DealCancelReason.CHANGED_MIND: "ikkinchi tomon kelishuvdan voz kechdi",
+    DealCancelReason.NOT_AS_DESCRIBED: "mahsulot e'londagi tavsifga mos kelmadi",
+    DealCancelReason.OTHER: "boshqa sabab",
+}
+
+
+def contact_notice(deal: Deal) -> str:
+    """Kontaktlar haqidagi jumla — HOLATGA qarab. E5 da `fee_pending` (kontaktlar yopiq)
+    uchun alohida tarmoq qo'shiladi; `agreed` matni o'zgarmaydi."""
+    if deal.status == DealStatus.AGREED:
+        return "Kontaktlar ochildi — kelishuv sahifasiga o'ting."
+    return "Holatni kelishuv sahifasida kuzating."
+
+
+def _payload(deal: Deal, **extra: object) -> dict:
+    payload: dict = {"deal_id": deal.id, "item_id": deal.item_id}
+    if deal.auction_id is not None:
+        payload["auction_id"] = deal.auction_id
+    if deal.offer_id is not None:
+        payload["offer_id"] = deal.offer_id
+    return {**payload, **extra}
+
+
+def _title(deal: Deal) -> str:
+    return deal.item.title if deal.item is not None else f"#{deal.item_id}"
+
+
+def _notify_created(db: Session, deal: Deal) -> None:
+    """Kelishuv tuzildi: manbaga qarab mavjud turlar (auksion — WON/SOLD, taklif —
+    OFFER_ACCEPTED), lekin bitta joydan — har kelishuvga aniq bir juftlik."""
+    qty = f"{deal.quantity} dona, jami " if deal.quantity > 1 else ""
+    body = (
+        f"«{_title(deal)}»: {qty}{format_soum_text(deal.final_price)} soʻm. {contact_notice(deal)}"
+    )
+    payload = _payload(deal, final_price=str(deal.final_price))
+    notifier = NotificationService(db)
+    if deal.auction_id is not None:
+        buyer = (NotificationType.WON, "Kelishuv tuzildi — mahsulot sizniki")
+        seller = (NotificationType.SOLD, "Kelishuv tuzildi — xaridor topildi")
+    else:
+        buyer = (NotificationType.OFFER_ACCEPTED, "Taklifingiz qabul qilindi")
+        seller = (NotificationType.OFFER_ACCEPTED, "Kelishuv tuzildi")
+    for user_id, (type_, title) in ((deal.buyer_id, buyer), (deal.seller_id, seller)):
+        notifier.create(user_id=user_id, type=type_, title=title, body=body, payload=payload)
+
+
+def _notify_marked_sold(db: Session, deal: Deal) -> None:
+    hours = settings.deal_auto_confirm_hours
+    NotificationService(db).create(
+        user_id=deal.buyer_id,
+        type=NotificationType.DEAL_MARKED_SOLD,
+        title="Sotuvchi «Sotildi» deb belgiladi",
+        body=(
+            f"«{_title(deal)}»: mahsulotni olgan bo'lsangiz, {hours} soat ichida tasdiqlang. "
+            "Muammo bo'lsa shu muddatda shikoyat qoldiring — aks holda kelishuv "
+            "avtomatik yakunlanadi."
+        ),
+        payload=_payload(deal, auto_confirm_hours=hours),
+    )
+
+
+def _notify_completed(db: Session, deal: Deal, *, auto: bool) -> None:
+    lead = "Xaridor muddat ichida e'tiroz bildirmadi. " if auto else ""
+    body = f"«{_title(deal)}». {lead}Endi bir-biringizga sharh qoldirishingiz mumkin."
+    notifier = NotificationService(db)
+    for user_id in (deal.buyer_id, deal.seller_id):
+        notifier.create(
+            user_id=user_id,
+            type=NotificationType.DEAL_COMPLETED,
+            title="Kelishuv yakunlandi",
+            body=body,
+            payload=_payload(deal, auto=auto),
+        )
+
+
+def _notify_cancelled(db: Session, deal: Deal, actor_id: int) -> None:
+    """Bekor qilmagan tomon(lar)ga. Sabab — ro'yxatdagi matn (erkin matn emas)."""
+    reason = deal.cancel_reason
+    by_admin = actor_id not in {deal.buyer_id, deal.seller_id}
+    prefix = "Moderator qarori bilan. " if by_admin else ""
+    notifier = NotificationService(db)
+    for user_id in (deal.buyer_id, deal.seller_id):
+        if user_id == actor_id:
+            continue
+        notifier.create(
+            user_id=user_id,
+            type=NotificationType.DEAL_CANCELLED,
+            title="Kelishuv bekor qilindi",
+            body=f"«{_title(deal)}». {prefix}Sabab: {CANCEL_REASON_TEXT[reason]}.",
+            payload=_payload(deal, reason=reason.value),
+        )

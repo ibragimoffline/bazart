@@ -102,10 +102,13 @@ class NotificationType(StrEnum):
     ENDING_SOON = "ending_soon"  # auksion tugashiga oz qoldi
     OFFER_RECEIVED = "offer_received"  # sotuvchiga yangi taklif
     OFFER_COUNTERED = "offer_countered"  # qarshi taklif keldi
-    OFFER_ACCEPTED = "offer_accepted"  # taklif qabul qilindi -> deal
+    OFFER_ACCEPTED = "offer_accepted"  # taklif qabul qilindi -> kelishuv
     OFFER_CLOSED = "offer_closed"  # rad etildi / muddati o'tdi / zaxira tugadi
     PRICE_DROPPED = "price_dropped"  # pasayuvchi auksionda narx sezilarli tushdi
     DUTCH_STARTED = "dutch_started"  # taklifsiz auksion pasayuvchi bosqichga o'tdi
+    DEAL_MARKED_SOLD = "deal_marked_sold"  # xaridorga: sotuvchi "Sotildi" belgiladi
+    DEAL_COMPLETED = "deal_completed"  # kelishuv yakunlandi (ikkala tomonga)
+    DEAL_CANCELLED = "deal_cancelled"  # kelishuv bekor qilindi (sabab bilan)
 
 
 class DealStatus(StrEnum):

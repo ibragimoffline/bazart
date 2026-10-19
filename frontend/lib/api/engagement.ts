@@ -15,11 +15,11 @@ export type NotificationType =
   | "outbid"
   | "won"
   | "sold"
-  /** Rezervga yetmadi — sotuvchiga "eng yuqori taklifga sotish" taklifi. payload: auction_id, expires_at. */
+  /** Keyingi bidderga sotuvchi taklifi (yoki rezerv taklifi). payload: auction_id, amount, expires_at. */
   | "second_chance"
   /** Kuzatilayotgan auksion tugashiga oz qoldi. */
   | "ending_soon"
-  /** Taklifli savdo: payload — offer_id, item_id (qabulda deal_id ham). */
+  /** Taklifli savdo: payload — offer_id, item_id (qabulda deal_id ham). Auksion kelishuvida won/sold. */
   | "offer_received"
   | "offer_countered"
   | "offer_accepted"
@@ -27,7 +27,12 @@ export type NotificationType =
   /** Taklifsiz tugagan lot pasayuvchi auksionga o'tdi. payload: auction_id (yangi). */
   | "dutch_started"
   /** Pasayuvchi auksionda narx sezilarli tushdi (kuzatuvchilarga). payload: auction_id, previous_price, current_price, at_floor. */
-  | "price_dropped";
+  | "price_dropped"
+  /** Kelishuv (payload: deal_id, item_id). Kontakt matnda YO'Q — faqat kelishuv sahifasida. */
+  | "deal_marked_sold"
+  | "deal_completed"
+  /** payload.reason — DealCancelReason kodi. */
+  | "deal_cancelled";
 
 /** NotificationRead sxemasi. */
 export interface Notification {

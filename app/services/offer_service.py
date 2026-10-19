@@ -228,30 +228,7 @@ class OfferService:
                 quantity=offer.quantity,
                 unit_price=offer.unit_price,
             )
-            deal = DealService(self.db).create_for_offer(offer)
-
-            notifier = NotificationService(self.db)
-            total = _som(deal.final_price)
-            notifier.create(
-                user_id=offer.buyer_id,
-                type=NotificationType.OFFER_ACCEPTED,
-                title="Taklif qabul qilindi",
-                body=(
-                    f"«{item.title}»: {offer.quantity} dona, jami {total}. "
-                    "Sotuvchi bilan bogʻlanib, uchrashuvni kelishing."
-                ),
-                payload={"offer_id": offer.id, "item_id": item.id, "deal_id": deal.id},
-            )
-            notifier.create(
-                user_id=offer.seller_id,
-                type=NotificationType.OFFER_ACCEPTED,
-                title="Bitim tuzildi",
-                body=(
-                    f"«{item.title}»: {offer.quantity} dona, jami {total}. "
-                    "Xaridor toʻlovi kutilmoqda."
-                ),
-                payload={"offer_id": offer.id, "item_id": item.id, "deal_id": deal.id},
-            )
+            DealService(self.db).create_for_offer(offer)
 
             if item.quantity_available == 0:
                 item.status = ItemStatus.SOLD

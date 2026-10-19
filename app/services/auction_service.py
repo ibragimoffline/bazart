@@ -276,7 +276,7 @@ class AuctionService:
         Option B: rezerv narxga yetilguncha ochiq (rezervsiz auksionda — birinchi
         taklifgacha); qoida `buy_now_window_open` da. Mavjud bidlar OUTBID bo'ladi.
         Natija oddiy g'alaba bilan bir xil: buy-now narxida VALID bid yoziladi,
-        auksion ENDED bo'ladi va mavjud deal oqimi o'zgarishsiz ishlaydi.
+        auksion ENDED bo'ladi va mavjud kelishuv oqimi o'zgarishsiz ishlaydi.
 
         Auksion qatori FOR UPDATE bilan qulflanadi — parallel bid yoki ikkinchi
         buy-now poyga qilmaydi: kechikkani qulfdan keyin ENDED holatni ko'rib 409 oladi.
@@ -391,20 +391,6 @@ class AuctionService:
             DealService(self.db).create_for_winning_auction(auction)
 
             notifier = NotificationService(self.db)
-            notifier.create(
-                user_id=buyer.id,
-                type=NotificationType.WON,
-                title="Mahsulotni sotib oldingiz",
-                body="Mahsulot «hoziroq sotib olish» narxida sizniki. To'lovni amalga oshiring.",
-                payload={"auction_id": auction.id, "final_price": str(price)},
-            )
-            notifier.create(
-                user_id=auction.seller_id,
-                type=NotificationType.SOLD,
-                title="Mahsulotingiz sotildi",
-                body="Xaridor mahsulotni «hoziroq sotib olish» narxida sotib oldi.",
-                payload={"auction_id": auction.id, "final_price": str(price)},
-            )
             for user_id in sorted(outbid_users):
                 notifier.create(
                     user_id=user_id,
@@ -660,22 +646,6 @@ class AuctionService:
             self.db.add(auction)
             self.db.flush()
             DealService(self.db).create_for_winning_auction(auction)
-            # G'olib va sotuvchi xabardor qilinadi (tranzaksiya ichida, atomik).
-            notifier = NotificationService(self.db)
-            notifier.create(
-                user_id=winning_bid.bidder_id,
-                type=NotificationType.WON,
-                title="Auksionda yutdingiz!",
-                body="Tabriklaymiz — mahsulotni yutib oldingiz. To'lovni amalga oshiring.",
-                payload={"auction_id": auction.id, "final_price": str(auction.current_price)},
-            )
-            notifier.create(
-                user_id=auction.seller_id,
-                type=NotificationType.SOLD,
-                title="Mahsulotingiz sotildi",
-                body="Auksioningiz g'olib bilan yakunlandi.",
-                payload={"auction_id": auction.id, "final_price": str(auction.current_price)},
-            )
             self.db.commit()
         except Exception:
             self.db.rollback()
@@ -804,21 +774,6 @@ class AuctionService:
             self.db.flush()
             DealService(self.db).create_for_winning_auction(auction)
 
-            notifier = NotificationService(self.db)
-            notifier.create(
-                user_id=winning_bid.bidder_id,
-                type=NotificationType.WON,
-                title="Auksionda yutdingiz!",
-                body="Sotuvchi taklifingizni qabul qildi. To'lovni amalga oshiring.",
-                payload={"auction_id": auction.id, "final_price": str(auction.current_price)},
-            )
-            notifier.create(
-                user_id=auction.seller_id,
-                type=NotificationType.SOLD,
-                title="Mahsulotingiz sotildi",
-                body="Second-chance taklif qabul qilindi — auksion g'olib bilan yakunlandi.",
-                payload={"auction_id": auction.id, "final_price": str(auction.current_price)},
-            )
             self.db.commit()
         except Exception:
             self.db.rollback()
@@ -892,8 +847,8 @@ class AuctionService:
                 type=NotificationType.SECOND_CHANCE,
                 title="Sotuvchi sizga taklif yubordi",
                 body=(
-                    f"«{auction.item.title}» sizning {format_soum_text(nxt.amount)} "
-                    "taklifingiz bo'yicha. 24 soat ichida qabul qiling."
+                    f"«{auction.item.title}» sizning {format_soum_text(nxt.amount)} soʻm"
+                    " taklifingiz bo'yicha. 24 soat ichida qabul qiling."
                 ),
                 payload={
                     "auction_id": auction.id,
@@ -945,13 +900,6 @@ class AuctionService:
             offer.accepted_at = now
             offer.deal_id = deal.id
             self.db.add(offer)
-            NotificationService(self.db).create(
-                user_id=auction.seller_id,
-                type=NotificationType.SOLD,
-                title="Keyingi bidder taklifni qabul qildi",
-                body=f"«{auction.item.title}»: {format_soum_text(offer.amount)}. Kelishuv tuzildi.",
-                payload={"auction_id": auction.id, "deal_id": deal.id},
-            )
             self.db.commit()
         except IntegrityError as exc:
             self.db.rollback()

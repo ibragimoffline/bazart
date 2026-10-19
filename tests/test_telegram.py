@@ -128,6 +128,9 @@ def test_notification_delivers_to_telegram_when_chat_id_set(
         title="Sizni ortda qoldirishdi",
         body="Yangi taklif qo'ying.",
     )
+    # Tashqi yetkazish faqat COMMIT'dan keyin (rollback bo'lsa umuman ketmaydi).
+    assert recorder.sent == []
+    db_session.commit()
 
     assert recorder.sent == [("chat-999", "Sizni ortda qoldirishdi\n\nYangi taklif qo'ying.")]
 
@@ -145,6 +148,7 @@ def test_notification_skips_telegram_without_chat_id(
         type=NotificationType.WON,
         title="Yutdingiz",
     )
+    db_session.commit()
 
     assert recorder.sent == []
 
@@ -195,3 +199,24 @@ def test_update_preferences_rejects_unknown_language(
 def test_link_telegram_requires_auth(client: TestClient) -> None:
     response = client.post("/api/v1/users/me/telegram", json={"chat_id": "1"})
     assert response.status_code == 401
+
+
+def test_rolled_back_notification_is_never_delivered(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Tranzaksiya bekor bo'lsa — DB'da ham, Telegram'da ham xabar yo'q."""
+    recorder = _RecordingProvider()
+    monkeypatch.setattr(notifications_task, "get_telegram_provider", lambda: recorder)
+    user = create_user(client, db_session, email="rb@example.com")
+    db_user = db_session.get(User, user.id)
+    db_user.telegram_chat_id = "chat-1"
+    db_session.commit()
+
+    NotificationService(db_session).create(
+        user_id=user.id, type=NotificationType.OUTBID, title="Yuborilmasligi kerak"
+    )
+    db_session.rollback()
+    db_session.commit()
+
+    assert recorder.sent == []
+    assert client.get("/api/v1/notifications", headers=user.headers).json() == []

@@ -10,7 +10,7 @@ implementatsiya beradi:
 
 Tanlov `get_telegram_provider()` da: `telegram_enabled` va token bo'lsa Http, aks
 holda Log. Har qanday xato YUTILADI (best-effort) — bildirishnoma yetkazilmasa
-ham foydalanuvchi biznes-oqimi (bid, to'lov) bloklanmaydi.
+ham foydalanuvchi biznes-oqimi (bid, kelishuv) bloklanmaydi.
 """
 
 from __future__ import annotations
