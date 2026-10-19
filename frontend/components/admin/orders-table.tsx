@@ -26,7 +26,6 @@ import { Button } from "@/components/ui/button"
 
 const STATUSES: OrderStatus[] = [
   "pending_payment",
-  "paid",
   "pickup_pending",
   "completed",
   "cancelled",

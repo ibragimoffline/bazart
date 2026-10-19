@@ -1,6 +1,6 @@
 """Taklifli savdo: erkin narx, miqdor bo'yicha taklif, muzokara, zaxira va poyga.
 
-Bu oqim pulga (order, escrow) va zaxiraga tegadi — har qoida chekka holatlar
+Bu oqim pulga (order summasi) va zaxiraga tegadi — har qoida chekka holatlar
 bilan sinaladi. Haqiqiy parallel qabul qilish testi alohida ulanishlarda.
 """
 
@@ -249,8 +249,8 @@ def test_cancelled_order_restores_stock(client: TestClient, db_session: Session)
     assert after["status"] == "active"
 
 
-def test_offer_order_pays_total_with_premium_flow(client: TestClient, db_session: Session) -> None:
-    """Order jami = miqdor x dona narxi; to'lov oqimi (escrow, buyer premium) o'zgarishsiz."""
+def test_offer_order_records_line_total(client: TestClient, db_session: Session) -> None:
+    """Order jami = miqdor x dona narxi (to'lov oqimi yo'q — Faza E)."""
     seller, buyer = _users(client, db_session, "seller", "buyer")
     item = _listing(client, seller, quantity=5)
     offer = _offer(client, buyer, item["id"], 3, 1_000_000).json()
@@ -261,18 +261,6 @@ def test_offer_order_pays_total_with_premium_flow(client: TestClient, db_session
     assert order["unit_price"] == "1000000"
     assert order["final_price"] == "3000000"
     assert order["offer_id"] == offer["id"]
-
-    intent = client.post(
-        "/api/v1/payments/intents",
-        headers=buyer.headers,
-        json={
-            "order_id": order_id,
-            "amount": order["final_price"],
-            "currency": "UZS",
-            "provider": "mock",
-        },
-    )
-    assert intent.status_code == 201, intent.text
 
 
 # --- Muzokara -------------------------------------------------------------------

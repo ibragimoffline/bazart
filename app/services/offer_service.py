@@ -236,7 +236,7 @@ class OfferService:
                 title="Taklif qabul qilindi",
                 body=(
                     f"«{item.title}»: {offer.quantity} dona, jami {total}. "
-                    "Toʻlovni amalga oshiring — pul escrow'da himoyalanadi."
+                    "Sotuvchi bilan bogʻlanib, uchrashuvni kelishing."
                 ),
                 payload={"offer_id": offer.id, "item_id": item.id, "order_id": order.id},
             )

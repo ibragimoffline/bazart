@@ -80,7 +80,7 @@ function OrdersView() {
           Buyurtmalarim
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Xaridlaringiz va sotuvlaringiz — escrow toʻlov va topshirish holati.
+          Xaridlaringiz va sotuvlaringiz — kelishuv holati.
         </p>
       </div>
 

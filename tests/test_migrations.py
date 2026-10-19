@@ -36,7 +36,6 @@ MONEY_COLUMNS = [
     ("auctions", "reserve_price"),
     ("bids", "amount"),
     ("orders", "final_price"),
-    ("payments", "amount"),
 ]
 
 
@@ -89,7 +88,9 @@ def test_migrations_run_on_clean_database(migrated_url: str) -> None:
     finally:
         engine.dispose()
 
-    assert {"users", "items", "auctions", "bids", "orders", "payments"} <= tables
+    assert {"users", "items", "auctions", "bids", "orders", "offers"} <= tables
+    # Faza E1: to'lov, topshirish va nizo jadvallari olib tashlangan.
+    assert not {"payments", "payment_methods", "handovers", "disputes"} & tables
 
 
 def test_money_columns_are_bigint_after_migrations(migrated_url: str) -> None:

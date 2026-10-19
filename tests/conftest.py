@@ -17,7 +17,7 @@ from app.models.base import Base
 from app.models.enums import UserRole
 from app.repositories.user_repository import UserRepository
 
-# Test to'plami "test" muhitida ishlaydi: mock to'lov ruxsat etiladi, rate
+# Test to'plami "test" muhitida ishlaydi: rate
 # limiting o'chiq (aks holda ko'p marta login/bid qiluvchi testlar 429 olardi).
 # Muhit-bog'liq xatti-harakatni sinovchi testlar (masalan prod bloklari)
 # o'z Settings nusxasini yoki monkeypatch ishlatadi.

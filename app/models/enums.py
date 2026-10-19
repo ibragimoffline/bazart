@@ -94,24 +94,10 @@ def is_admin(role: UserRole) -> bool:
     return role in ADMIN_ROLES
 
 
-class HandoverMethod(StrEnum):
-    LOCAL_MEETUP = "local_meetup"
-    DELIVERY = "delivery"
-
-
-class HandoverStatus(StrEnum):
-    PENDING = "pending"  # sotuvchi yaratdi, kod berildi
-    COMPLETED = "completed"  # xaridor kod bilan tasdiqladi -> capture
-    FAILED = "failed"
-
-
 class NotificationType(StrEnum):
     OUTBID = "outbid"  # sizni ortda qoldirishdi
     WON = "won"  # auksionda yutdingiz
     SOLD = "sold"  # lotingiz sotildi
-    PAYMENT = "payment"  # to'lov holati
-    HANDOVER = "handover"  # topshirish
-    DISPUTE = "dispute"
     SECOND_CHANCE = "second_chance"  # rezervga yetmadi — sotuvchiga taklif
     ENDING_SOON = "ending_soon"  # auksion tugashiga oz qoldi
     OFFER_RECEIVED = "offer_received"  # sotuvchiga yangi taklif
@@ -122,36 +108,9 @@ class NotificationType(StrEnum):
     DUTCH_STARTED = "dutch_started"  # taklifsiz auksion pasayuvchi bosqichga o'tdi
 
 
-class DisputeReason(StrEnum):
-    NOT_RECEIVED = "not_received"  # tovar kelmadi
-    NOT_AS_DESCRIBED = "not_as_described"  # ta'rifga mos emas
-    DAMAGED = "damaged"  # shikastlangan
-    FAKE = "fake"  # soxta
-    OTHER = "other"
-
-
-class DisputeStatus(StrEnum):
-    OPEN = "open"
-    UNDER_REVIEW = "under_review"
-    RESOLVED_BUYER = "resolved_buyer"  # xaridor foydasiga (release/refund)
-    RESOLVED_SELLER = "resolved_seller"  # sotuvchi foydasiga (capture)
-
-
-class PaymentStatus(StrEnum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    PAID = "paid"
-    FAILED = "failed"
-    REFUNDED = "refunded"
-    # Escrow holatlari (Faza D):
-    HELD = "held"  # PSP kartada bloklagan — pul hali ko'chmagan
-    RELEASED = "released"  # capture qilindi — sotuvchiga o'tdi
-    CANCELLED_HOLD = "cancelled_hold"  # blok bekor qilindi — pul xaridorda qoldi
-
-
 class OrderStatus(StrEnum):
+    # Faza E o'tish davri: to'lov yo'q; E2 da kelishuv (deal) holatlari bilan almashadi.
     PENDING_PAYMENT = "pending_payment"
-    PAID = "paid"
     PICKUP_PENDING = "pickup_pending"
     COMPLETED = "completed"
     CANCELLED = "cancelled"

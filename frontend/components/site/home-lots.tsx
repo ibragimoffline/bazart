@@ -38,8 +38,8 @@ function Hero({ activeCount }: { activeCount: number }) {
         </h1>
         <p className="relative mt-3 max-w-xl text-sm text-brand-foreground/80 sm:text-base">
           Sotuvchi moʻljal narxni qoʻyadi, siz esa oʻz narxingiz va kerakli miqdorni
-          taklif qilasiz — 3, 5 yoki 7 kun ichida kelishasiz. Toʻlov escrow orqali
-          himoyalangan: tovarni olgach tasdiqlaysiz, keyin sotuvchiga oʻtadi.
+          taklif qilasiz — 3, 5 yoki 7 kun ichida kelishasiz. Kelishuvdan soʻng
+          sotuvchi bilan bevosita bogʻlanib, uchrashuvda hisob-kitob qilasiz.
         </p>
         <div className="relative mt-6 flex flex-wrap gap-2">
           <Button
@@ -67,8 +67,8 @@ function Hero({ activeCount }: { activeCount: number }) {
         <dl className="relative mt-8 grid grid-cols-3 gap-3 border-t border-brand-foreground/20 pt-5 sm:max-w-xl">
           {[
             ["3–7 kun", "muddat"],
-            ["Escrow", "himoya"],
-            ["8%", "komissiya"],
+            ["Erkin", "narx"],
+            ["0%", "xaridor komissiyasi"],
           ].map(([value, label]) => (
             <div key={value} className="grid gap-0.5">
               <dt className="sr-only">{label}</dt>

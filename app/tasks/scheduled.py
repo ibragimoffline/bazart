@@ -1,7 +1,7 @@
-"""Davriy (Celery beat) vazifalar: auksion yopish va auto-complete.
+"""Davriy (Celery beat) vazifalar: auksion yopish, takliflar muddati, eslatmalar.
 
-Yopish/capture mantig'i o'zgarmaydi — mavjud toza funksiyalar
-(`close_due_auctions`, `auto_complete_due_orders`) qayta ishlatiladi. Bu yerda
+Mantiq o'zgarmaydi — mavjud toza funksiyalar (`close_due_auctions` va h.k.)
+qayta ishlatiladi. Bu yerda
 faqat "Celery kontekstida yangi DB sessiya ochib chaqirish" bor.
 """
 
@@ -12,7 +12,6 @@ import logging
 from app.core.celery_app import celery_app
 from app.db.session import SessionLocal
 from app.services.auction_closer import close_due_auctions
-from app.services.auto_complete import auto_complete_due_orders
 from app.services.ending_soon import notify_ending_soon
 from app.services.offer_service import OfferService
 from app.services.price_alerts import notify_price_drops
@@ -29,19 +28,6 @@ def close_due_auctions_task() -> int:
         if closed:
             logger.info("Celery: %s ta auksion yopildi", closed)
         return closed
-    finally:
-        db.close()
-
-
-@celery_app.task(name="app.tasks.scheduled.auto_complete_orders_task")
-def auto_complete_orders_task() -> int:
-    """Muddati o'tgan hold'larni capture qiladi. Yakunlanganlar sonini qaytaradi."""
-    db = SessionLocal()
-    try:
-        done = auto_complete_due_orders(db)
-        if done:
-            logger.info("Celery: %s ta order avtomatik yakunlandi", done)
-        return done
     finally:
         db.close()
 

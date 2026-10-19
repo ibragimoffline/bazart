@@ -286,7 +286,7 @@ function OfferCard({
       >
         {viewer === "buyer" && (
           <div className="grid gap-2 text-sm text-muted-foreground">
-            <p>Toʻlovda xaridor komissiyasi (8%) qoʻshiladi; pul escrow orqali himoyalanadi.</p>
+            <p>Qabul qilinsa kelishuv tuziladi — sotuvchi kontaktlari ochiladi. Mahsulotni koʻrmasdan oldindan toʻlamang.</p>
             {consent.needsConsent && (
               <div className="flex items-start gap-2">
                 <Checkbox

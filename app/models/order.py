@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey
+from sqlalchemy import BigInteger, CheckConstraint, ForeignKey
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -30,7 +30,7 @@ class Order(Base):
     buyer_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
     seller_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
     # Pul — tiyinda (BIGINT). Batafsil: app/money/
-    # final_price — JAMI (quantity x unit_price); buyer premium va escrow shundan.
+    # final_price — JAMI (quantity x unit_price).
     quantity: Mapped[int] = mapped_column(default=1, nullable=False)
     unit_price: Mapped[Tiyin] = mapped_column(BigInteger, nullable=False)
     final_price: Mapped[Tiyin] = mapped_column(BigInteger, nullable=False)
@@ -39,11 +39,6 @@ class Order(Base):
         default=OrderStatus.PENDING_PAYMENT,
         index=True,
         nullable=False,
-    )
-    # Auto-complete: hold qilingandan keyin xaridor sukut saqlasa, shu vaqtdan
-    # keyin (72 soat) order avtomatik yakunlanadi va capture bo'ladi.
-    auto_complete_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
@@ -57,4 +52,3 @@ class Order(Base):
     buyer = relationship("User", foreign_keys=[buyer_id], back_populates="orders_as_buyer")
     seller = relationship("User", foreign_keys=[seller_id], back_populates="orders_as_seller")
     item = relationship("Item")
-    payments = relationship("Payment", back_populates="order", cascade="all, delete-orphan")

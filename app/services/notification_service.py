@@ -25,7 +25,7 @@ def _deep_link(payload: dict | None) -> str | None:
 class NotificationService:
     """In-app bildirishnoma biznes mantiqi.
 
-    `create` COMMIT QILMAYDI — u event hook'lardan (bid, close, payment) tranzaksiya
+    `create` COMMIT QILMAYDI — u event hook'lardan (bid, close, offer) tranzaksiya
     ichida chaqiriladi va shu tranzaksiya bilan atomik bo'lishi kerak. Standalone
     endpoint'lar (mark_read, mark_all_read) esa o'zi commit qiladi.
     """

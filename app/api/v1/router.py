@@ -7,16 +7,13 @@ from app.api.v1.endpoints import (
     bids,
     categories,
     complaints,
-    disputes,
     fraud,
-    handovers,
     items,
     legal,
     messages,
     notifications,
     offers,
     orders,
-    payments,
     regions,
     reviews,
     users,
@@ -31,12 +28,9 @@ api_router.include_router(categories.router, prefix="/categories", tags=["catego
 api_router.include_router(items.router, prefix="/items", tags=["items"])
 api_router.include_router(auctions.router, prefix="/auctions", tags=["auctions"])
 api_router.include_router(bids.router, prefix="/bids", tags=["bids"])
-api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
 api_router.include_router(orders.router, prefix="/orders", tags=["orders"])
 api_router.include_router(messages.router, prefix="/messages", tags=["messages"])
-api_router.include_router(handovers.router, prefix="/handovers", tags=["handovers"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
-api_router.include_router(disputes.router, prefix="/disputes", tags=["disputes"])
 api_router.include_router(fraud.router, prefix="/fraud", tags=["fraud"])
 api_router.include_router(reviews.router, prefix="/reviews", tags=["reviews"])
 api_router.include_router(regions.router, prefix="/regions", tags=["regions"])

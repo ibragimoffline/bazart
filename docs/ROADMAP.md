@@ -108,7 +108,7 @@ Kelishuv modeli: `docs/DEALS.md`. Ish branch'i `faza-e`, boshlang'ich teg `pre-f
 |---|---|---|
 | P | Baseline, teg, branch, hajm ro'yxati | ✅ (P.1 push — egasi qiladi) |
 | E0 | Hujjatlar va qoidalar | ✅ |
-| E1 | To'lov, topshirish, nizo modullarini kesish | [ ] (E2 bilan bitta reliz) |
+| E1 | To'lov, topshirish, nizo modullarini kesish | ✅ kodda (E2 bilan bitta reliz, deploy qilinmagan) |
 | E2 | Buyurtma o'rniga kelishuv: kontaktlar, tasdiqlash, bekor qilish, hisoblagichlar | [ ] |
 | E3 | Mahsulot hayot sikli: `unsold`/`removed`/`rejected`, olib tashlash, qayta joylash | [ ] |
 | E4 | Rezerv va soddalashtirishlar (`floor_price`, buy-now, qadam, retract, push, `seller` roli) | [ ] (E4.10 ✅) |

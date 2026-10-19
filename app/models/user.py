@@ -65,11 +65,6 @@ class User(Base):
         foreign_keys="Auction.winner_id",
         back_populates="winner",
     )
-    payment_methods = relationship(
-        "PaymentMethod",
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
     orders_as_buyer = relationship(
         "Order",
         foreign_keys="Order.buyer_id",

@@ -7,11 +7,8 @@ import {
   TagIcon,
   XCircleIcon,
   GavelIcon,
-  PackageCheckIcon,
-  ShieldAlertIcon,
   TrendingDownIcon,
   TrophyIcon,
-  WalletIcon,
   type LucideIcon,
 } from "lucide-react"
 
@@ -32,9 +29,6 @@ const META: Record<NotificationType, NotificationMeta> = {
   outbid: { label: "Sizni ortda qoldirishdi", Icon: TrendingDownIcon, tone: "text-warning" },
   won: { label: "Auksionda gʻalaba", Icon: TrophyIcon, tone: "text-success" },
   sold: { label: "Mahsulotingiz sotildi", Icon: GavelIcon, tone: "text-success" },
-  payment: { label: "Toʻlov holati", Icon: WalletIcon, tone: "text-primary" },
-  handover: { label: "Topshirish", Icon: PackageCheckIcon, tone: "text-primary" },
-  dispute: { label: "Nizo", Icon: ShieldAlertIcon, tone: "text-destructive" },
   second_chance: { label: "Ikkinchi imkoniyat", Icon: HandCoinsIcon, tone: "text-primary" },
   ending_soon: { label: "Tugashiga oz qoldi", Icon: ClockAlertIcon, tone: "text-warning" },
   offer_received: { label: "Yangi taklif", Icon: TagIcon, tone: "text-primary" },

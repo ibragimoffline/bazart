@@ -109,7 +109,7 @@ function DescendingPanel({
       await consent.ensure()
       await buyNow(auction.id)
       setOpen(false)
-      toast.success("Mahsulot sizniki! Endi toʻlovni amalga oshiring.")
+      toast.success("Mahsulot sizniki! Sotuvchi bilan bogʻlaning.")
       onRefresh()
       router.push("/orders")
     } catch (e) {
@@ -221,7 +221,7 @@ function DescendingPanel({
         open={open}
         onOpenChange={setOpen}
         title="Hozirgi narxda sotib olasizmi?"
-        description={`Joriy narx ${formatTiyin(auction.current_price)}. Narx faqat pasayadi — toʻlov bundan oshmaydi. Auksion shu zahoti yakunlanadi.`}
+        description={`Joriy narx ${formatTiyin(auction.current_price)}. Narx faqat pasayadi — kelishuv narxi bundan oshmaydi. Auksion shu zahoti yakunlanadi.`}
         confirmLabel="Sotib olish"
         cancelLabel="Yoʻq"
         loading={buying}
@@ -229,7 +229,7 @@ function DescendingPanel({
         onConfirm={() => void confirm()}
       >
         <div className="grid gap-2 text-sm text-muted-foreground">
-          <p>Toʻlovda xaridor komissiyasi (8%) qoʻshiladi; pul escrow orqali himoyalanadi.</p>
+          <p>Xarid kelishuv tuzadi — sotuvchi kontaktlari ochiladi. Mahsulotni koʻrmasdan oldindan toʻlamang.</p>
           {consent.needsConsent && (
             <div className="flex items-start gap-2">
               <Checkbox

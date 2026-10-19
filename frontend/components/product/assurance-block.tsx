@@ -1,26 +1,25 @@
-import { ShieldCheckIcon, KeyRoundIcon, ScaleIcon, type LucideIcon } from "lucide-react"
+import { PhoneIcon, ShieldAlertIcon, FlagIcon, type LucideIcon } from "lucide-react"
 
 /**
- * Xaridor kafolatlari bloki — platformaning HAQIQIY himoya mexanizmi.
- * Bu yerda hech qanday kuryer xizmati / bepul yetkazish / qaytarish-kafolat
- * VA'DASI yo'q — ular platformada mavjud emas. Faqat escrow + kod bilan
- * topshirish + nizo (docs/PAYMENTS.md, handover oqimi).
+ * Xaridor eslatmalari bloki — platformaning HAQIQIY himoya mexanizmi.
+ * Bazart toʻlovda ishtirok etmaydi (Faza E, docs/DEALS.md): hech qanday escrow,
+ * kuryer yoki qaytarish kafolati vaʼda qilinmaydi.
  */
 const ROWS: { icon: LucideIcon; title: string; text: string }[] = [
   {
-    icon: ShieldCheckIcon,
-    title: "Escrow himoyasi",
-    text: "Bitim tuzilgach (auksionda gʻalaba yoki qabul qilingan taklif) toʻlov kartangizda bloklanadi — sotuvchiga darhol oʻtmaydi. Tovarni olib tasdiqlaguningizcha mablagʻ sizniki.",
+    icon: PhoneIcon,
+    title: "Kelishuvdan keyin aloqa",
+    text: "Taklif qabul qilinsa yoki auksionda gʻolib chiqsangiz, sotuvchining tasdiqlangan telefoni ochiladi. Uchrashuvni oʻzingiz kelishasiz.",
   },
   {
-    icon: KeyRoundIcon,
-    title: "Kod bilan topshirish",
-    text: "Sotuvchi bilan kelishilgan tarzda (uchrashuv yoki yetkazish) tovarni oling, soʻng sotuvchi bergan maxfiy kodni kiriting. Kod — qabul dalili; faqat shundan keyin pul sotuvchiga oʻtadi.",
+    icon: ShieldAlertIcon,
+    title: "Oldindan toʻlamang",
+    text: "Mahsulotni koʻrmasdan va tekshirmasdan pul oʻtkazmang. Bazart toʻlovda ishtirok etmaydi va pulni qaytara olmaydi.",
   },
   {
-    icon: ScaleIcon,
-    title: "Nizo himoyasi",
-    text: "Tovar kelmasa yoki tavsifga mos boʻlmasa — kodni tasdiqlamang va nizo oching. Bloklangan mablagʻ qaytarilishi mumkin.",
+    icon: FlagIcon,
+    title: "Shikoyat",
+    text: "Sotuvchi aldasa yoki mahsulot tavsifga mos kelmasa — shikoyat qoldiring. Moderator koʻrib chiqadi va hisobni cheklashi mumkin.",
   },
 ]
 

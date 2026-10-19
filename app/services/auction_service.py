@@ -119,7 +119,7 @@ def _validate_dutch_fallback(starting: int, floor: int | None) -> None:
 class AuctionService:
     """Winner resolution and settlement workflow.
 
-    Future production work belongs here: reserve strategies, payment authorization,
+    Future production work belongs here: reserve strategies,
     fraud checks, notifications, and background scheduling.
     """
 
@@ -270,8 +270,7 @@ class AuctionService:
         Option B: rezerv narxga yetilguncha ochiq (rezervsiz auksionda — birinchi
         taklifgacha); qoida `buy_now_window_open` da. Mavjud bidlar OUTBID bo'ladi.
         Natija oddiy g'alaba bilan bir xil: buy-now narxida VALID bid yoziladi,
-        auksion ENDED bo'ladi va mavjud order oqimi (to'lov, escrow, buyer premium)
-        o'zgarishsiz ishlaydi.
+        auksion ENDED bo'ladi va mavjud order oqimi o'zgarishsiz ishlaydi.
 
         Auksion qatori FOR UPDATE bilan qulflanadi — parallel bid yoki ikkinchi
         buy-now poyga qilmaydi: kechikkani qulfdan keyin ENDED holatni ko'rib 409 oladi.

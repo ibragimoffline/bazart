@@ -1,7 +1,7 @@
 """Celery ilovasi — fon vazifalari uchun (broker/backend: Redis).
 
 Vazifalar:
-  * Davriy (beat): muddati o'tgan auksionlarni yopish, auto-complete order'lar.
+  * Davriy (beat): muddati o'tgan auksionlarni yopish, takliflar muddati, eslatmalar.
     Ilgari bu `main.py` lifespan'idagi in-process asyncio loop edi; prod'da
     Celery beat ishonchli, ko'p-instans muhitida bir marta bajaradi.
   * Navbatli (queue): push bildirishnoma va email yuborish — so'rov oqimidan
@@ -45,10 +45,6 @@ if settings.celery_beat_enabled:
         "close-due-auctions": {
             "task": "app.tasks.scheduled.close_due_auctions_task",
             "schedule": schedule(settings.auction_closer_interval_seconds),
-        },
-        "auto-complete-orders": {
-            "task": "app.tasks.scheduled.auto_complete_orders_task",
-            "schedule": schedule(settings.auto_complete_interval_seconds),
         },
         "notify-ending-soon": {
             "task": "app.tasks.scheduled.notify_ending_soon_task",

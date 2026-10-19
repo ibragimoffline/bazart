@@ -8,10 +8,7 @@ Tiyin = int
 
 TIYIN_PER_SOUM = 100
 
-# Buyer premium — xaridor to'laydigan komissiya. BPS = basis points.
-# 800 BPS = 8%. Konfiguratsiyaga chiqarilishi mumkin, lekin default shu.
-BUYER_PREMIUM_BPS = 800
-
+# BPS = basis points: 10 000 BPS = 100%.
 _BPS_DIVISOR = 10_000
 
 
@@ -120,32 +117,6 @@ def format_soum_text(value: Tiyin) -> str:
     `format_soum` kabi '62 000.50' (yaxlitlanmaydi, faqat ".00" tashlanadi)."""
     text = format_soum(value)
     return text[:-3] if text.endswith(".00") else text
-
-
-def calc_buyer_premium(price: Tiyin, bps: int = BUYER_PREMIUM_BPS) -> Tiyin:
-    """Xaridor komissiyasi. Yaxlitlash FAQAT shu yerda bo'ladi.
-
-    Butun sonli bo'lish ishlatiladi (pastga yaxlitlash) — foydalanuvchi
-    foydasiga. Yaxlitlash boshqa joyda takrorlansa, jami summa qismlar
-    yig'indisiga teng bo'lmay qoladi.
-    """
-    _assert_tiyin(price)
-    if bps < 0:
-        raise ValueError(f"BPS manfiy bo'lishi mumkin emas: {bps}")
-    return price * bps // _BPS_DIVISOR
-
-
-def calc_total(price: Tiyin, bps: int = BUYER_PREMIUM_BPS) -> Tiyin:
-    """Xaridor to'laydigan umumiy summa = narx + premium."""
-    return price + calc_buyer_premium(price, bps)
-
-
-def calc_seller_payout(price: Tiyin, seller_fee_bps: int = 0) -> Tiyin:
-    """Sotuvchi oladigan summa. MVP: sotuvchi komissiyasi 0%."""
-    _assert_tiyin(price)
-    if seller_fee_bps < 0:
-        raise ValueError(f"BPS manfiy bo'lishi mumkin emas: {seller_fee_bps}")
-    return price - (price * seller_fee_bps // _BPS_DIVISOR)
 
 
 def _assert_tiyin(value: Tiyin) -> None:

@@ -175,7 +175,7 @@ function BidPanel({
       }
       await buyNow(auction.id)
       setBuyOpen(false)
-      toast.success("Mahsulot sizniki! Endi toʻlovni amalga oshiring.")
+      toast.success("Mahsulot sizniki! Sotuvchi bilan bogʻlaning.")
       onBid()
       router.push("/orders")
     } catch (e) {
@@ -363,7 +363,7 @@ function BidPanel({
 
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <ShieldCheckIcon className="size-3.5 shrink-0" aria-hidden="true" />
-        Gʻolib chiqsangiz toʻlov escrow orqali himoyalanadi.
+        Gʻolib chiqsangiz sotuvchi bilan kelishuv tuziladi. Mahsulotni koʻrmasdan oldindan toʻlamang.
       </p>
 
       {auction.buy_now_price != null && (
@@ -371,7 +371,7 @@ function BidPanel({
           open={buyOpen}
           onOpenChange={setBuyOpen}
           title="Hoziroq sotib olasizmi?"
-          description={`Auksion shu zahoti yakunlanadi va lot sizga oʻtadi${auction.bid_count > 0 ? " — mavjud takliflar ortda qoladi" : ""}. Toʻlov escrow orqali himoyalanadi.`}
+          description={`Auksion shu zahoti yakunlanadi va lot sizga oʻtadi${auction.bid_count > 0 ? " — mavjud takliflar ortda qoladi" : ""}. Mahsulotni koʻrmasdan oldindan toʻlamang.`}
           confirmLabel="Sotib olish"
           cancelLabel="Yoʻq"
           loading={buying}
@@ -384,10 +384,6 @@ function BidPanel({
               <dd className="font-semibold tabular-nums text-foreground">
                 {formatTiyin(auction.buy_now_price)}
               </dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt>Xaridor komissiyasi</dt>
-              <dd className="text-foreground">8%, toʻlovda qoʻshiladi</dd>
             </div>
           </dl>
           {needsConsent && (

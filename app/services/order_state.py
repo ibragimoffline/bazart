@@ -1,18 +1,14 @@
 """Order holati state machine.
 
-`PATCH /orders/{id}/status` ilgari istalgan holatga o'tishga ruxsat berardi
-(sotuvchi order'ni PENDING_PAYMENT'dan chiqarib xaridor to'lovini bloklashi
-mumkin edi — grifing). Qo'lda status yozish faqat ruxsat etilgan o'tishlar
-orqali.
+Qo'lda status yozish faqat ruxsat etilgan o'tishlar orqali (grifing va izchillik
+buzilishining oldi). Faza E o'tish davri: to'lov oqimi yo'q, sotuvchi order'ni
+o'zi yakunlaydi yoki bekor qiladi; E2 da `deal_state` bilan almashadi.
 """
 
 from app.models.enums import OrderStatus
 
 ALLOWED_TRANSITIONS: dict[OrderStatus, frozenset[OrderStatus]] = {
     OrderStatus.PENDING_PAYMENT: frozenset(
-        {OrderStatus.PAID, OrderStatus.PICKUP_PENDING, OrderStatus.CANCELLED}
-    ),
-    OrderStatus.PAID: frozenset(
         {OrderStatus.PICKUP_PENDING, OrderStatus.COMPLETED, OrderStatus.CANCELLED}
     ),
     OrderStatus.PICKUP_PENDING: frozenset({OrderStatus.COMPLETED, OrderStatus.CANCELLED}),

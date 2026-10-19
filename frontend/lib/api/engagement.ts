@@ -1,9 +1,8 @@
 /**
- * Bildirishnoma, nizo va sharh (engagement) endpointlari.
+ * Bildirishnoma va sharh (engagement) endpointlari.
  *
- * Turlar backend sxemalariga (app/schemas/notification.py, dispute.py,
- * review.py) 1:1 mos keladi. Maydon nomlari AYNAN backend'dagidek —
- * dispute'da `description` (comment emas), review'da `stars`/`text`
+ * Turlar backend sxemalariga (app/schemas/notification.py, review.py) 1:1 mos
+ * keladi. Maydon nomlari AYNAN backend'dagidek — review'da `stars`/`text`
  * (rating/comment emas).
  */
 
@@ -16,9 +15,6 @@ export type NotificationType =
   | "outbid"
   | "won"
   | "sold"
-  | "payment"
-  | "handover"
-  | "dispute"
   /** Rezervga yetmadi — sotuvchiga "eng yuqori taklifga sotish" taklifi. payload: auction_id, expires_at. */
   | "second_chance"
   /** Kuzatilayotgan auksion tugashiga oz qoldi. */
@@ -71,52 +67,6 @@ export function markAllNotificationsRead(): Promise<number> {
   return apiFetch<UnreadCount>("/notifications/read-all", { method: "POST" }).then(
     (r) => r.count
   );
-}
-
-// --- Nizolar (disputes) ------------------------------------------------
-
-/** DisputeReason (app/models/enums.py). */
-export type DisputeReason =
-  | "not_received"
-  | "not_as_described"
-  | "damaged"
-  | "fake"
-  | "other";
-
-/** DisputeStatus (app/models/enums.py). */
-export type DisputeStatus =
-  | "open"
-  | "under_review"
-  | "resolved_buyer"
-  | "resolved_seller";
-
-/** DisputeRead sxemasi. */
-export interface Dispute {
-  id: number;
-  order_id: number;
-  reason: DisputeReason;
-  status: DisputeStatus;
-  description: string | null;
-  resolution: string | null;
-  resolved_at: string | null;
-  created_at: string;
-}
-
-/** DisputeCreate — payment serverda order bo'yicha topiladi (klientdan olinmaydi). */
-export interface DisputeCreateInput {
-  order_id: number;
-  reason: DisputeReason;
-  description?: string;
-}
-
-/** Order ustidan nizo ochish. */
-export function createDispute(input: DisputeCreateInput): Promise<Dispute> {
-  return apiFetch<Dispute>("/disputes", { method: "POST", body: input });
-}
-
-/** Menikilar (admin uchun ?status=open backend'da alohida boshqariladi). */
-export function listMyDisputes(): Promise<Dispute[]> {
-  return apiFetch<Dispute[]>("/disputes");
 }
 
 // --- Sharhlar (reviews) ------------------------------------------------

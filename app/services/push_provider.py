@@ -1,9 +1,9 @@
-"""Push bildirishnoma provayderi — ulanadigan abstraksiya (PSP naqshi).
+"""Push bildirishnoma provayderi — ulanadigan abstraksiya.
 
 Hozir bildirishnoma faqat in-app (DB, notification_service). Bu modul push
 (FCM/APNs) uchun YAGONA interfeys beradi — real provayder keyin ulanadi.
 
-Naqsh: `app/services/payment_providers.py` (ABC + registry + get_*) bilan bir xil.
+Naqsh: ABC + registry + get_* (sms_provider bilan bir xil).
 
 INTEGRATSIYA (TODO):
     Real FCM/APNs adapteri `BasePushProvider` ni implement qiladi va `_PROVIDERS`

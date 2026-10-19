@@ -71,8 +71,7 @@ export const AUCTION_STATUS_VARIANT: Record<AuctionStatus, BadgeVariant> = {
 };
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
-  pending_payment: "To'lov kutilmoqda",
-  paid: "To'landi",
+  pending_payment: "Kelishildi",
   pickup_pending: "Topshirish kutilmoqda",
   completed: "Yakunlangan",
   cancelled: "Bekor qilingan",
@@ -80,7 +79,6 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
 
 export const ORDER_STATUS_VARIANT: Record<OrderStatus, BadgeVariant> = {
   pending_payment: "warning",
-  paid: "success",
   pickup_pending: "secondary",
   completed: "neutral",
   cancelled: "outline",

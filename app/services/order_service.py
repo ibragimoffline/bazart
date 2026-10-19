@@ -18,7 +18,6 @@ class OrderService:
         self.orders = OrderRepository(db)
 
     def create_order_for_winning_auction(self, auction: Auction) -> Order | None:
-        # TODO: Attach payment intent, pickup instructions, taxes, and platform fees.
         if auction.winner_id is None or auction.winning_bid is None:
             return None
 

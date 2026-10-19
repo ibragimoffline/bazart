@@ -42,8 +42,8 @@ function payloadId(payload: Notification["payload"], key: string): number | null
 }
 
 /**
- * Bildirishnoma qayerga olib boradi. Buyurtma konteksti (to'lov, topshirish,
- * nizo) aniqroq — order_id bo'lsa u ustun; aks holda lot sahifasi.
+ * Bildirishnoma qayerga olib boradi. Buyurtma konteksti aniqroq — order_id
+ * bo'lsa u ustun; aks holda lot sahifasi.
  */
 function notificationHref(item: Notification): string | null {
   const orderId = payloadId(item.payload, "order_id")
@@ -311,8 +311,8 @@ function NotificationList() {
               {onlyUnread ? "Oʻqilmagan bildirishnoma yoʻq" : "Hozircha bildirishnoma yoʻq"}
             </EmptyTitle>
             <EmptyDescription>
-              Taklifingiz ortda qolsa, auksionda gʻalaba qozonsangiz yoki toʻlov
-              holati oʻzgarsa — shu yerda koʻrasiz.
+              Taklifingiz ortda qolsa, auksionda gʻalaba qozonsangiz yoki taklifingizga
+              javob kelsa — shu yerda koʻrasiz.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

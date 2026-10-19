@@ -59,7 +59,7 @@ function TelegramLink({ me, onChange }: { me: UserMe; onChange: (me: UserMe) => 
         <div className="min-w-0">
           <h2 className="text-base font-semibold text-foreground">Telegram bildirishnomalari</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Taklif, gʻalaba va toʻlov haqidagi xabarlar Telegram orqali ham keladi.
+            Taklif, gʻalaba va kelishuv haqidagi xabarlar Telegram orqali ham keladi.
           </p>
         </div>
         {linked && (

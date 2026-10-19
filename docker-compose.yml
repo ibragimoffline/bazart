@@ -44,7 +44,7 @@ services:
       redis:
         condition: service_healthy
 
-  # Celery beat — davriy vazifalarni rejalashtiradi (auksion yopish, auto-complete).
+  # Celery beat — davriy vazifalarni rejalashtiradi (auksion yopish, takliflar muddati, eslatmalar).
   beat:
     build: .
     command: celery -A app.core.celery_app beat -l info

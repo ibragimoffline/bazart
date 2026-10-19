@@ -53,29 +53,6 @@ def _order(client: TestClient, seller: str, buyer: str) -> dict:
     ]
 
 
-def test_hold_idempotency_key_is_owner_scoped(client: TestClient) -> None:
-    """Begona idempotency_key bilan hold -> 409, boshqaning payment'i oshkor bo'lmaydi."""
-    seller = _login(client, "seller@example.com")
-    buyer1 = _login(client, "buyer1@example.com")
-    buyer2 = _login(client, "buyer2@example.com")
-    o1 = _order(client, seller, buyer1)
-
-    client.post(
-        "/api/v1/payments/holds",
-        headers={"Authorization": f"Bearer {buyer1}"},
-        json={"order_id": o1["id"], "idempotency_key": "shared-key-01", "provider": "mock"},
-    )
-    # buyer2 o'sha kalitni ishlatmoqchi (boshqa order bilan bo'lsa ham) -> 409.
-    seller2 = _login(client, "seller2@example.com")
-    o2 = _order(client, seller2, buyer2)
-    resp = client.post(
-        "/api/v1/payments/holds",
-        headers={"Authorization": f"Bearer {buyer2}"},
-        json={"order_id": o2["id"], "idempotency_key": "shared-key-01", "provider": "mock"},
-    )
-    assert resp.status_code == 409
-
-
 def test_order_status_invalid_transition_rejected(client: TestClient, db_session: Session) -> None:
     """Order holati state machine: taqiqlangan o'tish 409."""
     seller = _login(client, "seller@example.com")
@@ -83,11 +60,17 @@ def test_order_status_invalid_transition_rejected(client: TestClient, db_session
     admin = create_user(client, db_session, email="admin@example.com", role=UserRole.ADMIN)
     order = _order(client, seller, buyer)
 
-    # PENDING_PAYMENT -> COMPLETED to'g'ridan-to'g'ri sakrash taqiqlangan.
-    resp = client.patch(
+    done = client.patch(
         f"/api/v1/orders/{order['id']}/status",
         headers=admin.headers,
         json={"status": "completed"},
+    )
+    assert done.status_code == 200, done.text
+    # COMPLETED — yakuniy holat: orqaga qaytish taqiqlangan.
+    resp = client.patch(
+        f"/api/v1/orders/{order['id']}/status",
+        headers=admin.headers,
+        json={"status": "pending_payment"},
     )
     assert resp.status_code == 409
 

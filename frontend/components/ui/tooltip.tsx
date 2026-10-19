@@ -6,7 +6,7 @@ import { Tooltip as TooltipPrimitive } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 /**
- * Tooltip — qisqa izoh (escrow, avto-taklif, buyer premium kabi atamalar uchun).
+ * Tooltip — qisqa izoh (avto-taklif kabi atamalar uchun).
  *
  * Manba: vengeanceui `tooltip`, loyiha dizayn tizimiga moslangan:
  * `backdrop-blur` olib tashlandi (glassmorphism TAQIQ) va hardcode ranglar

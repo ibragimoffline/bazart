@@ -50,20 +50,9 @@ export type UserRole = "user" | "seller" | "admin" | "superadmin";
 
 export type OrderStatus =
   | "pending_payment"
-  | "paid"
   | "pickup_pending"
   | "completed"
   | "cancelled";
-
-export type PaymentStatus =
-  | "pending"
-  | "processing"
-  | "paid"
-  | "failed"
-  | "refunded"
-  | "held"
-  | "released"
-  | "cancelled_hold";
 
 export interface User {
   id: number;

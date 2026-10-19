@@ -40,8 +40,8 @@ def test_list_returns_only_mine_newest_first(client: TestClient, db_session: Ses
 def test_unread_count(client: TestClient, db_session: Session) -> None:
     owner = create_user(client, db_session, email="owner@example.com")
     _seed(db_session, owner.id, NotificationType.OUTBID, "A")
-    _seed(db_session, owner.id, NotificationType.PAYMENT, "B")
-    _seed(db_session, owner.id, NotificationType.HANDOVER, "C")
+    _seed(db_session, owner.id, NotificationType.OFFER_RECEIVED, "B")
+    _seed(db_session, owner.id, NotificationType.ENDING_SOON, "C")
     db_session.commit()
 
     response = client.get("/api/v1/notifications/unread-count", headers=owner.headers)

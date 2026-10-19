@@ -13,7 +13,6 @@ from app.core.logging_config import configure_logging
 from app.core.request_context import RequestIdMiddleware
 from app.realtime import manager
 from app.services.auction_closer import start_auction_closer, stop_auction_closer
-from app.services.auto_complete import start_auto_complete, stop_auto_complete
 
 
 @asynccontextmanager
@@ -27,12 +26,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # shu loop'ga rejalashtira olishi uchun (broadcast_threadsafe).
     manager.set_loop(asyncio.get_running_loop())
     closer_task = start_auction_closer()
-    auto_complete_task = start_auto_complete()
     try:
         yield
     finally:
         await stop_auction_closer(closer_task)
-        await stop_auto_complete(auto_complete_task)
 
 
 def create_app() -> FastAPI:

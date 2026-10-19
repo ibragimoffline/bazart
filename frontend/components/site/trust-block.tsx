@@ -14,8 +14,8 @@ import {
 const FACTS: { icon: LucideIcon; title: string; text: string }[] = [
   {
     icon: ShieldCheckIcon,
-    title: "Escrow himoyasi",
-    text: "Toʻlov bloklanadi. Xaridor tovarni olib kodni tasdiqlagach sotuvchiga oʻtadi.",
+    title: "Tasdiqlangan kontaktlar",
+    text: "Telefon raqamlar faqat kelishuvdan keyin ochiladi. Mahsulotni koʻrmasdan toʻlamang.",
   },
   {
     icon: TimerIcon,
@@ -24,8 +24,8 @@ const FACTS: { icon: LucideIcon; title: string; text: string }[] = [
   },
   {
     icon: PercentIcon,
-    title: "Komissiya 8%",
-    text: "Faqat xaridor toʻlaydi, bitim tuzilganda — oldindan koʻrsatiladi.",
+    title: "Xaridorga komissiya yoʻq",
+    text: "Kelishilgan narxni toʻgʻridan-toʻgʻri sotuvchiga toʻlaysiz — Bazart toʻlovda ishtirok etmaydi.",
   },
   {
     icon: HandshakeIcon,

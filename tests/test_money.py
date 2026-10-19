@@ -11,10 +11,6 @@ import pytest
 from pydantic import BaseModel, Field, ValidationError
 
 from app.money import (
-    BUYER_PREMIUM_BPS,
-    calc_buyer_premium,
-    calc_seller_payout,
-    calc_total,
     format_soum,
     soum_to_tiyin,
     tiyin_to_soum,
@@ -68,49 +64,6 @@ class TestTiyinToSoum:
         """bool ham int — lekin pul emas."""
         with pytest.raises(TypeError):
             tiyin_to_soum(True)
-
-
-class TestBuyerPremium:
-    def test_eight_percent_of_100k_soum(self) -> None:
-        """Hujjatdagi misol: 100 000 so'm -> 8 000 so'm premium, jami 108 000."""
-        price = soum_to_tiyin(Decimal("100000"))
-        assert calc_buyer_premium(price) == soum_to_tiyin(Decimal("8000"))
-        assert calc_total(price) == soum_to_tiyin(Decimal("108000"))
-
-    def test_default_bps_is_800(self) -> None:
-        assert BUYER_PREMIUM_BPS == 800
-
-    def test_rounds_down_not_up(self) -> None:
-        """Yaxlitlash pastga — foydalanuvchi foydasiga.
-
-        1 tiyin * 8% = 0.08 tiyin -> 0 tiyin. Tiyindan mayda pul yo'q.
-        """
-        assert calc_buyer_premium(1) == 0
-        assert calc_total(1) == 1
-
-    def test_premium_of_zero_is_zero(self) -> None:
-        assert calc_buyer_premium(0) == 0
-
-    def test_total_always_equals_price_plus_premium(self) -> None:
-        """Invariant: jami = narx + premium. Har doim, chegarada ham."""
-        for price in [0, 1, 7, 99, 12_345, 6_200_050, 10**15]:
-            assert calc_total(price) == price + calc_buyer_premium(price)
-
-    def test_negative_price_is_rejected(self) -> None:
-        with pytest.raises(ValueError, match="manfiy"):
-            calc_buyer_premium(-100)
-
-    def test_negative_bps_is_rejected(self) -> None:
-        with pytest.raises(ValueError):
-            calc_buyer_premium(100, bps=-1)
-
-
-class TestSellerPayout:
-    def test_mvp_zero_fee(self) -> None:
-        assert calc_seller_payout(6_200_050) == 6_200_050
-
-    def test_with_fee(self) -> None:
-        assert calc_seller_payout(100_000, seller_fee_bps=500) == 95_000
 
 
 class TestLargeAmounts:

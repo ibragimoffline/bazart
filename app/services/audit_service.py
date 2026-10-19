@@ -5,12 +5,12 @@ from app.models.audit_log import AuditLog
 
 
 class AuditService:
-    """Pul harakatlarining o'zgarmas jurnaliga yozuvchi servis (INSERT only).
+    """Muhim harakatlarning o'zgarmas jurnaliga yozuvchi servis (INSERT only).
 
-    Nizoda yagona ishonchli dalil — shu sababli audit yozuvi chaqiruvchining
-    pul tranzaksiyasi ICHIDA bo'lishi shart. Bu servis HECH QACHON commit
-    qilmaydi: faqat `add` + `flush`. Chaqiruvchi (payment_service va h.k.)
-    pul o'zgarishi bilan BIRGA commit qiladi.
+    Shikoyat ko'rib chiqilganda yagona ishonchli dalil — shu sababli audit yozuvi chaqiruvchining
+    asosiy tranzaksiyasi ICHIDA bo'lishi shart. Bu servis HECH QACHON commit
+    qilmaydi: faqat `add` + `flush`. Chaqiruvchi (admin harakatlari va h.k.)
+    asosiy o'zgarish bilan BIRGA commit qiladi.
 
     Nega commit qilmaydi: agar audit alohida commit qilsa va keyin pul
     o'zgarishi rollback bo'lsa — jurnalda sodir bo'lmagan operatsiya qoladi

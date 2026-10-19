@@ -14,8 +14,8 @@ yetib keladi; hali o'chirilmagan eski kod quyidagicha — **uni kengaytirma, ung
 
 | Eski kod | Qaysi bosqichda o'chadi |
 |---|---|
-| To'lov/escrow (`payments`, `payment_service`, PSP, buyer premium), `handovers`, `disputes`, `auto_complete` | E1 |
-| `orders` (buyurtma) — `deals` (kelishuv) ga aylanadi | E2 |
+| To'lov/escrow, `handovers`, `disputes`, `auto_complete` | E1 — **bajarildi** (migratsiya 0029) |
+| `orders` (buyurtma) — `deals` (kelishuv) ga aylanadi. Oraliqda: to'lovsiz, sotuvchi `PATCH /orders/{id}/status` bilan yakunlaydi | E2 |
 | `SCHEDULED` auksion, `PATCH /auctions/{id}/pricing`, "Keyinroq boshlash", Dutch-fallback | E3 |
 | Rezerv narx (`RESERVE_NOT_MET`, rezervli second chance), sotuvchi qadami, `end_time` yo'li, bid retract, push abstraksiyasi, `seller` roli | E4 |
 
@@ -79,12 +79,12 @@ app/
   models/              # user, item, auction, bid, offer, order, watchlist, notification, message, ...
   schemas/             # Pydantic v2 I/O
   api/v1/router.py     # + endpoints/: auth, users, items, offers, auctions, bids, orders, watchlist,
-                       #   notifications, messages, complaints, admin, ws, ... (payments/handovers/disputes — E1)
+                       #   notifications, messages, complaints, admin, ws, ...
   repositories/        # DB kirish (select/insert)
   services/            # biznes mantiq: offer_service, bid_service, auction_service, price_schedule, ...
   tasks/               # Celery: scheduled (beat), notifications, email, dispatch
-alembic/versions/      # 28 migratsiya
-tests/                 # 64 fayl, 410 test
+alembic/versions/      # 29 migratsiya
+tests/                 # 56 fayl, 349 test
 ```
 
 Qatlam yo'nalishi: **api → services → repositories → models**. Teskari import TAQIQ.
@@ -170,7 +170,7 @@ Bu qoidalar barcha frontend ishlariga tatbiq etiladi. Buzilishi — code review'
 
 ```bash
 docker compose up -d db redis minio       # testlardan OLDIN — testlar real Postgres talab qiladi
-.venv/Scripts/python.exe -m pytest        # 410 test (~10 daqiqa)
+.venv/Scripts/python.exe -m pytest        # 349 test (~9 daqiqa)
 .venv/Scripts/python.exe -m pytest tests/test_bids.py
 ruff check . && ruff format --check .     # CI shu ikkalasini tekshiradi
 alembic upgrade head                      # toza bazada
@@ -192,7 +192,7 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 - **Pul: har doim `Tiyin` (butun son)**. `Decimal`/`float` TAQIQ. Hisob-kitob faqat `app/money/`
   orqali. Sxemada `TiyinAmount` turi ishlatiladi (`app/money/fields.py`) — u JSON'ga string yozadi.
   Yaxlitlash faqat `app/money/` ichida (`calc_dutch_step`; E5 da `calc_seller_fee`);
-  boshqa joyda takrorlanmaydi. `calc_buyer_premium` E1 da o'chadi.
+  boshqa joyda takrorlanmaydi.
 
 ## Test qoidalari
 

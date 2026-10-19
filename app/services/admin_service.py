@@ -213,9 +213,7 @@ class AdminService:
         total_sales_amount = (
             self.db.scalar(
                 select(func.coalesce(func.sum(Order.final_price), 0)).where(
-                    Order.status.in_(
-                        [OrderStatus.PAID, OrderStatus.PICKUP_PENDING, OrderStatus.COMPLETED]
-                    )
+                    Order.status.in_([OrderStatus.PICKUP_PENDING, OrderStatus.COMPLETED])
                 )
             )
             or 0

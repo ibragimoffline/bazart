@@ -15,7 +15,6 @@ import {
   HandshakeIcon,
   MessageCircleIcon,
   CircleUserIcon,
-  ScaleIcon,
   ShieldIcon,
   HeartIcon,
 } from "lucide-react"
@@ -232,15 +231,6 @@ function AuthArea() {
               >
                 <MessageCircleIcon className="size-4" aria-hidden="true" />
                 Xabarlar
-              </Link>
-              <Link
-                role="menuitem"
-                href="/disputes"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-popover-foreground outline-none transition-colors hover:bg-muted focus-visible:bg-muted"
-              >
-                <ScaleIcon className="size-4" aria-hidden="true" />
-                Nizolarim
               </Link>
               <Link
                 role="menuitem"

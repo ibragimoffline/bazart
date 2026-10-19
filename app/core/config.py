@@ -11,10 +11,6 @@ INSECURE_DEFAULT_WEBHOOK_SECRET = "change-me-webhook-secret"
 
 Environment = Literal["local", "test", "staging", "production"]
 
-# Mock to'lov provayderi va mock tasdiqlash faqat shu muhitlarda ruxsat etiladi.
-# Prod'da mock = tovarni bepul olish imkoni.
-_MOCK_SAFE_ENVIRONMENTS: frozenset[str] = frozenset({"local", "test"})
-
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
@@ -69,20 +65,9 @@ class Settings(BaseSettings):
     rate_limit_login_per_minute: int = 5
     rate_limit_bid_per_minute: int = 10
 
-    # Escrow / to'lov (Faza D).
-    buyer_premium_bps: int = 800  # 8% (basis points)
-    auto_complete_hours: int = 72  # xaridor sukut saqlasa order shu vaqtda yakunlanadi
-    # PSP webhook imzo maxfiy kaliti. Prod'da .env orqali beriladi.
+    # To'lov provayderi webhook imzo kaliti. Bazart savdo to'lovida ishtirok etmaydi
+    # (Faza E); kalit hamyon to'ldirish webhook'i uchun saqlanadi (E5).
     psp_webhook_secret: str = INSECURE_DEFAULT_WEBHOOK_SECRET
-    # Real PSP (escrow hold/capture/release) HTTP adapteri sozlamalari.
-    # Bo'sh psp_base_url = adapter o'chiq (prod'da .env orqali beriladi).
-    # "psp" provayderi so'ralsa-yu base_url bo'sh bo'lsa — aniq config xatosi.
-    psp_base_url: str = ""
-    psp_api_key: str = ""  # so'rov imzosi (HMAC) va Authorization uchun
-    psp_timeout_seconds: float = 15.0
-    # Auto-complete fon vazifasi (auction_closer kabi, testda o'chiq).
-    auto_complete_enabled: bool = False
-    auto_complete_interval_seconds: int = 300
 
     # Redis (token blacklist, keyin kesh/pub-sub). Bo'sh bo'lsa in-memory fallback.
     redis_url: str = "redis://localhost:6379/0"
@@ -90,7 +75,7 @@ class Settings(BaseSettings):
     # .env orqali JSON ro'yxat sifatida beriladi: CORS_ORIGINS='["https://bazart.uz"]'
     cors_origins: list[str] = ["http://localhost:3000"]
 
-    # Celery (fon vazifalari: auksion yopish, auto-complete, push, email).
+    # Celery (fon vazifalari: auksion yopish, takliflar muddati, push, email).
     # Broker/backend berilmasa — redis_url ishlatiladi.
     celery_broker_url: str | None = None
     celery_result_backend: str | None = None
@@ -147,15 +132,6 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         """Prod yoki staging — ya'ni real pul va real foydalanuvchilar muhiti."""
         return self.environment in {"staging", "production"}
-
-    @property
-    def allow_mock_payments(self) -> bool:
-        """Mock to'lov oqimiga ruxsat berilganmi.
-
-        Faqat local/test. Prod'da mock provayder doim PAID qaytargani uchun
-        bu bayroq yoqilsa istalgan xaridor tovarni to'lovsiz oladi.
-        """
-        return self.environment in _MOCK_SAFE_ENVIRONMENTS
 
     @model_validator(mode="after")
     def _forbid_insecure_secret_in_production(self) -> "Settings":

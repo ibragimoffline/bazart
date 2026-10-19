@@ -137,22 +137,29 @@ Bog'liqlik: E0. Xavf: past (faqat o'chirish). **Deploy qilinmaydi**, E2 bilan bi
 
 Tartib: tashqaridan ichkariga (frontend, testlar, endpointlar, servislar, modellar, migratsiya).
 
-- [ ] E1.1 **Frontend:** to'lov, topshirish va nizo sahifalari/komponentlarini o'chirish (`escrow-panel`, `dispute-*`, `orders/[id]/dispute`, to'lov tugmalari); `assurance-block` dagi "xavfsiz to'lov" matnini olib tashlash. Buyurtma sahifalari E2 gacha vaqtincha qoladi.
-- [ ] E1.2 **Testlar:** 10 ta fayl o'chadi: `test_auto_complete`, `test_disputes`, `test_escrow`, `test_handover`, `test_payment_security`, `test_payments`, `test_psp_escrow`, `test_psp_http_provider`, `test_webhook_events`, `test_webhook_verify`. 7 tasi qayta yoziladi: `test_admin`, `test_audit`, `test_orders`, `test_reviews`, `test_review_fixes`, `test_migrations`, `test_money`.
-- [ ] E1.3 **Endpointlar:** `payments`, `handovers`, `disputes` ni `router.py` dan chiqarish va fayllarni o'chirish.
-- [ ] E1.4 **Servislar:** `payment_service`, `payment_providers`, `payment_state`, `handover_service`, `dispute_service`, `auto_complete` (va uning Celery vazifasi) o'chadi.
-- [ ] E1.5 **Repozitoriylar va sxemalar:** `payment`, `handover`, `dispute` repozitoriylari; `payment` va `dispute` sxemalari o'chadi.
-- [ ] E1.6 **Webhook:** `core/webhook.py` (imzo tekshiruvi) va `webhook_events` (takrorlanishdan himoya) **saqlanadi**: hamyon to'ldirish (E5.4) shunga tayanadi. Faqat to'lov holatiga ulanish olib tashlanadi.
-- [ ] E1.7 **Modellar:** `payment`, `handover`, `dispute`; `order` dan `auto_complete_at`; `PaymentStatus`, handover va dispute enum'lari; `NotificationType` dan `PAYMENT`, `HANDOVER`, `DISPUTE`; `OrderStatus` dan `paid`.
-- [ ] E1.8 **Pul moduli:** `calc_buyer_premium` va `BUYER_PREMIUM_BPS` o'chadi; tiyin arifmetikasi qoladi.
-- [ ] E1.9 **Sozlamalar:** `allow_mock_payments`, PSP kalitlari, premium BPS; `.env.example` yangilanadi.
-- [ ] E1.10 **Audit:** `audit_log` admin harakatlari uchun qoladi; to'lov bilan bog'liq chaqiruvlari olib tashlanadi.
-- [ ] E1.11 **Migratsiya:** `payments`, `handovers`, `disputes` jadvallari, ularning enum'lari, `orders` dagi to'lov ustunlari o'chadi; notification enum'i yangi enum bilan almashtiriladi. `downgrade` yoziladi, toza bazada sinaladi, `test_migrations` yangilanadi.
+- [x] E1.1 **Frontend:** to'lov, topshirish va nizo sahifalari/komponentlarini o'chirish (`escrow-panel`, `dispute-*`, `orders/[id]/dispute`, to'lov tugmalari); `assurance-block` dagi "xavfsiz to'lov" matnini olib tashlash. Buyurtma sahifalari E2 gacha vaqtincha qoladi.
+- [x] E1.2 **Testlar:** 10 ta fayl o'chadi: `test_auto_complete`, `test_disputes`, `test_escrow`, `test_handover`, `test_payment_security`, `test_payments`, `test_psp_escrow`, `test_psp_http_provider`, `test_webhook_events`, `test_webhook_verify`. 7 tasi qayta yoziladi: `test_admin`, `test_audit`, `test_orders`, `test_reviews`, `test_review_fixes`, `test_migrations`, `test_money`.
+- [x] E1.3 **Endpointlar:** `payments`, `handovers`, `disputes` ni `router.py` dan chiqarish va fayllarni o'chirish.
+- [x] E1.4 **Servislar:** `payment_service`, `payment_providers`, `payment_state`, `handover_service`, `dispute_service`, `auto_complete` (va uning Celery vazifasi) o'chadi.
+- [x] E1.5 **Repozitoriylar va sxemalar:** `payment`, `handover`, `dispute` repozitoriylari; `payment` va `dispute` sxemalari o'chadi.
+- [x] E1.6 **Webhook:** `core/webhook.py` (imzo tekshiruvi) va `webhook_events` (takrorlanishdan himoya) **saqlanadi**: hamyon to'ldirish (E5.4) shunga tayanadi. Faqat to'lov holatiga ulanish olib tashlanadi.
+- [x] E1.7 **Modellar:** `payment`, `handover`, `dispute`; `order` dan `auto_complete_at`; `PaymentStatus`, handover va dispute enum'lari; `NotificationType` dan `PAYMENT`, `HANDOVER`, `DISPUTE`; `OrderStatus` dan `paid`.
+- [x] E1.8 **Pul moduli:** `calc_buyer_premium` va `BUYER_PREMIUM_BPS` o'chadi; tiyin arifmetikasi qoladi.
+- [x] E1.9 **Sozlamalar:** `allow_mock_payments`, PSP kalitlari, premium BPS; `.env.example` yangilanadi.
+- [x] E1.10 **Audit:** `audit_log` admin harakatlari uchun qoladi; to'lov bilan bog'liq chaqiruvlari olib tashlanadi.
+- [x] E1.11 **Migratsiya:** `payments`, `handovers`, `disputes` jadvallari, ularning enum'lari, `orders` dagi to'lov ustunlari o'chadi; notification enum'i yangi enum bilan almashtiriladi. `downgrade` yoziladi, toza bazada sinaladi, `test_migrations` yangilanadi.
 
 **Tekshiruv:**
 - `pytest` va `ruff` yashil; toza bazada `alembic upgrade head` va `alembic check` o'tadi.
 - Parallel bid va parallel buy-now testlari o'zgarishsiz yashil.
 - `grep -rIlE "payment|escrow|handover|dispute|premium" app` faqat ruxsat etilgan istisnolarni ko'rsatadi (webhook, audit).
+
+E1 natijasi (2026-10-19): 349 test yashil (410 dan 61 tasi o'chirilgan modullar bilan ketdi);
+toza bazada `upgrade → check → downgrade -1 → upgrade → check` o'tdi; parallel bid/buy-now testlari
+o'zgarmagan. Grep qoldig'i: faqat `OrderStatus.PENDING_PAYMENT` (E2 da `deals` bilan ketadi).
+Rejadan farqlar: `test_webhook_verify` saqlandi (u saqlanayotgan `core/webhook.py` ni sinaydi);
+`test_webhook_events` servis darajasida qayta yozildi (endpoint yo'q, E5 qayta ulaydi). Oraliq
+holat: `PENDING_PAYMENT → COMPLETED` o'tishi ochildi — sotuvchi sotuvni o'zi yakunlaydi (E2 gacha).
 
 ---
 

@@ -23,7 +23,7 @@ class AuditLog(Base):
     # actor_id nullable: worker/webhook tomonidan qilingan operatsiyalar uchun.
     actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     action: Mapped[str] = mapped_column(String(80), nullable=False)  # PAYMENT_HELD, ...
-    entity_type: Mapped[str] = mapped_column(String(40), nullable=False)  # payment, order
+    entity_type: Mapped[str] = mapped_column(String(40), nullable=False)  # auction, order, user
     entity_id: Mapped[int] = mapped_column(BigInteger, index=True, nullable=False)
     old_value: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     new_value: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

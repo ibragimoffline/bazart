@@ -6,13 +6,7 @@ import { usePathname } from "next/navigation"
 
 import { formatTiyin } from "@/lib/format"
 import type { Order } from "@/lib/api/types"
-import {
-  getOrder,
-  getOrderPayment,
-  getHandover,
-  type Payment,
-  type Handover,
-} from "@/lib/api/order-flow"
+import { getOrder } from "@/lib/api/order-flow"
 import { ApiError } from "@/lib/api/client"
 import { useAuthStore } from "@/lib/store/auth"
 import { Button } from "@/components/ui/button"
@@ -25,27 +19,14 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import {
-  OrderStatusBadge,
-  PaymentStatusBadge,
-} from "@/components/order/order-status"
-import { EscrowPanel, type OrderRole } from "@/components/order/escrow-panel"
+import { OrderStatusBadge } from "@/components/order/order-status"
+import { OrderPanel, type OrderRole } from "@/components/order/order-panel"
 
-type Bundle = {
-  order: Order
-  payment: Payment | null
-  handover: Handover | null
-}
+type Bundle = { order: Order }
 
 async function loadBundle(orderId: number): Promise<Bundle> {
-  // Order MAJBURIY (egalik/mavjudlik shu yerda tekshiriladi); payment/handover
-  // hali boʻlmasligi mumkin -> order-flow ichida 404 null'ga aylantiriladi.
-  const order = await getOrder(orderId)
-  const [payment, handover] = await Promise.all([
-    getOrderPayment(orderId),
-    getHandover(orderId),
-  ])
-  return { order, payment, handover }
+  // Egalik/mavjudlik server tomonda tekshiriladi (begona -> 403/404).
+  return { order: await getOrder(orderId) }
 }
 
 function OrderDetail({ orderId }: { orderId: number }) {
@@ -115,7 +96,7 @@ function OrderDetail({ orderId }: { orderId: number }) {
     )
   }
 
-  const { order, payment, handover } = data
+  const { order } = data
   const role: OrderRole =
     user?.id === order.buyer_id
       ? "buyer"
@@ -145,13 +126,7 @@ function OrderDetail({ orderId }: { orderId: number }) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem] lg:items-start">
-        <EscrowPanel
-          order={order}
-          payment={payment}
-          handover={handover}
-          role={role}
-          onChanged={refetch}
-        />
+        <OrderPanel order={order} role={role} onChanged={refetch} />
 
         <aside className="grid gap-3 rounded-xl border border-border bg-card p-4">
           <h2 className="text-sm font-semibold text-foreground">Xulosa</h2>
@@ -171,43 +146,14 @@ function OrderDetail({ orderId }: { orderId: number }) {
                 </span>
               </Row>
             )}
-            <Row label="Yakuniy narx">
+            <Row label="Kelishilgan narx">
               <span className="tabular-nums">{formatTiyin(order.final_price)}</span>
             </Row>
-            {payment && (
-              <>
-                <Row label="Mukofot (8%)">
-                  <span className="tabular-nums">{formatTiyin(payment.premium)}</span>
-                </Row>
-                <Row label="Jami (escrow)">
-                  <span className="font-semibold tabular-nums text-foreground">
-                    {formatTiyin(payment.total)}
-                  </span>
-                </Row>
-              </>
-            )}
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <dt className="text-muted-foreground">Toʻlov holati</dt>
-              <dd>
-                {payment ? (
-                  <PaymentStatusBadge status={payment.status} />
-                ) : (
-                  <span className="text-sm text-muted-foreground">Yaratilmagan</span>
-                )}
-              </dd>
-            </div>
           </dl>
         </aside>
       </div>
 
-      {/* Nizo / sharh — buyurtma bosqichiga qarab. */}
-      {(order.status === "pickup_pending" || order.status === "paid") && (
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/orders/${order.id}/dispute`}>Nizo ochish</Link>
-          </Button>
-        </div>
-      )}
+      {/* Sharh — faqat yakunlangan buyurtmada. */}
       {order.status === "completed" && (
         <div className="flex flex-wrap gap-2">
           <Button asChild size="sm">

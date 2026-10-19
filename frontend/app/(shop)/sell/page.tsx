@@ -17,8 +17,8 @@ export default function SellPage() {
       <div className="mb-6">
         <h1 className="font-heading text-xl font-bold tracking-tight text-foreground uppercase md:text-2xl">Mahsulot joylash</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tovaringizni majburiy deadline bilan auksionga qoʻying. Gʻolib chiqqan xaridor
-          toʻlovi escrow orqali himoyalanadi.
+          Tovaringizni majburiy deadline bilan narx taklifiga yoki auksionga qoʻying.
+          Kelishuvdan soʻng xaridor bilan bevosita bogʻlanasiz.
         </p>
       </div>
 

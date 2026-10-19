@@ -23,11 +23,8 @@ def _register_and_login(client: TestClient, email: str) -> tuple[str, int]:
     return login.json()["access_token"], reg.json()["id"]
 
 
-def _completed_order(client: TestClient, seller_token: str, buyer_token: str, suffix: str) -> dict:
-    """Auksion -> bid -> close -> hold -> capture orqali COMPLETED order.
-
-    Har order uchun unik idempotency_key kerak (suffix orqali).
-    """
+def _completed_order(client: TestClient, seller_token: str, buyer_token: str) -> dict:
+    """Auksion -> bid -> close -> sotuvchi yakunlaydi orqali COMPLETED order."""
     item = client.post(
         "/api/v1/items",
         headers={"Authorization": f"Bearer {seller_token}"},
@@ -58,24 +55,13 @@ def _completed_order(client: TestClient, seller_token: str, buyer_token: str, su
     orders = client.get("/api/v1/orders/buyer", headers={"Authorization": f"Bearer {buyer_token}"})
     order = orders.json()[0]
 
-    hold = client.post(
-        "/api/v1/payments/holds",
-        headers={"Authorization": f"Bearer {buyer_token}"},
-        json={
-            "order_id": order["id"],
-            "idempotency_key": f"hold-key-{suffix}",
-            "provider": "mock",
-        },
+    # Faza E: to'lov yo'q — sotuvchi order'ni o'zi yakunlaydi (E2 da kelishuv tasdig'i).
+    finish = client.patch(
+        f"/api/v1/orders/{order['id']}/status",
+        headers={"Authorization": f"Bearer {seller_token}"},
+        json={"status": "completed"},
     )
-    assert hold.status_code == 201
-    pid = hold.json()["id"]
-    cap = client.post(
-        f"/api/v1/payments/{pid}/capture",
-        headers={"Authorization": f"Bearer {buyer_token}"},
-        json={"idempotency_key": f"cap-key-{suffix}"},
-    )
-    assert cap.status_code == 200
-    assert cap.json()["status"] == "released"
+    assert finish.status_code == 200, finish.text
 
     done = client.get(
         f"/api/v1/orders/{order['id']}", headers={"Authorization": f"Bearer {buyer_token}"}
@@ -119,7 +105,7 @@ def _pending_order(client: TestClient, seller_token: str, buyer_token: str) -> d
 def test_buyer_reviews_seller_updates_rating(client: TestClient) -> None:
     seller, seller_id = _register_and_login(client, "seller@example.com")
     buyer, _ = _register_and_login(client, "buyer@example.com")
-    order = _completed_order(client, seller, buyer, "01")
+    order = _completed_order(client, seller, buyer)
 
     resp = client.post(
         "/api/v1/reviews",
@@ -140,7 +126,7 @@ def test_buyer_reviews_seller_updates_rating(client: TestClient) -> None:
 def test_duplicate_review_conflicts(client: TestClient) -> None:
     seller, _ = _register_and_login(client, "seller@example.com")
     buyer, _ = _register_and_login(client, "buyer@example.com")
-    order = _completed_order(client, seller, buyer, "02")
+    order = _completed_order(client, seller, buyer)
 
     first = client.post(
         "/api/v1/reviews",
@@ -173,7 +159,7 @@ def test_non_participant_forbidden(client: TestClient) -> None:
     seller, _ = _register_and_login(client, "seller@example.com")
     buyer, _ = _register_and_login(client, "buyer@example.com")
     intruder, _ = _register_and_login(client, "intruder@example.com")
-    order = _completed_order(client, seller, buyer, "04")
+    order = _completed_order(client, seller, buyer)
 
     resp = client.post(
         "/api/v1/reviews",
@@ -186,7 +172,7 @@ def test_non_participant_forbidden(client: TestClient) -> None:
 def test_stars_out_of_range_422(client: TestClient) -> None:
     seller, _ = _register_and_login(client, "seller@example.com")
     buyer, _ = _register_and_login(client, "buyer@example.com")
-    order = _completed_order(client, seller, buyer, "05")
+    order = _completed_order(client, seller, buyer)
 
     resp = client.post(
         "/api/v1/reviews",
@@ -202,8 +188,8 @@ def test_average_of_two_reviews(client: TestClient) -> None:
     buyer1, _ = _register_and_login(client, "buyer1@example.com")
     buyer2, _ = _register_and_login(client, "buyer2@example.com")
 
-    order1 = _completed_order(client, seller, buyer1, "06a")
-    order2 = _completed_order(client, seller, buyer2, "06b")
+    order1 = _completed_order(client, seller, buyer1)
+    order2 = _completed_order(client, seller, buyer2)
 
     r1 = client.post(
         "/api/v1/reviews",
@@ -231,7 +217,7 @@ def test_average_of_two_reviews(client: TestClient) -> None:
 def test_list_user_reviews_returns_reviews(client: TestClient) -> None:
     seller, seller_id = _register_and_login(client, "seller@example.com")
     buyer, _ = _register_and_login(client, "buyer@example.com")
-    order = _completed_order(client, seller, buyer, "07")
+    order = _completed_order(client, seller, buyer)
 
     client.post(
         "/api/v1/reviews",

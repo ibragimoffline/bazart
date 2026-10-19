@@ -26,7 +26,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Bazart — muddatli auksion marketplace",
   description:
-    "Har e'londa majburiy deadline, auksion va escrow bilan himoyalangan C2C savdo.",
+    "Har e'londa majburiy deadline, narx taklifi yoki auksion, kelishuvdan keyin toʻgʻridan-toʻgʻri aloqa.",
 };
 
 export default function RootLayout({
