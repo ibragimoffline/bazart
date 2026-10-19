@@ -75,6 +75,10 @@ class Settings(BaseSettings):
     # "Sotildi" dan keyin xaridor jim tursa (va ochiq shikoyat bo'lmasa) avto-tasdiq.
     deal_auto_confirm_hours: int = 72
     deal_auto_confirm_interval_seconds: int = 300
+    # Bekor qilish cheklovi: oynada shuncha aybli bekor qilish -> shuncha kun bid/taklif taqiqi.
+    deal_cancel_limit: int = 3
+    deal_cancel_window_days: int = 30
+    deal_cancel_ban_days: int = 14
 
     # Redis (token blacklist, keyin kesh/pub-sub). Bo'sh bo'lsa in-memory fallback.
     redis_url: str = "redis://localhost:6379/0"

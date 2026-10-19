@@ -35,6 +35,7 @@ from app.services.auction_state import (
 from app.services.deal_service import DealService
 from app.services.notification_service import NotificationService
 from app.services.price_schedule import descending_price_at
+from app.services.trust_service import TrustService
 
 # Second-chance offer amal qilish muddati: reserve bajarilmagach sotuvchiga
 # eng yuqori bidderga sotish taklifi shu muddat ichida ochiq turadi.
@@ -273,6 +274,8 @@ class AuctionService:
         Auksion qatori FOR UPDATE bilan qulflanadi — parallel bid yoki ikkinchi
         buy-now poyga qilmaydi: kechikkani qulfdan keyin ENDED holatni ko'rib 409 oladi.
         """
+        # Bekor qilish cheklovi (E2.9).
+        TrustService(self.db).ensure_can_trade(buyer)
         try:
             auction = self.auctions.get_for_update(auction_id)
             if auction is None:

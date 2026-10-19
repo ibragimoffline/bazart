@@ -105,6 +105,22 @@ class UserMeRead(UserRead):
     phone_verified_at: datetime | None
 
 
+class PublicProfile(BaseModel):
+    """Ommaviy profil — ishonch signallari (docs/DEALS.md §8). Email, telefon, Telegram YO'Q:
+    kontakt faqat kelishuvda ochiladi."""
+
+    id: int
+    full_name: str | None
+    avatar_url: str | None
+    location: str | None
+    seller_rating: float
+    seller_rating_count: int
+    created_at: datetime
+    deals_completed: int
+    cancelled_as_buyer: int
+    cancelled_as_seller: int
+
+
 class TelegramLink(BaseModel):
     """Foydalanuvchi Telegram chat'ini ulash so'rovi tanasi."""
 

@@ -1,15 +1,17 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 
 from app.core.dependencies import CurrentUser, DbSession
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import (
+    PublicProfile,
     TelegramLink,
     UserMeRead,
     UserPreferencesUpdate,
     UserRead,
     UserUpdate,
 )
+from app.services.trust_service import TrustService
 
 router = APIRouter()
 
@@ -49,3 +51,25 @@ def update_preferences(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@router.get("/{user_id}/profile", response_model=PublicProfile)
+def read_public_profile(user_id: int, db: DbSession) -> PublicProfile:
+    """Ommaviy profil: reyting va kelishuv hisoblagichlari. Kontaktsiz; o'chirilgan yoki
+    bloklangan foydalanuvchi — 404."""
+    user = UserRepository(db).get_by_id(user_id)
+    if user is None or not user.is_active or user.deleted_at is not None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    stats = TrustService(db).stats(user.id)
+    return PublicProfile(
+        id=user.id,
+        full_name=user.full_name,
+        avatar_url=user.avatar_url,
+        location=user.location,
+        seller_rating=float(user.seller_rating),
+        seller_rating_count=user.seller_rating_count,
+        created_at=user.created_at,
+        deals_completed=stats.deals_completed,
+        cancelled_as_buyer=stats.cancelled_as_buyer,
+        cancelled_as_seller=stats.cancelled_as_seller,
+    )

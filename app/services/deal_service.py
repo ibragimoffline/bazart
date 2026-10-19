@@ -183,6 +183,7 @@ class DealService:
                     f"({settings.deal_contact_window_hours} soat)",
                 )
         self._transition(deal, DealStatus.CANCELLED)
+        deal.cancelled_at = datetime.now(UTC)
         deal.cancelled_by_id = actor.id
         deal.cancel_reason = reason
         deal.at_fault_id = at_fault_for(deal, actor.id, reason)

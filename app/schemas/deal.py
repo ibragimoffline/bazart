@@ -23,6 +23,7 @@ class DealRead(BaseModel):
     seller_marked_sold_at: datetime | None = None
     buyer_confirmed_at: datetime | None = None
     completed_at: datetime | None = None
+    cancelled_at: datetime | None = None
     cancelled_by_id: int | None = None
     cancel_reason: DealCancelReason | None = None
     at_fault_id: int | None = None

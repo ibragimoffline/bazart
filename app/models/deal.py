@@ -53,6 +53,7 @@ class Deal(Base):
         DateTime(timezone=True), nullable=True
     )
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     cancelled_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     cancel_reason: Mapped[DealCancelReason | None] = mapped_column(
         SqlEnum(DealCancelReason, name="deal_cancel_reason"), nullable=True

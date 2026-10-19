@@ -41,6 +41,7 @@ from app.schemas.item import ItemPublish
 from app.schemas.offer import OfferCounter, OfferCreate
 from app.services.deal_service import DealService
 from app.services.notification_service import NotificationService
+from app.services.trust_service import TrustService
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,8 @@ class OfferService:
     # --- Taklif berish --------------------------------------------------------
 
     def make_offer(self, item_id: int, buyer: User, payload: OfferCreate) -> Offer:
+        # Bekor qilish cheklovi (E2.9).
+        TrustService(self.db).ensure_can_trade(buyer)
         try:
             item = self.offers.lock_item(item_id)
             if item is None:

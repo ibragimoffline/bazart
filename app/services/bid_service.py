@@ -25,6 +25,7 @@ from app.schemas.bid import BidCreate
 from app.services.auction_state import assert_transition
 from app.services.bid_increment import effective_min_increment
 from app.services.notification_service import NotificationService
+from app.services.trust_service import TrustService
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +93,9 @@ class BidService:
             existing = self.bids.get_by_idempotency_key(bidder.id, idempotency_key)
             if existing is not None:
                 return existing
+
+        # Bekor qilish cheklovi (E2.9) — qulfdan oldin, faqat o'qish.
+        TrustService(self.db).ensure_can_trade(bidder)
 
         try:
             auction = self.auctions.get_for_update(auction_id)
