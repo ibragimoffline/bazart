@@ -240,8 +240,8 @@ def test_cancelled_order_restores_stock(client: TestClient, db_session: Session)
     deal_id = _act(client, seller, offer["id"], "accept").json()["deal_id"]
     assert _item(client, item["id"])["status"] == "sold"
 
-    cancel = client.patch(
-        f"/api/v1/deals/{deal_id}/status", headers=seller.headers, json={"status": "cancelled"}
+    cancel = client.post(
+        f"/api/v1/deals/{deal_id}/cancel", headers=seller.headers, json={"reason": "changed_mind"}
     )
     assert cancel.status_code == 200, cancel.text
     after = _item(client, item["id"])

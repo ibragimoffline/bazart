@@ -1,11 +1,11 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKey
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
-from app.models.enums import DealStatus
+from app.models.enums import DealCancelReason, DealStatus
 from app.money import Tiyin
 
 
@@ -40,6 +40,25 @@ class Deal(Base):
         index=True,
         nullable=False,
     )
+    # Kontaktlar birinchi marta ochilgan vaqt (agreed ga kirganda). Ochilgan kontakt qayta
+    # yashirilmaydi; 48 soatlik bog'lanish oynasi ham shundan hisoblanadi.
+    contacts_revealed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Sotuvchi "Sotildi" belgiladi — 72 soatlik avto-tasdiq shundan hisoblanadi.
+    seller_marked_sold_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    buyer_confirmed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancelled_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    cancel_reason: Mapped[DealCancelReason | None] = mapped_column(
+        SqlEnum(DealCancelReason, name="deal_cancel_reason"), nullable=True
+    )
+    # Bekor qilishda aybdor tomon (sababdan) — hisoblagich shunga yoziladi.
+    at_fault_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(UTC),

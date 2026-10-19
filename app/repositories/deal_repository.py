@@ -1,9 +1,10 @@
+from datetime import UTC, datetime
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.auction import Auction
 from app.models.deal import Deal
-from app.models.enums import DealStatus
 from app.models.offer import Offer
 from app.money import calc_line_total
 
@@ -31,6 +32,7 @@ class DealRepository:
             quantity=1,
             unit_price=auction.winning_bid.amount,
             final_price=auction.winning_bid.amount,
+            contacts_revealed_at=datetime.now(UTC),
         )
         self.db.add(deal)
         self.db.flush()
@@ -46,6 +48,7 @@ class DealRepository:
             quantity=offer.quantity,
             unit_price=offer.unit_price,
             final_price=calc_line_total(offer.unit_price, offer.quantity),
+            contacts_revealed_at=datetime.now(UTC),
         )
         self.db.add(deal)
         self.db.flush()
@@ -63,9 +66,7 @@ class DealRepository:
         statement = select(Deal).order_by(Deal.created_at.desc())
         return list(self.db.scalars(statement))
 
-    def update_status(self, deal: Deal, status: DealStatus) -> Deal:
-        deal.status = status
-        self.db.add(deal)
-        self.db.commit()
-        self.db.refresh(deal)
-        return deal
+    def get_for_update(self, deal_id: int) -> Deal | None:
+        """Kelishuv qatorini FOR UPDATE bilan oladi: "Sotildi" va "Tasdiqlayman" bir vaqtda
+        kelsa, ikkalasi bir-birining yozuvini ko'rmay qolib kelishuv `agreed` da qotmasin."""
+        return self.db.scalar(select(Deal).where(Deal.id == deal_id).with_for_update())

@@ -69,6 +69,10 @@ class Settings(BaseSettings):
     # (Faza E); kalit hamyon to'ldirish webhook'i uchun saqlanadi (E5).
     psp_webhook_secret: str = INSECURE_DEFAULT_WEBHOOK_SECRET
 
+    # Kelishuv (Faza E2, docs/DEALS.md).
+    # Kelishuvdan keyin bog'lanish oynasi: shundan keyingina "javob bermadi" bilan bekor qilinadi.
+    deal_contact_window_hours: int = 48
+
     # Redis (token blacklist, keyin kesh/pub-sub). Bo'sh bo'lsa in-memory fallback.
     redis_url: str = "redis://localhost:6379/0"
     # Frontend (Next.js) origin'lari — brauzerdan API'ga so'rov yuborishi uchun CORS.

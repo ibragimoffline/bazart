@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.core.dependencies import CurrentActiveUser, CurrentAdminUser, DbSession
 from app.models.deal import Deal
-from app.schemas.deal import DealRead, DealStatusUpdate
+from app.schemas.deal import DealCancel, DealRead
 from app.services.deal_service import DealService
 
 router = APIRouter()
@@ -28,11 +28,21 @@ def read_deal(deal_id: int, current_user: CurrentActiveUser, db: DbSession) -> D
     return DealService(db).get_deal_for_user(deal_id, current_user)
 
 
-@router.patch("/{deal_id}/status", response_model=DealRead)
-def update_deal_status(
-    deal_id: int,
-    payload: DealStatusUpdate,
-    current_user: CurrentActiveUser,
-    db: DbSession,
+@router.post("/{deal_id}/complete", response_model=DealRead)
+def complete_deal(deal_id: int, current_user: CurrentActiveUser, db: DbSession) -> Deal:
+    """Sotuvchi: "Sotildi"."""
+    return DealService(db).complete(deal_id, current_user)
+
+
+@router.post("/{deal_id}/confirm", response_model=DealRead)
+def confirm_deal(deal_id: int, current_user: CurrentActiveUser, db: DbSession) -> Deal:
+    """Xaridor: "Tasdiqlayman"."""
+    return DealService(db).confirm(deal_id, current_user)
+
+
+@router.post("/{deal_id}/cancel", response_model=DealRead)
+def cancel_deal(
+    deal_id: int, payload: DealCancel, current_user: CurrentActiveUser, db: DbSession
 ) -> Deal:
-    return DealService(db).update_deal_status(deal_id, payload.status, current_user)
+    """Istalgan tomon (yoki admin), sabab bilan."""
+    return DealService(db).cancel(deal_id, current_user, payload.reason)

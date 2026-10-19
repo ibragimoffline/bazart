@@ -116,6 +116,15 @@ class DealStatus(StrEnum):
     CANCELLED = "cancelled"
 
 
+class DealCancelReason(StrEnum):
+    """Kelishuvni bekor qilish sababi — aybdor tomon shundan aniqlanadi (docs/DEALS.md §7)."""
+
+    NO_RESPONSE = "no_response"  # ikkinchi tomon javob bermadi (48 soatdan keyin)
+    CHANGED_MIND = "changed_mind"  # bekor qilgan tomon fikridan qaytdi
+    NOT_AS_DESCRIBED = "not_as_described"  # mahsulot e'londagidek emas (aybdor — sotuvchi)
+    OTHER = "other"
+
+
 class ComplaintTargetType(StrEnum):
     ITEM = "item"
     USER = "user"

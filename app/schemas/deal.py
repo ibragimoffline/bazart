@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import DealStatus
+from app.models.enums import DealCancelReason, DealStatus
 from app.money.fields import TiyinAmount
 
 
@@ -20,9 +20,15 @@ class DealRead(BaseModel):
     unit_price: TiyinAmount
     final_price: TiyinAmount
     status: DealStatus
+    seller_marked_sold_at: datetime | None = None
+    buyer_confirmed_at: datetime | None = None
+    completed_at: datetime | None = None
+    cancelled_by_id: int | None = None
+    cancel_reason: DealCancelReason | None = None
+    at_fault_id: int | None = None
     created_at: datetime
     updated_at: datetime
 
 
-class DealStatusUpdate(BaseModel):
-    status: DealStatus
+class DealCancel(BaseModel):
+    reason: DealCancelReason

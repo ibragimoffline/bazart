@@ -109,13 +109,21 @@ def test_order_creation_after_auction_close_and_role_views(
     assert admin_orders_response.status_code == 200
     assert [entry["id"] for entry in admin_orders_response.json()] == [deal["id"]]
 
-    admin_status_update = client.patch(
-        f"/api/v1/deals/{deal['id']}/status",
-        headers={"Authorization": f"Bearer {admin_token}"},
-        json={"status": "completed"},
+    marked = client.post(
+        f"/api/v1/deals/{deal['id']}/complete",
+        headers={"Authorization": f"Bearer {seller_token}"},
     )
-    assert admin_status_update.status_code == 200
-    assert admin_status_update.json()["status"] == "completed"
+    assert marked.status_code == 200
+    assert marked.json()["status"] == "agreed"
+    assert marked.json()["seller_marked_sold_at"] is not None
+
+    confirmed = client.post(
+        f"/api/v1/deals/{deal['id']}/confirm",
+        headers={"Authorization": f"Bearer {buyer_token}"},
+    )
+    assert confirmed.status_code == 200
+    assert confirmed.json()["status"] == "completed"
+    assert confirmed.json()["completed_at"] is not None
 
 
 def test_unauthorized_user_cannot_view_or_manage_another_users_order(client: TestClient) -> None:
@@ -131,9 +139,19 @@ def test_unauthorized_user_cannot_view_or_manage_another_users_order(client: Tes
     )
     assert read_response.status_code == 403
 
-    update_response = client.patch(
-        f"/api/v1/deals/{deal['id']}/status",
-        headers={"Authorization": f"Bearer {buyer_token}"},
-        json={"status": "cancelled"},
+    # Xaridor "Sotildi" belgilay olmaydi, begona umuman ko'rmaydi (404).
+    assert (
+        client.post(
+            f"/api/v1/deals/{deal['id']}/complete",
+            headers={"Authorization": f"Bearer {buyer_token}"},
+        ).status_code
+        == 403
     )
-    assert update_response.status_code == 403
+    assert (
+        client.post(
+            f"/api/v1/deals/{deal['id']}/cancel",
+            headers={"Authorization": f"Bearer {stranger_token}"},
+            json={"reason": "other"},
+        ).status_code
+        == 404
+    )

@@ -55,11 +55,15 @@ def _completed_order(client: TestClient, seller_token: str, buyer_token: str) ->
     deals = client.get("/api/v1/deals/buyer", headers={"Authorization": f"Bearer {buyer_token}"})
     deal = deals.json()[0]
 
-    # Faza E: to'lov yo'q — sotuvchi deal'ni o'zi yakunlaydi (E2 da kelishuv tasdig'i).
-    finish = client.patch(
-        f"/api/v1/deals/{deal['id']}/status",
+    # Kelishuv: sotuvchi "Sotildi", xaridor tasdiqlaydi.
+    marked = client.post(
+        f"/api/v1/deals/{deal['id']}/complete",
         headers={"Authorization": f"Bearer {seller_token}"},
-        json={"status": "completed"},
+    )
+    assert marked.status_code == 200, marked.text
+    finish = client.post(
+        f"/api/v1/deals/{deal['id']}/confirm",
+        headers={"Authorization": f"Bearer {buyer_token}"},
     )
     assert finish.status_code == 200, finish.text
 

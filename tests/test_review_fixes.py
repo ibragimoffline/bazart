@@ -58,17 +58,17 @@ def test_order_status_invalid_transition_rejected(client: TestClient, db_session
     admin = create_user(client, db_session, email="admin@example.com", role=UserRole.ADMIN)
     deal = _deal(client, seller, buyer)
 
-    done = client.patch(
-        f"/api/v1/deals/{deal['id']}/status",
-        headers=admin.headers,
-        json={"status": "completed"},
+    done = client.post(
+        f"/api/v1/deals/{deal['id']}/cancel", headers=admin.headers, json={"reason": "other"}
     )
     assert done.status_code == 200, done.text
-    # COMPLETED — yakuniy holat: orqaga qaytish taqiqlangan.
-    resp = client.patch(
-        f"/api/v1/deals/{deal['id']}/status",
-        headers=admin.headers,
-        json={"status": "agreed"},
+    # CANCELLED — yakuniy holat: yakunlash ham, qayta bekor qilish ham taqiqlangan.
+    resp = client.post(
+        f"/api/v1/deals/{deal['id']}/complete", headers={"Authorization": f"Bearer {seller}"}
+    )
+    assert resp.status_code == 409
+    resp = client.post(
+        f"/api/v1/deals/{deal['id']}/cancel", headers=admin.headers, json={"reason": "other"}
     )
     assert resp.status_code == 409
 

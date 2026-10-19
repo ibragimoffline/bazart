@@ -210,9 +210,18 @@ export interface Order {
   /** tiyin (string) */
   final_price: string;
   status: OrderStatus;
+  seller_marked_sold_at: string | null;
+  buyer_confirmed_at: string | null;
+  completed_at: string | null;
+  cancelled_by_id: number | null;
+  cancel_reason: DealCancelReason | null;
+  at_fault_id: number | null;
   created_at: string;
   updated_at: string;
 }
+
+/** Kelishuvni bekor qilish sababi (app/models/enums.py DealCancelReason). */
+export type DealCancelReason = "no_response" | "changed_mind" | "not_as_described" | "other";
 
 export interface AuthToken {
   access_token: string;
