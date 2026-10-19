@@ -180,3 +180,87 @@ def test_closing_already_ended_auction_conflicts(client: TestClient) -> None:
         headers={"Authorization": f"Bearer {seller_token}"},
     )
     assert second.status_code == 409
+
+
+# --- E'lonni bekor qilish (DELETE /items/{id}) auksion bilan birga ----------
+#
+# Ilgari DELETE /items faqat item.status yozardi: jonli auksion bid qabul
+# qilishda davom etardi va bidli lotni ham "bekor qilish" mumkin edi.
+
+
+def test_cancel_listing_cancels_live_auction_without_bids(client: TestClient) -> None:
+    seller_token = _register_and_login(client, "seller@example.com")
+    headers = {"Authorization": f"Bearer {seller_token}"}
+    auction_id = _create_active_auction(client, seller_token)
+    item_id = client.get(f"/api/v1/auctions/{auction_id}").json()["item_id"]
+
+    response = client.delete(f"/api/v1/items/{item_id}", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["status"] == "cancelled"
+    assert client.get(f"/api/v1/auctions/{auction_id}").json()["status"] == "cancelled"
+
+
+def test_cancel_listing_with_bids_conflicts_and_keeps_auction(client: TestClient) -> None:
+    """Bid tushgan lotni e'lon orqali ham bekor qilib bo'lmaydi."""
+    seller_token = _register_and_login(client, "seller@example.com")
+    bidder_token = _register_and_login(client, "bidder@example.com")
+    auction_id = _create_active_auction(client, seller_token)
+    item_id = client.get(f"/api/v1/auctions/{auction_id}").json()["item_id"]
+    bid = client.post(
+        f"/api/v1/bids/{auction_id}",
+        headers={"Authorization": f"Bearer {bidder_token}"},
+        json={"amount": "110000"},
+    )
+    assert bid.status_code == 201
+
+    response = client.delete(
+        f"/api/v1/items/{item_id}", headers={"Authorization": f"Bearer {seller_token}"}
+    )
+    assert response.status_code == 409
+    assert client.get(f"/api/v1/auctions/{auction_id}").json()["status"] == "active"
+    assert client.get(f"/api/v1/items/{item_id}").json()["status"] != "cancelled"
+
+
+def test_cancel_listing_after_auction_ended_conflicts(client: TestClient) -> None:
+    seller_token = _register_and_login(client, "seller@example.com")
+    bidder_token = _register_and_login(client, "bidder@example.com")
+    headers = {"Authorization": f"Bearer {seller_token}"}
+    auction_id = _create_active_auction(client, seller_token)
+    item_id = client.get(f"/api/v1/auctions/{auction_id}").json()["item_id"]
+    client.post(
+        f"/api/v1/bids/{auction_id}",
+        headers={"Authorization": f"Bearer {bidder_token}"},
+        json={"amount": "110000"},
+    )
+    assert client.post(f"/api/v1/auctions/{auction_id}/close", headers=headers).status_code == 200
+
+    response = client.delete(f"/api/v1/items/{item_id}", headers=headers)
+    assert response.status_code == 409
+
+
+def test_cancel_listing_without_auction(client: TestClient) -> None:
+    seller_token = _register_and_login(client, "seller@example.com")
+    headers = {"Authorization": f"Bearer {seller_token}"}
+    item = client.post(
+        "/api/v1/items",
+        headers=headers,
+        json={"title": "Drill", "condition": "used", "starting_price": "100000"},
+    )
+    assert item.status_code == 201
+
+    response = client.delete(f"/api/v1/items/{item.json()['id']}", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["status"] == "cancelled"
+
+
+def test_other_user_cannot_cancel_listing(client: TestClient) -> None:
+    seller_token = _register_and_login(client, "seller@example.com")
+    other_token = _register_and_login(client, "other@example.com")
+    auction_id = _create_active_auction(client, seller_token)
+    item_id = client.get(f"/api/v1/auctions/{auction_id}").json()["item_id"]
+
+    response = client.delete(
+        f"/api/v1/items/{item_id}", headers={"Authorization": f"Bearer {other_token}"}
+    )
+    assert response.status_code == 403
+    assert client.get(f"/api/v1/auctions/{auction_id}").json()["status"] == "active"

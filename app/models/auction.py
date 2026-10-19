@@ -1,11 +1,19 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Integer, SmallInteger
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    SmallInteger,
+)
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
-from app.models.enums import AuctionStatus
+from app.models.enums import AuctionStatus, PricingMode
 from app.money import TIYIN_PER_SOUM, Tiyin
 
 
@@ -14,7 +22,22 @@ class Auction(Base):
 
     # Sweeper (close_due_auctions) `status == ACTIVE AND end_time <= now`
     # bo'yicha qidiradi — kompozit index shu so'rovni tez qiladi.
-    __table_args__ = (Index("ix_auctions_status_end_time", "status", "end_time"),)
+    __table_args__ = (
+        Index("ix_auctions_status_end_time", "status", "end_time"),
+        # Pasayuvchi auksionda qadam, oraliq va pastki chegara (reserve_price) majburiy —
+        # aks holda narx nolga (yoki manfiyga) tushib, tovar tekinga ketardi.
+        CheckConstraint(
+            "pricing_mode = 'ASCENDING' OR (price_decrement > 0 "
+            "AND price_drop_interval_minutes > 0 AND reserve_price IS NOT NULL)",
+            name="ck_auctions_descending_config",
+        ),
+        # Golland zaxirasi (sotuvchi roziligi) faqat o'suvchi auksionda ma'noga ega.
+        CheckConstraint(
+            "dutch_fallback_floor IS NULL OR (pricing_mode = 'ASCENDING' "
+            "AND dutch_fallback_floor > 0)",
+            name="ck_auctions_dutch_fallback",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), unique=True, nullable=False)
@@ -67,6 +90,30 @@ class Auction(Base):
     unique_bidder_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     # "Hoziroq sotib olish" narxi (tiyin). None = buy-now o'chiq.
     buy_now_price: Mapped[Tiyin | None] = mapped_column(BigInteger, nullable=True)
+    # Narx yo'nalishi. DESCENDING: narx `price_drop_interval_minutes` da bir
+    # `price_decrement` ga pasayadi, `reserve_price` dan pastga tushmaydi. Joriy narx
+    # BAZADA SAQLANMAYDI — vaqtdan hisoblanadi (`services/price_schedule.py`);
+    # `current_price` faqat sotilganda (sotuv narxi) yoziladi.
+    pricing_mode: Mapped[PricingMode] = mapped_column(
+        SqlEnum(PricingMode, name="pricing_mode"),
+        default=PricingMode.ASCENDING,
+        server_default=PricingMode.ASCENDING.name,
+        nullable=False,
+    )
+    price_decrement: Mapped[Tiyin | None] = mapped_column(BigInteger, nullable=True)
+    price_drop_interval_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # "Narx tushdi" xabari oxirgi marta qaysi narxda yuborilgan (NULL — hali yuborilmagan).
+    last_price_alert: Mapped[Tiyin | None] = mapped_column(BigInteger, nullable=True)
+    # Sotuvchining OLDINDAN roziligi: taklifsiz tugasa lot 3 kunlik pasayuvchi auksionga
+    # avtomatik o'tadi; qiymat — o'sha bosqichning pastki chegarasi (tiyin). NULL = rozilik
+    # yo'q. Qiymati javobda oshkor bo'lmaydi (faqat `dutch_fallback_enabled`).
+    dutch_fallback_floor: Mapped[Tiyin | None] = mapped_column(BigInteger, nullable=True)
+    # Shu auksion taklifsiz tugab, davom etgan pasayuvchi auksion (UNIQUE — bir marta).
+    continued_as_auction_id: Mapped[int | None] = mapped_column(
+        ForeignKey("auctions.id", name="fk_auctions_continued_as_auction_id"),
+        unique=True,
+        nullable=True,
+    )
     # Second-chance offer: reserve bajarilmaganda sotuvchiga eng yuqori
     # bidderga sotish taklifi beriladi. offered_at = taklif berilgan vaqt,
     # expires_at = taklif amal qilish muddati (24 soat).
@@ -74,6 +121,11 @@ class Auction(Base):
         DateTime(timezone=True), nullable=True
     )
     second_chance_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # "Tugashiga oz qoldi" eslatmasi yuborilgan vaqt. NULL = hali yuborilmagan;
+    # eslatma auksionga BIR MARTA ketadi (anti-sniping uzaytirsa ham takrorlanmaydi).
+    ending_soon_notified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC), nullable=False)

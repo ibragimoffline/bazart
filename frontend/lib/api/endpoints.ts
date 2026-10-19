@@ -5,6 +5,7 @@ import type {
   Category,
   Item,
   ItemStatus,
+  ListingType,
   Auction,
   AuctionStatus,
   Bid,
@@ -57,6 +58,7 @@ export function listItems(params: {
   seller_id?: number;
   region_id?: number;
   district_id?: number;
+  listing_type?: ListingType;
   limit?: number;
 } = {}): Promise<Item[]> {
   const q = new URLSearchParams();
@@ -66,6 +68,7 @@ export function listItems(params: {
   if (params.category_id != null) q.set("category_id", String(params.category_id));
   if (params.status) q.set("status", params.status);
   if (params.seller_id != null) q.set("seller_id", String(params.seller_id));
+  if (params.listing_type) q.set("listing_type", params.listing_type);
   q.set("limit", String(params.limit ?? 100));
   return apiFetch<Item[]>(`/items?${q.toString()}`, { auth: false });
 }
@@ -110,6 +113,14 @@ export function listAuctionBids(auctionId: number, limit = 50): Promise<Bid[]> {
  */
 export function retractBid(bidId: number): Promise<Bid> {
   return apiFetch<Bid>(`/bids/${bidId}/retract`, { method: "POST" });
+}
+
+/**
+ * Lotni "hoziroq sotib olish" narxida sotib olish. Zaxira narx bo'lsa — takliflar unga
+ * yetguncha, zaxirasiz — birinchi taklifgacha ochiq; aks holda server 409 qaytaradi.
+ */
+export function buyNow(auctionId: number): Promise<Auction> {
+  return apiFetch<Auction>(`/auctions/${auctionId}/buy-now`, { method: "POST" });
 }
 
 /** Sotuvchi: rezervga yetmagan auksionni eng yuqori taklifga sotish (24 soat ichida). */

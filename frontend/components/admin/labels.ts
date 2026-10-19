@@ -41,6 +41,7 @@ export const ITEM_STATUS_LABEL: Record<ItemStatus, string> = {
   active: "Faol",
   sold: "Sotilgan",
   cancelled: "Bekor qilingan",
+  expired: "Muddati tugagan",
 };
 
 export const ITEM_STATUS_VARIANT: Record<ItemStatus, BadgeVariant> = {
@@ -50,6 +51,7 @@ export const ITEM_STATUS_VARIANT: Record<ItemStatus, BadgeVariant> = {
   active: "success",
   sold: "neutral",
   cancelled: "outline",
+  expired: "outline",
 };
 
 export const AUCTION_STATUS_LABEL: Record<AuctionStatus, string> = {

@@ -34,10 +34,9 @@ function Gallery({ title, images = [] }: { title: string; images?: string[] }) {
   // Rasm yo'q — bitta neytral placeholder (soxta hisob ko'rsatilmaydi).
   if (!hasImages) {
     return (
-      <div className="grid aspect-square w-full place-items-center rounded-xl border border-border bg-muted">
+      <div className="grid aspect-square w-full place-items-center rounded-xl bg-brand-soft">
         <div className="flex flex-col items-center gap-2 p-6 text-center text-muted-foreground">
-          <ImageIcon className="size-10" aria-hidden="true" />
-          <span className="max-w-xs text-sm">{title}</span>
+          <ImageIcon className="size-12 text-brand/30" aria-hidden="true" />
           <span className="text-xs">Rasm qoʻshilmagan</span>
         </div>
       </div>

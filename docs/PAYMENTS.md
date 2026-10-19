@@ -63,8 +63,9 @@ class BasePaymentProvider(ABC):
     provider_name: str
 
     @abstractmethod
-    def create_hold(self, *, amount_tiyin: int, currency: str,
-                    token_reference: str, idempotency_key: str) -> ProviderResult:
+    def create_hold(
+        self, *, amount_tiyin: int, currency: str, token_reference: str, idempotency_key: str
+    ) -> ProviderResult:
         """Kartada mablag'ni bloklaydi (escrow o'rnini bosadi). Pul hali ko'chmaydi."""
 
     @abstractmethod
@@ -112,7 +113,7 @@ Hozirgi enum: `pending`, `processing`, `paid`, `failed`, `refunded` — escrow'n
 **Buyer premium:** 8% (BPS = 800).
 ```python
 BUYER_PREMIUM_BPS = 800
-premium = final_price_tiyin * BUYER_PREMIUM_BPS // 10_000   # butun bo'linma, float TAQIQ
+premium = final_price_tiyin * BUYER_PREMIUM_BPS // 10_000  # butun bo'linma, float TAQIQ
 total = final_price_tiyin + premium
 ```
 Yaxlitlash doim tiyingacha, `//` orqali. `float` ishlatish **TAQIQ**.
@@ -134,7 +135,7 @@ def create_hold(self, payload: HoldCreate, buyer: User) -> Payment:
     """
     existing = self.payments.get_by_idempotency_key(payload.idempotency_key)
     if existing is not None:
-        return existing            # tekshirmasdan qayta yaratish TAQIQ
+        return existing  # tekshirmasdan qayta yaratish TAQIQ
 
     try:
         payment = self.payments.create(..., idempotency_key=payload.idempotency_key)

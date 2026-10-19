@@ -71,6 +71,18 @@ class BidRepository:
         )
         return self.db.scalar(statement) or 0
 
+    def list_bidder_ids(self, auction_id: int) -> list[int]:
+        """Auksionda tirik bidi bor foydalanuvchilar (bekor qilinganlar tashqarida)."""
+        statement = (
+            select(Bid.bidder_id)
+            .distinct()
+            .where(
+                Bid.auction_id == auction_id,
+                Bid.status.not_in(_DEAD_STATUSES),
+            )
+        )
+        return list(self.db.scalars(statement))
+
     def count_distinct_bidders(self, auction_id: int) -> int:
         """Auksiondagi noyob bidderlar soni (bekor qilinganlar/proksi tashqarida)."""
         statement = select(func.count(func.distinct(Bid.bidder_id))).where(

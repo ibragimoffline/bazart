@@ -16,6 +16,13 @@ const SPRING = { stiffness: 260, damping: 34, mass: 0.4 } as const
  * Sahifa yuklanganda statik (`initiallyStable`); faqat keyingi o'zgarishda animatsiya.
  * `prefers-reduced-motion` da oddiy matn ko'rsatiladi.
  */
+/**
+ * Ming ajratgichi — UZILMAS bo'shliq (U+00A0). SlidingNumber har guruhni flex
+ * ichida alohida <span> qilib chizadi; faqat oddiy bo'shliqdan iborat span brauzerda
+ * siqilib, narx "3200000" bo'lib ko'rinardi. NBSP siqilmaydi, ko'rinishi bir xil.
+ */
+const THOUSAND_SEP = "\u00A0"
+
 function AnimatedSom({ tiyin, className }: { tiyin: string; className?: string }) {
   const reduce = useReducedMotion()
   const som = tiyinToSoum(tiyin)
@@ -28,7 +35,7 @@ function AnimatedSom({ tiyin, className }: { tiyin: string; className?: string }
     <span className={cn("inline-flex items-baseline gap-1 tabular-nums", className)}>
       <SlidingNumber
         number={som}
-        thousandSeparator=" "
+        thousandSeparator={THOUSAND_SEP}
         transition={SPRING}
         initiallyStable
       />
@@ -64,7 +71,7 @@ function AnimatedInteger({
 
   return (
     <span className={cn("inline-flex items-baseline gap-1 tabular-nums", className)}>
-      <SlidingNumber number={value} thousandSeparator=" " transition={SPRING} inView inViewOnce />
+      <SlidingNumber number={value} thousandSeparator={THOUSAND_SEP} transition={SPRING} inView inViewOnce />
       {som && <span>soʻm</span>}
     </span>
   )

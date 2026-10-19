@@ -176,6 +176,49 @@ export function autoIncrementSoum(startingSoum: number): number {
   return Math.max(1000, Math.ceil((startingSoum * 0.05) / 1000) * 1000)
 }
 
+/**
+ * "Hoziroq sotib olish" narxi tekshiruvi (so'm) — server `_validate_pricing` bilan
+ * bir xil qoida. 0 — o'chiq, xato yo'q. Xato matnini yoki null qaytaradi.
+ */
+export function buyNowError(buyNowSoum: number, startingSoum: number, reserveSoum: number): string | null {
+  if (buyNowSoum <= 0 || startingSoum <= 0) return null
+  if (buyNowSoum <= startingSoum) return "Bu narx boshlangʻich narxdan yuqori boʻlishi kerak."
+  if (reserveSoum > 0 && buyNowSoum < reserveSoum) return "Bu narx zaxira narxdan past boʻlmasligi kerak."
+  return null
+}
+
+/**
+ * Qayta joylash uchun tavsiya qilingan boshlang'ich narx (so'm).
+ *
+ * Taklif tushgan bo'lsa (rezervga yetmagan) — eng yuqori taklif: bozor shu narxni
+ * allaqachon tasdiqlagan. Taklif bo'lmagan bo'lsa — eski narxdan 10% past, 1 000
+ * so'mga pastga yaxlitlangan: narx qotib qolmasligi kerak (loyiha g'oyasi).
+ */
+export function suggestRelistSoum(previousStartSoum: number, highestBidSoum: number | null): number {
+  if (highestBidSoum != null && highestBidSoum > 0) return highestBidSoum
+  const lowered = previousStartSoum * 0.9
+  if (lowered >= 1000) return Math.floor(lowered / 1000) * 1000
+  return Math.max(1, Math.floor(lowered))
+}
+
+/**
+ * Holatga qarab auksion tavsiyalari (so'm, faqat UI — yakuniy qiymat serverda tekshiriladi).
+ * Yangi mahsulot — pasayuvchi: chegara boshlang'ichning 80%, narx muddat oxiridan ~12 soat
+ * oldin chegaraga yetadigan soatlik qadam. Ishlatilgan — o'suvchi + buy-now (130%).
+ */
+export function suggestDutchFloorSoum(startingSoum: number): number {
+  return Math.floor((startingSoum * 0.8) / 1000) * 1000
+}
+
+export function suggestDutchStepSoum(startingSoum: number, floorSoum: number, days: number): number {
+  const hours = Math.max(1, days * 24 - 12)
+  return Math.max(1000, Math.ceil((startingSoum - floorSoum) / hours / 1000) * 1000)
+}
+
+export function suggestBuyNowSoum(startingSoum: number): number {
+  return Math.ceil((startingSoum * 1.3) / 10_000) * 10_000
+}
+
 const endsAtFormatter = new Intl.DateTimeFormat("uz-UZ", {
   timeZone: "Asia/Tashkent",
   day: "numeric",

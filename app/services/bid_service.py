@@ -8,8 +8,16 @@ from app.core.config import settings
 from app.models.auction import Auction
 from app.models.auction_extension import AuctionExtension
 from app.models.bid import Bid
-from app.models.enums import AuctionStatus, BidStatus, ItemStatus, NotificationType, is_admin
+from app.models.enums import (
+    AuctionStatus,
+    BidStatus,
+    ItemStatus,
+    NotificationType,
+    PricingMode,
+    is_admin,
+)
 from app.models.user import User
+from app.money import format_soum_text
 from app.realtime import manager
 from app.repositories.auction_repository import AuctionRepository
 from app.repositories.bid_repository import BidRepository
@@ -377,7 +385,10 @@ class BidService:
             user_id=user_id,
             type=NotificationType.OUTBID,
             title="Sizni ortda qoldirishdi",
-            body="Auksionda taklifingiz ortda qoldi. Yangi taklif qo'ying.",
+            body=(
+                f"«{auction.item.title if auction.item else 'Lot'}»: taklifingiz ortda qoldi. "
+                f"Joriy narx: {format_soum_text(new_price)} soʻm. Yangi taklif qoʻying."
+            ),
             payload={"auction_id": auction.id, "current_price": str(new_price)},
         )
 
@@ -412,6 +423,12 @@ class BidService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Auction is not active",
+            )
+        if auction.pricing_mode == PricingMode.DESCENDING:
+            # Golland auksionida bid yo'q: narx vaqt bilan pasayadi, birinchi xarid yutadi.
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Bidding is not available in a descending auction; buy at the current price",
             )
 
         now = datetime.now(UTC)

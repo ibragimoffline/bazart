@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.models.auction import Auction
 from app.models.enums import OrderStatus
+from app.models.offer import Offer
 from app.models.order import Order
+from app.money import calc_line_total
 
 
 class OrderRepository:
@@ -26,7 +28,24 @@ class OrderRepository:
             item_id=auction.item_id,
             buyer_id=auction.winner_id,
             seller_id=auction.seller_id,
+            quantity=1,
+            unit_price=auction.winning_bid.amount,
             final_price=auction.winning_bid.amount,
+        )
+        self.db.add(order)
+        self.db.flush()
+        return order
+
+    def create_for_offer(self, offer: Offer) -> Order:
+        """Qabul qilingan taklifdan order. COMMIT QILMAYDI (chaqiruvchi tranzaksiyasi)."""
+        order = Order(
+            offer_id=offer.id,
+            item_id=offer.item_id,
+            buyer_id=offer.buyer_id,
+            seller_id=offer.seller_id,
+            quantity=offer.quantity,
+            unit_price=offer.unit_price,
+            final_price=calc_line_total(offer.unit_price, offer.quantity),
         )
         self.db.add(order)
         self.db.flush()

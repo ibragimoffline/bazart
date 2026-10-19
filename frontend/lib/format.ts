@@ -11,7 +11,7 @@
  * Ajratgich ATAYLAB qo'lda qo'yiladi, `Intl.NumberFormat` orqali emas: "uz-UZ"
  * ajratgichi muhit ICU'siga qarab vergul (","), uzilmas bo'shliq yoki apostrof
  * bo'lib qolardi — ya'ni narx brauzerga qarab har xil ko'rinardi. Bu yerda u
- * har doim oddiy bo'shliq (SlidingNumber'dagi `thousandSeparator=" "` bilan bir xil).
+ * har doim oddiy bo'shliq (animatsiyali narxda — ko'rinishi bir xil uzilmas bo'shliq).
  */
 export function formatNumber(value: number): string {
   const rounded = Number.isFinite(value) ? Math.round(value) : 0;

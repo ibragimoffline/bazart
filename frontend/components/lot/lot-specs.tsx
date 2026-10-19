@@ -49,7 +49,8 @@ function usePlace(regionId: number | null, districtId: number | null): Place {
 
 type Spec = { label: string; value: React.ReactNode; tone?: "notice" }
 
-function LotSpecs({ item, auction }: { item: Item; auction: Auction }) {
+/** auction yo'q — taklifli e'lon: dona narxi, zaxira va e'lon muddati ko'rsatiladi. */
+function LotSpecs({ item, auction }: { item: Item; auction?: Auction }) {
   const place = usePlace(item.region_id, item.district_id)
   const placeText = [place.region, place.district].filter(Boolean).join(", ")
   // Faqat http(s) havola — `javascript:` kabi sxemalar hech qachon href'ga tushmaydi.
@@ -68,11 +69,24 @@ function LotSpecs({ item, auction }: { item: Item; auction: Auction }) {
             : { label: "Nuqsonlar", value: item.defects, tone: "notice" as const },
         ]
       : []),
-    { label: "Boshlangʻich narx", value: formatTiyin(auction.starting_price) },
-    { label: "Minimal qadam", value: formatTiyin(auction.minimum_bid_increment) },
-    ...(auction.duration_days
-      ? [{ label: "Muddat", value: `${auction.duration_days} kun` }]
-      : []),
+    ...(auction
+      ? [
+          { label: "Boshlangʻich narx", value: formatTiyin(auction.starting_price) },
+          { label: "Minimal qadam", value: formatTiyin(auction.minimum_bid_increment) },
+          ...(auction.duration_days
+            ? [{ label: "Muddat", value: `${auction.duration_days} kun` }]
+            : []),
+        ]
+      : [
+          { label: "Sotuvchi narxi (1 dona)", value: formatTiyin(item.starting_price) },
+          {
+            label: "Mavjud",
+            value: `${formatNumber(item.quantity_available)} / ${formatNumber(item.quantity_total)} dona`,
+          },
+          ...(item.listing_duration_days
+            ? [{ label: "Muddat", value: `${item.listing_duration_days} kun` }]
+            : []),
+        ]),
     ...(placeText ? [{ label: "Hudud", value: placeText }] : []),
     ...(item.location ? [{ label: "Manzil", value: item.location }] : []),
     ...(item.view_count > 0
@@ -121,7 +135,7 @@ function LotSpecs({ item, auction }: { item: Item; auction: Auction }) {
           href={videoUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-primary underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-primary underline-offset-4 outline-none transition-colors underline decoration-foreground/30 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <ExternalLinkIcon className="size-4" aria-hidden="true" />
           Videoni koʻrish

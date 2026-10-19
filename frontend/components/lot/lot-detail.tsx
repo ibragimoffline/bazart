@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { RadioIcon, TimerResetIcon } from "lucide-react"
+import { RadioIcon, TimerResetIcon, TrendingDownIcon } from "lucide-react"
 
 import type { Lot } from "@/lib/api/types"
 import { getLot, getAuction } from "@/lib/api/endpoints"
@@ -13,6 +13,8 @@ import { Gallery } from "@/components/product/gallery"
 import { AssuranceBlock } from "@/components/product/assurance-block"
 import { DeadlineBar } from "@/components/ui/deadline-bar"
 import { BidPanel } from "@/components/lot/bid-panel"
+import { DescendingPanel } from "@/components/lot/descending-panel"
+import { MobileBidBar } from "@/components/lot/mobile-bid-bar"
 import { BidHistory } from "@/components/lot/bid-history"
 import { LotSpecs, CONDITION_LABEL } from "@/components/lot/lot-specs"
 import { WatchButton } from "@/components/lot/watch-button"
@@ -130,10 +132,11 @@ function LotDetail({ auctionId }: { auctionId: number }) {
   // Haqiqiy rasmlar (asosiysi birinchi, to'liq URL) — `lib/item-image`.
   const imageUrls = itemImageUrls(item)
 
-  // Anti-sniping: so'nggi daqiqalardagi taklif tugash vaqtini surgan bo'lsa.
+  // Anti-sniping: so'nggi daqiqalardagi taklif tugash vaqtini KEYINGA surgan bo'lsa.
+  // Buy-now muddatdan oldin yopganda end_time ertaroq bo'ladi — bu uzaytirish emas.
   const extended =
     auction.original_end_time != null &&
-    Date.parse(auction.original_end_time) !== Date.parse(auction.end_time)
+    Date.parse(auction.end_time) > Date.parse(auction.original_end_time)
 
   return (
     <div>
@@ -146,19 +149,32 @@ function LotDetail({ auctionId }: { auctionId: number }) {
           <BreadcrumbItem>
             <BreadcrumbLink href="/catalog/hammasi">Katalog</BreadcrumbLink>
           </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
+          {/* Mobilda nom pastda sarlavhada bor — non-wrapping bir qator qolsin. */}
+          <BreadcrumbSeparator className="max-sm:hidden" />
+          <BreadcrumbItem className="max-sm:hidden">
             <BreadcrumbPage className="line-clamp-1">{item.title}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="grid gap-8 md:grid-cols-2 md:gap-10">
+      {auction.continued_as_auction_id != null && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-brand-soft px-4 py-3">
+          <p className="flex items-center gap-2 text-sm text-foreground">
+            <TrendingDownIcon className="size-4 shrink-0 text-brand" aria-hidden="true" />
+            Taklif tushmadi — lot pasayuvchi auksionda davom etmoqda.
+          </p>
+          <Button asChild size="sm">
+            <Link href={`/lot/${auction.continued_as_auction_id}`}>Joriy narxni koʻrish</Link>
+          </Button>
+        </div>
+      )}
+
+      <div className="grid gap-5 md:grid-cols-2 md:gap-10">
         <Gallery title={item.title} images={imageUrls} />
 
         <div className="grid gap-5">
           <div className="grid gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
               {item.title}
             </h1>
             <div className="flex flex-wrap items-center gap-2">
@@ -167,15 +183,23 @@ function LotDetail({ auctionId }: { auctionId: number }) {
               </Badge>
               {auction.status === "active" ? (
                 <DeadlineBar endsAt={auction.end_time} inline />
+              ) : auction.status === "scheduled" ? (
+                <Badge variant="secondary">Rejalashtirilgan</Badge>
               ) : (
                 <Badge variant="neutral">Tugagan</Badge>
               )}
             </div>
           </div>
 
-          <div className="grid gap-1 rounded-xl border border-border bg-card p-4">
+          <div id="price-card" className="grid gap-1 rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm text-muted-foreground">Joriy narx</span>
+              <span className="text-sm text-muted-foreground">
+                {auction.status === "scheduled"
+                  ? "Boshlangʻich narx"
+                  : auction.pricing_mode === "descending"
+                    ? "Hozirgi narx · pasaymoqda"
+                    : "Joriy narx"}
+              </span>
               {liveStatus === "open" && (
                 <span className="flex items-center gap-1 text-xs font-medium text-success">
                   <RadioIcon className="size-3.5 shrink-0" aria-hidden="true" />
@@ -213,8 +237,14 @@ function LotDetail({ auctionId }: { auctionId: number }) {
             )}
           </div>
 
-          <BidPanel auction={auction} onBid={refresh} />
-          <div className="flex flex-col gap-2 sm:flex-row *:flex-1">
+          <div id="bid-panel" className="scroll-mt-24">
+            {auction.pricing_mode === "descending" ? (
+              <DescendingPanel auction={auction} onRefresh={refresh} />
+            ) : (
+              <BidPanel auction={auction} onBid={refresh} />
+            )}
+          </div>
+          <div className="flex gap-2 *:flex-1">
             <WatchButton auctionId={auction.id} className="w-full" />
             <MessageSellerButton
               itemId={item.id}
@@ -229,7 +259,7 @@ function LotDetail({ auctionId }: { auctionId: number }) {
         </div>
       </div>
 
-      <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-12">
+      <div className="mt-10 grid gap-10 md:mt-12 md:grid-cols-2 md:gap-12">
         <LotSpecs item={item} auction={auction} />
 
         <section>
@@ -242,9 +272,15 @@ function LotDetail({ auctionId }: { auctionId: number }) {
         </section>
       </div>
 
-      <div className="mt-12">
-        <BidHistory auction={auction} reloadKey={historyKey} onChanged={refresh} />
+      <div className="mt-10 md:mt-12">
+        {auction.pricing_mode !== "descending" && (
+          <BidHistory auction={auction} reloadKey={historyKey} onChanged={refresh} />
+        )}
       </div>
+
+      <MobileBidBar auction={auction} targetId="bid-panel" priceId="price-card" />
+      {/* Yopishqoq panel ostida kontent qolib ketmasin. */}
+      {auction.status === "active" && <div className="h-16 md:hidden" aria-hidden="true" />}
     </div>
   )
 }

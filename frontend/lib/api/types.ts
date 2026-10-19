@@ -12,7 +12,23 @@ export type ItemStatus =
   | "pending"
   | "active"
   | "sold"
-  | "cancelled";
+  | "cancelled"
+  /** Taklifli e'lon muddati tugadi, zaxira qolgan — qayta joylash mumkin. */
+  | "expired";
+
+/** Sotish rejimi. null — hali e'lon qilinmagan qoralama. */
+export type ListingType = "offer" | "auction";
+
+/** Narx prognozi nuqtasi. price — tiyin (string). */
+export interface PricePoint {
+  at: string;
+  price: string;
+  days_from_now: number;
+  is_end: boolean;
+}
+
+/** Auksion narx yo'nalishi. */
+export type PricingMode = "ascending" | "descending";
 
 export type AuctionStatus =
   | "scheduled"
@@ -116,6 +132,15 @@ export interface Item {
   /** Rezerv narx BORLIGI. Qiymatning o'zi javobda hech qachon kelmaydi. */
   has_reserve: boolean;
   item_images: ItemImage[];
+  /** Qayta joylangan e'lon bo'lsa — asl (sotilmagan) e'lon id'si. */
+  relisted_from_id: number | null;
+  listing_type: ListingType | null;
+  /** Jami va hali sotilmagan dona. Auksion e'loni — 1 dona. */
+  quantity_total: number;
+  quantity_available: number;
+  listing_duration_days: number | null;
+  /** Taklifli e'lon muddati (ISO). Auksionda muddat auction.end_time'da. */
+  listing_ends_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -150,6 +175,21 @@ export interface Auction {
   closed_at: string | null;
   /** RESERVE_NOT_MET bo'lganda sotuvchining "eng yuqori taklifga sotish" muddati. */
   second_chance_expires_at: string | null;
+  /** tiyin (string) — "hoziroq sotib olish" narxi; null = o'chiq. */
+  buy_now_price: string | null;
+  /** Buy-now hozir mumkinmi. Server hisoblaydi (o'suvchida — rezervgacha; pasayuvchida — faol bo'lsa). */
+  buy_now_available: boolean;
+  /** "ascending" — bidlar narxni oshiradi; "descending" — narx vaqt bilan pasayadi, birinchi xarid yutadi. */
+  pricing_mode: PricingMode;
+  /** tiyin (string) — pasayuvchida har oraliqdagi pasayish. */
+  price_decrement: string | null;
+  price_drop_interval_minutes: number | null;
+  /** Pasayuvchida keyingi narx tushishi (ISO); chegaraga yetgan yoki faol emas — null. */
+  next_price_drop_at: string | null;
+  /** Taklifsiz tugab, pasayuvchi auksionda davom etgan bo'lsa — yangi auksion id'si. */
+  continued_as_auction_id: number | null;
+  /** Pasayuvchi auksion narx prognozi: har kun belgisida va tugashda kutilayotgan narx. */
+  price_forecast: PricePoint[];
   created_at: string;
   updated_at: string;
 }
@@ -170,7 +210,12 @@ export interface Bid {
 
 export interface Order {
   id: number;
-  auction_id: number;
+  /** Manba — auksion YOKI qabul qilingan taklif (aynan bittasi). */
+  auction_id: number | null;
+  offer_id: number | null;
+  quantity: number;
+  /** tiyin (string) — dona narxi; final_price = quantity x unit_price */
+  unit_price: string;
   item_id: number;
   buyer_id: number;
   seller_id: number;

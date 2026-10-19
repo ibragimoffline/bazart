@@ -1,43 +1,57 @@
 "use client"
 
 import Link from "next/link"
-import { ImageIcon, GavelIcon } from "lucide-react"
+import { ImageIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { formatTiyin } from "@/lib/format"
 import type { Lot, ItemCondition } from "@/lib/api/types"
 import { heroImage } from "@/lib/item-image"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { DeadlineBar } from "@/components/ui/deadline-bar"
 
-const CONDITION: Record<
-  ItemCondition,
-  { label: string; variant: "default" | "secondary" }
-> = {
-  new: { label: "Yangi", variant: "default" },
-  used: { label: "Ishlatilgan", variant: "secondary" },
-  refurbished: { label: "Tiklangan", variant: "secondary" },
+const CONDITION_LABEL: Record<ItemCondition, string> = {
+  new: "Yangi",
+  used: "Ishlatilgan",
+  refurbished: "Tiklangan",
 }
 
+/** "Auksion · 3 ta taklif" — narx ostidagi bir qator jim tafsilot. */
+function detailLine(lot: Lot): string {
+  const { auction } = lot
+  const descending = auction.pricing_mode === "descending"
+  return [
+    descending ? "Narxi pasaymoqda" : "Auksion",
+    descending ? null : auction.bid_count > 0 ? `${auction.bid_count} ta taklif` : "Taklif yoʻq",
+  ]
+    .filter(Boolean)
+    .join(" · ")
+}
+
+/**
+ * Mahsulot kartochkasi (do'kon katalogi uslubi): yumshoq plitka ustida foto,
+ * burchakda ingichka chegarali teg (holat · daraja), muddat "pill"i; ostida qalin
+ * nom va narx. Butun karta — bitta havola, telefonda katta bosish maydoni.
+ */
 function LotCard({ lot, className }: { lot: Lot; className?: string }) {
   const { auction, item } = lot
-  const cond = CONDITION[item.condition]
-  const href = `/lot/${auction.id}`
   const ended = auction.status !== "active"
   const hero = heroImage(item)
+  const tag = CONDITION_LABEL[item.condition]
 
   return (
-    <div
+    <Link
+      href={`/lot/${auction.id}`}
       className={cn(
-        "flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs transition-shadow duration-200 hover:shadow-md",
+        "group flex flex-col gap-3 rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-4 focus-visible:ring-offset-background",
         className
       )}
     >
-      <Link
-        href={href}
-        aria-label={item.title}
-        className="relative block aspect-square overflow-hidden rounded-t-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      <div
+        className={cn(
+          "relative aspect-4/5 overflow-hidden rounded-xl",
+          hero ? "bg-muted" : "bg-brand-soft"
+        )}
       >
         {hero ? (
           // Backend host'idagi rasm — next/image emas, oddiy img: host prod'da
@@ -47,20 +61,17 @@ function LotCard({ lot, className }: { lot: Lot; className?: string }) {
             src={hero}
             alt={item.title}
             loading="lazy"
-            className="absolute inset-0 size-full object-cover"
+            className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-105"
           />
         ) : (
-          <div className="absolute inset-0 grid place-items-center bg-muted p-3">
-            <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
-              <ImageIcon className="size-6" aria-hidden="true" />
-              <span className="line-clamp-3 text-xs">{item.title}</span>
-            </div>
+          <div className="absolute inset-0 grid place-items-center">
+            <ImageIcon className="size-10 text-brand/30" aria-hidden="true" />
           </div>
         )}
 
-        <div className="pointer-events-none absolute inset-x-2 top-2 flex flex-col items-start gap-1">
-          <Badge variant={cond.variant}>{cond.label}</Badge>
-        </div>
+        <span className="pointer-events-none absolute top-2.5 left-2.5 rounded-md border border-foreground/70 bg-card px-1.5 py-0.5 text-xs font-semibold tracking-wide text-foreground uppercase">
+          {tag}
+        </span>
 
         {ended ? (
           <div className="absolute inset-0 grid place-items-center bg-background/60">
@@ -71,34 +82,18 @@ function LotCard({ lot, className }: { lot: Lot; className?: string }) {
         ) : (
           <DeadlineBar endsAt={auction.end_time} />
         )}
-      </Link>
-
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <Link
-          href={href}
-          tabIndex={-1}
-          className="outline-none focus-visible:underline"
-        >
-          <h3 className="line-clamp-2 min-h-10 text-sm font-medium text-foreground">
-            {item.title}
-          </h3>
-        </Link>
-
-        <div className="mt-auto grid gap-0.5">
-          <span className="text-xs text-muted-foreground">Joriy narx</span>
-          <span className="text-base font-semibold tabular-nums text-foreground">
-            {formatTiyin(auction.current_price)}
-          </span>
-        </div>
-
-        <Button asChild variant="secondary" size="sm" className="mt-1 w-full">
-          <Link href={href}>
-            <GavelIcon aria-hidden="true" />
-            Taklif berish
-          </Link>
-        </Button>
       </div>
-    </div>
+
+      <div className="grid gap-1 px-0.5">
+        <h3 className="line-clamp-2 text-sm font-semibold text-foreground underline-offset-2 group-hover:underline">
+          {item.title}
+        </h3>
+        <p className="text-lg font-bold tabular-nums text-foreground">
+          {formatTiyin(auction.current_price)}
+        </p>
+        <p className="truncate text-xs text-muted-foreground">{detailLine(lot)}</p>
+      </div>
+    </Link>
   )
 }
 

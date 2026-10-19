@@ -175,7 +175,7 @@ function MessageThread({ conversationId }: { conversationId: number }) {
           {conv.item_id != null && (
             <Link
               href={`/lot/${conv.item_id}`}
-              className="text-sm text-primary underline-offset-4 outline-none hover:underline focus-visible:underline"
+              className="text-sm text-primary underline-offset-4 outline-none underline decoration-foreground/30 hover:decoration-foreground focus-visible:underline"
             >
               Mahsulot #{conv.item_id}
             </Link>

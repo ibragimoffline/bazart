@@ -8,10 +8,19 @@
 
 import { apiFetch, API_BASE, ApiError } from "@/lib/api/client";
 import { getAccessToken } from "@/lib/api/token";
-import type { Item, ItemImage, Auction, ItemCondition } from "@/lib/api/types";
+import type {
+  Item,
+  ItemImage,
+  Auction,
+  AuctionStatus,
+  ItemCondition,
+  PricingMode,
+} from "@/lib/api/types";
 
 export type CreateItemPayload = {
   title: string;
+  /** Necha dona sotiladi (taklifli e'lon). Auksion — faqat 1. */
+  quantity?: number;
   description?: string;
   category_id?: number;
   condition: ItemCondition;
@@ -34,6 +43,29 @@ export type CreateItemPayload = {
   /** tiyin (string) */
   reserve_price?: string;
 };
+
+/** Qoralamani yangilash (PATCH /items/{id}). Miqdor faqat e'lon qilinguncha o'zgaradi. */
+export function updateItem(itemId: number, payload: Partial<CreateItemPayload>): Promise<Item> {
+  return apiFetch<Item>(`/items/${itemId}`, { method: "PATCH", body: payload });
+}
+
+/**
+ * Boshlanmagan auksionning narx rejimini to'liq almashtirish (PATCH /auctions/{id}/pricing).
+ * Berilmagan maydon tozalanadi. reserve_price: o'suvchida — rezerv, pasayuvchida — chegara.
+ */
+export function updateAuctionPricing(
+  auctionId: number,
+  payload: {
+    pricing_mode: PricingMode;
+    price_decrement?: string;
+    price_drop_interval_minutes?: number;
+    reserve_price?: string;
+    buy_now_price?: string;
+    dutch_fallback_floor?: string;
+  }
+): Promise<Auction> {
+  return apiFetch<Auction>(`/auctions/${auctionId}/pricing`, { method: "PATCH", body: payload });
+}
 
 /** Tovar (item) yaratish. POST /items → Item. */
 export function createItem(payload: CreateItemPayload): Promise<Item> {
@@ -96,11 +128,62 @@ export type CreateAuctionPayload = {
   minimum_bid_increment: string;
   /** tiyin (string) */
   reserve_price?: string;
+  /** tiyin (string) — "hoziroq sotib olish" narxi, boshlang'ich narxdan yuqori. */
+  buy_now_price?: string;
+  /** "descending" — golland auksioni: reserve_price (pastki chegara) majburiy, buy_now_price yo'q. */
+  pricing_mode?: PricingMode;
+  /**
+   * tiyin (string) — sotuvchi roziligi: taklifsiz tugasa 3 kunlik pasayuvchi auksionga
+   * o'tadi, bu — o'sha bosqichning eng past narxi. Faqat o'suvchi auksionda; ommaga oshkor emas.
+   */
+  dutch_fallback_floor?: string;
+  /** tiyin (string) — har oraliqdagi pasayish (faqat descending). */
+  price_decrement?: string;
+  /** 5..1440 daqiqa (faqat descending). */
+  price_drop_interval_minutes?: number;
 };
 
 /** Auksion ochish. POST /auctions → Auction. duration_days beriladi (end_time EMAS). */
 export function createAuction(payload: CreateAuctionPayload): Promise<Auction> {
   return apiFetch<Auction>("/auctions", { method: "POST", body: payload });
+}
+
+/**
+ * Lotni bekor qilish. DELETE /items/{id} → Item.
+ * Jonli auksion bo'lsa u ham bekor qilinadi; taklif tushgan yoki yakunlangan
+ * auksion uchun backend 409 qaytaradi.
+ */
+export function cancelListing(itemId: number): Promise<Item> {
+  return apiFetch<Item>(`/items/${itemId}`, { method: "DELETE" });
+}
+
+export type RelistPayload = {
+  duration_days: 3 | 5 | 7;
+  /** tiyin (string) */
+  starting_price: string;
+  /** tiyin (string) */
+  minimum_bid_increment?: string;
+  /** tiyin (string) */
+  reserve_price?: string;
+  /** tiyin (string) */
+  buy_now_price?: string;
+};
+
+/**
+ * Sotilmagan lotni qayta joylash. POST /auctions/{id}/relist → YANGI Auction.
+ * E'lon nusxa ko'chiriladi (rasmlar bilan); har lot faqat bir marta qayta joylanadi.
+ */
+export function relistAuction(auctionId: number, payload: RelistPayload): Promise<Auction> {
+  return apiFetch<Auction>(`/auctions/${auctionId}/relist`, { method: "POST", body: payload });
+}
+
+/** Sotuvchining auksionlari (berilgan holatda). GET /auctions?seller_id&status → Auction[]. */
+export function listSellerAuctions(sellerId: number, status: AuctionStatus): Promise<Auction[]> {
+  const q = new URLSearchParams();
+  q.set("seller_id", String(sellerId));
+  q.set("status", status);
+  q.set("limit", "100");
+  return apiFetch<Auction[]>(`/auctions?${q.toString()}`, { auth: false });
 }
 
 /** Sotuvchining tovarlari. GET /items?seller_id={id} → Item[]. */

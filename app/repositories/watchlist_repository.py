@@ -32,3 +32,14 @@ class WatchlistRepository:
             .order_by(Watchlist.created_at.desc())
         )
         return list(self.db.scalars(statement))
+
+    def list_user_ids_for_auction(self, auction_id: int) -> list[int]:
+        statement = select(Watchlist.user_id).where(Watchlist.auction_id == auction_id)
+        return list(self.db.scalars(statement))
+
+    def copy_to_auction(self, source_auction_id: int, target_auction_id: int) -> list[int]:
+        """Kuzatuvchilarni yangi auksionga ko'chiradi (davom etgan lot). COMMIT QILMAYDI."""
+        user_ids = self.list_user_ids_for_auction(source_auction_id)
+        for user_id in user_ids:
+            self.db.add(Watchlist(user_id=user_id, auction_id=target_auction_id))
+        return user_ids

@@ -5,10 +5,17 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { RotateCcwIcon, SearchXIcon, SlidersHorizontalIcon, XIcon } from "lucide-react"
 
 import { formatSom } from "@/lib/format"
-import type { Lot, Category, ItemCondition } from "@/lib/api/types"
-import { listLots, listCategories, listItems } from "@/lib/api/endpoints"
+import type { Category, ItemCondition } from "@/lib/api/types"
+import { listCategories, listItems } from "@/lib/api/endpoints"
+import {
+  byEndingSoon,
+  byNewest,
+  entryPrice,
+  listCatalogEntries,
+  type CatalogEntry,
+} from "@/lib/catalog"
 import { ApiError } from "@/lib/api/client"
-import { LotCard } from "@/components/lot/lot-card"
+import { EntryCard } from "@/components/catalog/entry-card"
 import { ProductCardSkeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,7 +66,7 @@ function parseId(v: string | null): number | null {
 }
 
 function filterSortLots(
-  lots: Lot[],
+  lots: CatalogEntry[],
   opts: {
     catId: number | null
     matchIds: Set<number> | null
@@ -68,24 +75,21 @@ function filterSortLots(
     max: number
     sort: SortKey
   }
-): Lot[] {
+): CatalogEntry[] {
   const { catId, matchIds, conds, min, max, sort } = opts
   const list = lots.filter((l) => {
     if (catId != null && l.item.category_id !== catId) return false
     if (matchIds && !matchIds.has(l.item.id)) return false
     if (conds.length && !conds.includes(l.item.condition)) return false
-    const priceSoum = Number(l.auction.current_price) / 100
+    const priceSoum = entryPrice(l) / 100
     if (min && priceSoum < min) return false
     if (max && priceSoum > max) return false
     return true
   })
-  const t = (s: string) => new Date(s).getTime()
-  const price = (l: Lot) => Number(l.auction.current_price)
-  if (sort === "price-asc") return list.sort((a, b) => price(a) - price(b))
-  if (sort === "price-desc") return list.sort((a, b) => price(b) - price(a))
-  if (sort === "new")
-    return list.sort((a, b) => t(b.auction.created_at) - t(a.auction.created_at))
-  return list.sort((a, b) => t(a.auction.end_time) - t(b.auction.end_time))
+  if (sort === "price-asc") return list.sort((a, b) => entryPrice(a) - entryPrice(b))
+  if (sort === "price-desc") return list.sort((a, b) => entryPrice(b) - entryPrice(a))
+  if (sort === "new") return list.sort(byNewest)
+  return list.sort(byEndingSoon)
 }
 
 /**
@@ -144,7 +148,7 @@ function CatalogLots({ categorySlug }: { categorySlug: string }) {
   const pathname = usePathname()
   const sp = useSearchParams()
 
-  const [lots, setLots] = React.useState<Lot[] | null>(null)
+  const [lots, setLots] = React.useState<CatalogEntry[] | null>(null)
   const [categories, setCategories] = React.useState<Category[]>([])
   const [error, setError] = React.useState<string | null>(null)
   const [retry, setRetry] = React.useState(0)
@@ -152,7 +156,7 @@ function CatalogLots({ categorySlug }: { categorySlug: string }) {
 
   React.useEffect(() => {
     let alive = true
-    Promise.all([listLots(), listCategories().catch(() => [])])
+    Promise.all([listCatalogEntries(), listCategories().catch(() => [])])
       .then(([l, c]) => {
         if (alive) {
           setLots(l)
@@ -298,7 +302,7 @@ function CatalogLots({ categorySlug }: { categorySlug: string }) {
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-          <h1 className="min-w-0 break-words text-xl font-semibold text-foreground">{label}</h1>
+          <h1 className="min-w-0 break-words font-heading text-xl font-bold tracking-tight text-foreground uppercase md:text-2xl">{label}</h1>
           <span className="text-sm tabular-nums text-muted-foreground">
             {loading ? "…" : `${results.length} ta`}
           </span>
@@ -306,7 +310,7 @@ function CatalogLots({ categorySlug }: { categorySlug: string }) {
             <button
               type="button"
               onClick={() => update({ q: null })}
-              className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-sm font-medium text-primary outline-none underline decoration-foreground/30 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50 underline-offset-4"
             >
               <XIcon className="size-3.5" aria-hidden="true" />
               Qidiruvni tozalash
@@ -403,7 +407,7 @@ function CatalogLots({ categorySlug }: { categorySlug: string }) {
           <button
             type="button"
             onClick={() => update({ cond: null, min: null, max: null, region: null, district: null })}
-            className="rounded-md px-2 py-1 text-xs font-medium text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="rounded-md px-2 py-1 text-xs font-medium text-primary outline-none underline decoration-foreground/30 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50 underline-offset-4"
           >
             Tozalash
           </button>
@@ -426,7 +430,7 @@ function CatalogLots({ categorySlug }: { categorySlug: string }) {
           ) : results.length > 0 ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {results.map((lot) => (
-                <LotCard key={lot.auction.id} lot={lot} />
+                <EntryCard key={lot.key} entry={lot} />
               ))}
             </div>
           ) : (

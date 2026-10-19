@@ -15,10 +15,19 @@ export type PreviewData = {
   year?: string
   defects?: string
   equipment: string[]
+  /** "offer" — narx takliflari (dona narxi + miqdor), "auction" — auksion. */
+  mode: "offer" | "auction"
+  /** Pasayuvchi auksion sozlamalari (bo'lsa). */
+  descending?: { decrementSoum: number; intervalLabel: string; floorSoum: number }
+  /** Rozilik berilgan bo'lsa — pasayuvchi zaxira bosqichining eng past narxi (so'm). */
+  dutchFallbackFloorSoum?: number
+  quantity: number
   startingSoum: number
   incrementSoum: number
   incrementIsAuto: boolean
   reserveSoum: number
+  /** 0 — "hoziroq sotib olish" o'chiq. */
+  buyNowSoum: number
   durationDays: number
   endsAt: string | null
   place: string
@@ -60,8 +69,10 @@ function ListingPreview({
       <div className="flex items-start gap-2 rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
         <InfoIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <p>
-          Mahsulot xaridorlarga shunday koʻrinadi. Joylangach auksion darhol boshlanadi —
-          boshlangʻich narx va muddatni keyin oʻzgartirib boʻlmaydi.
+          Mahsulot xaridorlarga shunday koʻrinadi.{" "}
+          {data.mode === "offer"
+            ? "Joylangach eʼlon darhol ochiladi — miqdor va muddatni keyin oʻzgartirib boʻlmaydi."
+            : "Joylangach auksion darhol boshlanadi — boshlangʻich narx va muddatni keyin oʻzgartirib boʻlmaydi."}
         </p>
       </div>
 
@@ -100,14 +111,17 @@ function ListingPreview({
           </div>
 
           <div className="grid gap-1 rounded-xl border border-border bg-card p-4">
-            <span className="text-sm text-muted-foreground">Boshlangʻich narx</span>
+            <span className="text-sm text-muted-foreground">
+              {data.mode === "offer" ? "Narx (1 dona) — xaridorlar oʻz narxini taklif qiladi" : "Boshlangʻich narx"}
+            </span>
             <span className="text-2xl font-semibold tabular-nums text-foreground">
               {formatSom(data.startingSoum)}
             </span>
             <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <CalendarClockIcon className="size-4 shrink-0" aria-hidden="true" />
               {data.durationDays} kun
-              {data.endsAt ? ` · ${data.endsAt} da tugaydi` : ""}
+              {data.endsAt ? ` · ${data.endsAt} da ${data.mode === "offer" ? "yopiladi" : "tugaydi"}` : ""}
+              {data.mode === "offer" ? ` · ${data.quantity} dona` : ""}
             </span>
           </div>
 
@@ -123,6 +137,21 @@ function ListingPreview({
         {data.defects && <Row label="Nuqsonlar">{data.defects}</Row>}
         {data.year && <Row label="Ishlab chiqarilgan yili">{data.year}</Row>}
         {data.equipment.length > 0 && <Row label="Komplektatsiya">{data.equipment.join(", ")}</Row>}
+        {data.descending && (
+          <>
+            <Row label="Narx pasayishi">
+              {formatSom(data.descending.decrementSoum)} / {data.descending.intervalLabel}
+            </Row>
+            <Row label="Eng past narx">{formatSom(data.descending.floorSoum)}</Row>
+          </>
+        )}
+        {data.dutchFallbackFloorSoum != null && (
+          <Row label="Taklif tushmasa">
+            3 kunlik pasayuvchi auksion, eng past {formatSom(data.dutchFallbackFloorSoum)}
+          </Row>
+        )}
+        {data.mode === "auction" && !data.descending && (
+          <>
         <Row label="Minimal qadam">
           {formatSom(data.incrementSoum)}
           {data.incrementIsAuto && (
@@ -130,6 +159,11 @@ function ListingPreview({
           )}
         </Row>
         <Row label="Zaxira narx">{data.reserveSoum > 0 ? formatSom(data.reserveSoum) : "Yoʻq"}</Row>
+        <Row label="Hoziroq sotib olish">
+          {data.buyNowSoum > 0 ? formatSom(data.buyNowSoum) : "Yoʻq"}
+        </Row>
+          </>
+        )}
         {data.videoUrl && <Row label="Video">{data.videoUrl}</Row>}
       </dl>
 

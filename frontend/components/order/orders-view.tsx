@@ -76,7 +76,7 @@ function OrdersView() {
   return (
     <div className="grid gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <h1 className="font-heading text-xl font-bold tracking-tight text-foreground uppercase md:text-2xl">
           Buyurtmalarim
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -175,6 +175,7 @@ function OrderRow({ order, role }: { order: Order; role: Tab }) {
         </div>
         <p className="mt-0.5 text-sm text-muted-foreground">
           {role === "buyer" ? "Mahsulot" : "Sotilgan mahsulot"} #{order.item_id} ·{" "}
+          {order.quantity > 1 && <span className="tabular-nums">{order.quantity} dona · </span>}
           <span className="font-medium tabular-nums text-foreground">
             {formatTiyin(order.final_price)}
           </span>

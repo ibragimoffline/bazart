@@ -50,4 +50,16 @@ if settings.celery_beat_enabled:
             "task": "app.tasks.scheduled.auto_complete_orders_task",
             "schedule": schedule(settings.auto_complete_interval_seconds),
         },
+        "notify-ending-soon": {
+            "task": "app.tasks.scheduled.notify_ending_soon_task",
+            "schedule": schedule(settings.ending_soon_interval_seconds),
+        },
+        "price-drop-alerts": {
+            "task": "app.tasks.scheduled.price_drop_alerts_task",
+            "schedule": schedule(settings.price_drop_interval_seconds),
+        },
+        "expire-offers": {
+            "task": "app.tasks.scheduled.expire_offers_task",
+            "schedule": schedule(settings.offer_expiry_interval_seconds),
+        },
     }

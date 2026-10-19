@@ -10,6 +10,7 @@ from app.models.item import Item, ItemImage
 from app.models.legal_consent import LegalConsent
 from app.models.message import Conversation, Message
 from app.models.notification import Notification
+from app.models.offer import Offer, OfferEvent
 from app.models.order import Order
 from app.models.otp import OtpCode
 from app.models.payment import Payment, PaymentMethod
@@ -38,6 +39,8 @@ __all__ = [
     "Order",
     "OtpCode",
     "PaymentMethod",
+    "Offer",
+    "OfferEvent",
     "Payment",
     "Region",
     "Review",

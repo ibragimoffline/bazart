@@ -2,13 +2,13 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { GavelIcon, ShieldCheckIcon, InfoIcon } from "lucide-react"
+import { GavelIcon, ShieldCheckIcon, InfoIcon, ShoppingBagIcon } from "lucide-react"
 
 import { formatTiyin, formatNumber } from "@/lib/format"
 import type { Auction } from "@/lib/api/types"
-import { placeBid } from "@/lib/api/endpoints"
+import { buyNow, placeBid } from "@/lib/api/endpoints"
 import { ApiError } from "@/lib/api/client"
 import {
   listMyConsents,
@@ -48,6 +48,7 @@ function BidPanel({
   const status = useAuthStore((s) => s.status)
   const user = useAuthStore((s) => s.user)
   const pathname = usePathname()
+  const router = useRouter()
 
   // Server hisoblagan minimum (qadam jadvali bilan) — frontend o'zi hisoblamaydi.
   const minNextTiyin = minNextBidTiyin(auction)
@@ -62,6 +63,9 @@ function BidPanel({
   const [consents, setConsents] = React.useState<LegalConsent[] | null>(null)
   const [agreed, setAgreed] = React.useState(false)
   const [nowMs, setNowMs] = React.useState(0)
+  const [buyOpen, setBuyOpen] = React.useState(false)
+  const [buying, setBuying] = React.useState(false)
+  const [buyError, setBuyError] = React.useState<string | null>(null)
 
   // Minimal taklif o'zgarsa (bid, jonli xabar) — taklifni yangi minimumga tenglash.
   const [synced, setSynced] = React.useState(minNextTiyin)
@@ -145,23 +149,56 @@ function BidPanel({
   const needsConsent = consents !== null && !hasConsented(consents, BID_DOCUMENTS)
   const amountTiyin = amount * 100
 
+  /** Rozilikni (kerak bo'lsa) yozadi. Xato bo'lsa matnini qaytaradi, aks holda null. */
+  const ensureConsent = async (): Promise<string | null> => {
+    if (!needsConsent) return null
+    try {
+      const recorded = await Promise.all(BID_DOCUMENTS.map((d) => recordConsent(d)))
+      setConsents((prev) => [...(prev ?? []), ...recorded])
+      return null
+    } catch (e) {
+      return e instanceof ApiError
+        ? e.detail
+        : "Roziligingizni saqlab boʻlmadi. Qayta urinib koʻring."
+    }
+  }
+
+  /** Buy-now: tasdiq oynasidagi "Sotib olish" — rozilik (kerak bo'lsa) + xarid. */
+  const confirmBuyNow = async () => {
+    setBuyError(null)
+    setBuying(true)
+    try {
+      const consentError = await ensureConsent()
+      if (consentError) {
+        setBuyError(consentError)
+        return
+      }
+      await buyNow(auction.id)
+      setBuyOpen(false)
+      toast.success("Mahsulot sizniki! Endi toʻlovni amalga oshiring.")
+      onBid()
+      router.push("/orders")
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        setBuyError("Kechikdingiz — bu imkoniyat yopildi yoki mahsulot allaqachon sotildi.")
+        onBid()
+      } else {
+        setBuyError(e instanceof ApiError ? e.detail : "Sotib olib boʻlmadi. Qayta urinib koʻring.")
+      }
+    } finally {
+      setBuying(false)
+    }
+  }
+
   /** Rozilikni (kerak bo'lsa) yozib, keyin taklifni yuboradi. */
   const send = async () => {
     setError(null)
     setSubmitting(true)
     try {
-      if (needsConsent) {
-        try {
-          const recorded = await Promise.all(BID_DOCUMENTS.map((d) => recordConsent(d)))
-          setConsents((prev) => [...(prev ?? []), ...recorded])
-        } catch (e) {
-          setError(
-            e instanceof ApiError
-              ? e.detail
-              : "Roziligingizni saqlab boʻlmadi. Qayta urinib koʻring."
-          )
-          return
-        }
+      const consentError = await ensureConsent()
+      if (consentError) {
+        setError(consentError)
+        return
       }
       const bid = await placeBid(
         auction.id,
@@ -205,8 +242,39 @@ function BidPanel({
     void send()
   }
 
+  const showBuyNow = auction.buy_now_available && auction.buy_now_price != null
+
   return (
     <div className="grid gap-3 rounded-xl border border-border bg-card p-4">
+      {showBuyNow && auction.buy_now_price != null && (
+        <div className="grid gap-2 border-b border-border pb-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-sm text-muted-foreground">Hoziroq sotib olish</span>
+            <span className="font-heading text-lg font-semibold tabular-nums text-foreground">
+              {formatTiyin(auction.buy_now_price)}
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="lg"
+            disabled={consents === null}
+            onClick={() => {
+              setBuyError(null)
+              setBuyOpen(true)
+            }}
+          >
+            <ShoppingBagIcon aria-hidden="true" />
+            Hoziroq sotib olish
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Kutmasdan shu narxda olasiz.{" "}
+            {auction.has_reserve
+              ? "Takliflar zaxira narxga yetgach bu imkoniyat yopiladi."
+              : "Birinchi taklif tushishi bilan bu imkoniyat yopiladi."}
+          </p>
+        </div>
+      )}
+
       <div className="grid gap-1.5">
         <label htmlFor="bid-amount" className="text-sm font-medium text-foreground">
           Taklif summasi, soʻm
@@ -297,6 +365,38 @@ function BidPanel({
         <ShieldCheckIcon className="size-3.5 shrink-0" aria-hidden="true" />
         Gʻolib chiqsangiz toʻlov escrow orqali himoyalanadi.
       </p>
+
+      {auction.buy_now_price != null && (
+        <ConfirmDialog
+          open={buyOpen}
+          onOpenChange={setBuyOpen}
+          title="Hoziroq sotib olasizmi?"
+          description={`Auksion shu zahoti yakunlanadi va lot sizga oʻtadi${auction.bid_count > 0 ? " — mavjud takliflar ortda qoladi" : ""}. Toʻlov escrow orqali himoyalanadi.`}
+          confirmLabel="Sotib olish"
+          cancelLabel="Yoʻq"
+          loading={buying}
+          error={buyError}
+          onConfirm={() => void confirmBuyNow()}
+        >
+          <dl className="grid gap-1 text-sm text-muted-foreground">
+            <div className="flex justify-between gap-4">
+              <dt>Narx</dt>
+              <dd className="font-semibold tabular-nums text-foreground">
+                {formatTiyin(auction.buy_now_price)}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt>Xaridor komissiyasi</dt>
+              <dd className="text-foreground">8%, toʻlovda qoʻshiladi</dd>
+            </div>
+          </dl>
+          {needsConsent && (
+            <p className="text-xs text-muted-foreground">
+              «Sotib olish» tugmasini bosib, auksion qoidalari va ommaviy ofertani qabul qilasiz.
+            </p>
+          )}
+        </ConfirmDialog>
+      )}
 
       <ConfirmDialog
         open={typoOpen}

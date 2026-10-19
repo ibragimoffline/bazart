@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from app.core.dependencies import CurrentUser, DbSession
+from app.core.dependencies import CurrentActiveUser, CurrentUser, DbSession
 from app.core.rate_limit import RateLimiter
 from app.core.request_meta import client_ip, device_id
 from app.models.auction import Auction
@@ -11,7 +11,13 @@ from app.models.enums import AuctionStatus
 from app.repositories.auction_repository import AuctionRepository
 from app.repositories.bid_repository import BidRepository
 from app.repositories.item_repository import ItemRepository
-from app.schemas.auction import AuctionCreate, AuctionRead, AuctionStatusUpdate
+from app.schemas.auction import (
+    AuctionCreate,
+    AuctionPricingUpdate,
+    AuctionRead,
+    AuctionRelist,
+    AuctionStatusUpdate,
+)
 from app.schemas.bid import BidCreate, BidRead
 from app.services.auction_service import AuctionService
 from app.services.bid_service import BidService
@@ -47,10 +53,13 @@ def create_item_auction(
 def read_auctions(
     db: DbSession,
     status_filter: AuctionStatusQuery = AuctionStatus.ACTIVE,
+    seller_id: Annotated[int | None, Query(ge=1)] = None,
     skip: SkipQuery = 0,
     limit: LimitQuery = 50,
 ) -> list[Auction]:
-    return AuctionRepository(db).list(status=status_filter, skip=skip, limit=limit)
+    return AuctionRepository(db).list(
+        status=status_filter, seller_id=seller_id, skip=skip, limit=limit
+    )
 
 
 @router.get("/{auction_id}", response_model=AuctionRead)
@@ -69,6 +78,17 @@ def set_auction_status(
     db: DbSession,
 ) -> Auction:
     return AuctionService(db).set_status_by_seller(auction_id, current_user, payload.status)
+
+
+@router.patch("/{auction_id}/pricing", response_model=AuctionRead)
+def update_auction_pricing(
+    auction_id: int,
+    payload: AuctionPricingUpdate,
+    current_user: CurrentActiveUser,
+    db: DbSession,
+) -> Auction:
+    """Narx rejimini (o'suvchi/pasayuvchi, buy-now, rezerv) boshlanishgacha o'zgartirish."""
+    return AuctionService(db).update_pricing(auction_id, current_user, payload)
 
 
 @router.post("/{auction_id}/close", response_model=AuctionRead)
@@ -93,6 +113,46 @@ def accept_second_chance(
 ) -> Auction:
     """Sotuvchi second-chance taklifni qabul qiladi — eng yuqori bidderga sotadi."""
     return AuctionService(db).accept_second_chance(auction_id, current_user)
+
+
+@router.post(
+    "/{auction_id}/buy-now",
+    response_model=AuctionRead,
+    dependencies=[Depends(RateLimiter("bid", 60))],
+)
+def buy_now(
+    auction_id: int, current_user: CurrentActiveUser, db: DbSession, request: Request
+) -> Auction:
+    """Lotni "hoziroq sotib olish" narxida sotib olish (faqat birinchi taklifgacha).
+
+    Bloklangan foydalanuvchi sotib ololmaydi (CurrentActiveUser). Anti-fraud izi
+    (ip/device/user-agent) oddiy bid kabi yoziladi.
+    """
+    ua = request.headers.get("user-agent")
+    return AuctionService(db).buy_now(
+        auction_id,
+        current_user,
+        ip=client_ip(request),
+        device_id=device_id(request),
+        user_agent=ua[:512] if ua else None,
+    )
+
+
+@router.post(
+    "/{auction_id}/relist", response_model=AuctionRead, status_code=status.HTTP_201_CREATED
+)
+def relist_auction(
+    auction_id: int,
+    payload: AuctionRelist,
+    current_user: CurrentActiveUser,
+    db: DbSession,
+) -> Auction:
+    """Sotilmagan lotni yangi narx va muddat bilan qayta joylash (yangi auksion qaytadi).
+
+    CurrentActiveUser: bloklangan sotuvchi relist orqali yangi e'lon ocholmaydi
+    (POST /items ham shu tekshiruvni talab qiladi).
+    """
+    return AuctionService(db).relist(auction_id, current_user, payload)
 
 
 @router.get("/{auction_id}/bids", response_model=list[BidRead])

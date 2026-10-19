@@ -45,9 +45,10 @@ function toneFor(minutesLeft: number): Tone {
       text: "text-warning",
       fill: "[&_[data-slot=progress-indicator]]:bg-warning",
     };
+  // Xotirjam holat: ingichka och chiziq — har kartada og'ir kulrang tasma bo'lmasin.
   return {
     text: "text-muted-foreground",
-    fill: "[&_[data-slot=progress-indicator]]:bg-muted-foreground",
+    fill: "[&_[data-slot=progress-indicator]]:bg-foreground/25",
   };
 }
 
@@ -95,7 +96,7 @@ function DeadlineBar({
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-sm font-medium tabular-nums",
+          "inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-sm font-medium tabular-nums",
           tone.text,
           className
         )}
@@ -106,21 +107,24 @@ function DeadlineBar({
     );
   }
 
+  // Rasm ustida: burchakda ixcham countdown "pill" + pastki chetda ingichka o'lchagich.
+  // Fotoni yopmaydi — faqat burchak va 2px chiziq.
   return (
-    <div className={cn("absolute inset-x-0 bottom-0", className)}>
-      {/* O'lchagich chizig'i — `ui/progress` (vengeanceui) ustida. */}
+    <div className={cn("pointer-events-none absolute inset-x-0 bottom-0", className)}>
+      <span
+        className={cn(
+          "absolute bottom-2.5 left-2 inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-xs font-medium tabular-nums shadow-xs",
+          tone.text
+        )}
+      >
+        <TimerIcon className="size-3" aria-hidden="true" />
+        {ended ? "Tugadi" : format(remaining)}
+      </span>
       <Progress
         value={pct}
         aria-label="Auksion muddati"
-        className={cn("h-1 rounded-none bg-background/60", tone.fill)}
+        className={cn("h-0.5 rounded-none bg-transparent", tone.fill)}
       />
-      {/* Countdown matni. */}
-      <div className="flex items-center gap-1 bg-background/85 px-2 py-1">
-        <TimerIcon className={cn("size-3", tone.text)} aria-hidden="true" />
-        <span className={cn("text-xs font-medium tabular-nums", tone.text)}>
-          {ended ? "Tugadi" : format(remaining)}
-        </span>
-      </div>
     </div>
   );
 }

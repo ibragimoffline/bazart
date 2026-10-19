@@ -1,13 +1,17 @@
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 
-from app.core.dependencies import CurrentActiveUser, DbSession
-from app.models.enums import ItemStatus
+from app.core.dependencies import CurrentActiveUser, CurrentUser, DbSession
+from app.core.rate_limit import RateLimiter
+from app.models.enums import ItemStatus, ListingType
 from app.models.item import Item
+from app.models.offer import Offer
 from app.repositories.item_repository import ItemRepository
-from app.schemas.item import ItemCreate, ItemImageUploadRead, ItemRead, ItemUpdate
+from app.schemas.item import ItemCreate, ItemImageUploadRead, ItemPublish, ItemRead, ItemUpdate
+from app.schemas.offer import OfferCreate, OfferRead
 from app.services.item_service import ItemService
+from app.services.offer_service import OfferService
 
 router = APIRouter()
 SkipQuery = Annotated[int, Query(ge=0)]
@@ -19,6 +23,7 @@ LocationQuery = Annotated[str | None, Query(max_length=160)]
 SearchQuery = Annotated[str | None, Query(max_length=160)]
 RegionQuery = Annotated[int | None, Query()]
 DistrictQuery = Annotated[int | None, Query()]
+ListingTypeQuery = Annotated[ListingType | None, Query()]
 UploadImage = Annotated[UploadFile, File()]
 PrimaryImageForm = Annotated[bool, Form()]
 
@@ -38,6 +43,7 @@ def read_listings(
     location: LocationQuery = None,
     region_id: RegionQuery = None,
     district_id: DistrictQuery = None,
+    listing_type: ListingTypeQuery = None,
     skip: SkipQuery = 0,
     limit: LimitQuery = 50,
 ) -> list[Item]:
@@ -49,6 +55,7 @@ def read_listings(
         location=location,
         region_id=region_id,
         district_id=district_id,
+        listing_type=listing_type,
         skip=skip,
         limit=limit,
     )
@@ -90,3 +97,30 @@ def upload_item_image(
 ) -> ItemImageUploadRead:
     image = ItemService(db).upload_image(item_id, file, current_user, is_primary=is_primary)
     return ItemImageUploadRead(image=image)
+
+
+@router.post("/{item_id}/publish", response_model=ItemRead)
+def publish_listing(
+    item_id: int, payload: ItemPublish, current_user: CurrentActiveUser, db: DbSession
+) -> Item:
+    """Qoralamani taklifli e'lon qiladi (yoki muddati o'tganini qayta ochadi)."""
+    return OfferService(db).publish(item_id, current_user, payload)
+
+
+@router.post(
+    "/{item_id}/offers",
+    response_model=OfferRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RateLimiter("bid", 60))],
+)
+def create_offer(
+    item_id: int, payload: OfferCreate, current_user: CurrentActiveUser, db: DbSession
+) -> Offer:
+    """Xaridor narx va miqdor taklif qiladi (istalgan musbat dona narxi)."""
+    return OfferService(db).make_offer(item_id, current_user, payload)
+
+
+@router.get("/{item_id}/offers", response_model=list[OfferRead])
+def read_item_offers(item_id: int, current_user: CurrentUser, db: DbSession) -> list[Offer]:
+    """Sotuvchi — barcha takliflar; boshqa foydalanuvchi — faqat o'z takliflari."""
+    return OfferService(db).list_for_item(item_id, current_user)

@@ -32,7 +32,7 @@ const FLAG_COPY: Record<string, { label: string; variant: BadgeVariant }> = {
 }
 
 const linkClass =
-  "rounded-sm font-medium tabular-nums text-primary underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+  "rounded-sm font-medium tabular-nums text-primary underline-offset-4 outline-none transition-colors underline decoration-foreground/30 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
 
 function Metric({ value, label, hint }: { value: number; label: string; hint: string }) {
   return (

@@ -10,7 +10,7 @@ const ROWS: { icon: LucideIcon; title: string; text: string }[] = [
   {
     icon: ShieldCheckIcon,
     title: "Escrow himoyasi",
-    text: "Gʻolib chiqsangiz toʻlov kartangizda bloklanadi — sotuvchiga darhol oʻtmaydi. Tovarni olib tasdiqlaguningizcha mablagʻ sizniki.",
+    text: "Bitim tuzilgach (auksionda gʻalaba yoki qabul qilingan taklif) toʻlov kartangizda bloklanadi — sotuvchiga darhol oʻtmaydi. Tovarni olib tasdiqlaguningizcha mablagʻ sizniki.",
   },
   {
     icon: KeyRoundIcon,

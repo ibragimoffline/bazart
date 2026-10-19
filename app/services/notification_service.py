@@ -1,10 +1,25 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.enums import NotificationType
 from app.models.notification import Notification
 from app.models.user import User
 from app.repositories.notification_repository import NotificationRepository
+
+
+def _deep_link(payload: dict | None) -> str | None:
+    """Payload'dan saytdagi sahifa havolasi: buyurtma > taklif > auksion."""
+    base = settings.public_site_url.rstrip("/")
+    if not base or not payload:
+        return None
+    if payload.get("order_id"):
+        return f"{base}/orders/{payload['order_id']}"
+    if payload.get("offer_id"):
+        return f"{base}/offers?focus={payload['offer_id']}"
+    if payload.get("auction_id"):
+        return f"{base}/lot/{payload['auction_id']}"
+    return None
 
 
 class NotificationService:
@@ -60,7 +75,7 @@ class NotificationService:
             enqueue(
                 deliver_telegram,
                 chat_id=chat_id,
-                text=self._telegram_text(title, body),
+                text=self._telegram_text(title, body, payload),
             )
         return created
 
@@ -70,9 +85,15 @@ class NotificationService:
         return user.telegram_chat_id if user else None
 
     @staticmethod
-    def _telegram_text(title: str, body: str | None) -> str:
-        """Telegram xabar matnini shakllantiradi: sarlavha + (ixtiyoriy) tana."""
-        return f"{title}\n\n{body}" if body else title
+    def _telegram_text(title: str, body: str | None, payload: dict | None = None) -> str:
+        """Telegram xabar matni: sarlavha + (ixtiyoriy) tana + (sayt manzili bo'lsa) havola.
+
+        Havola xabarni harakatga aylantiradi ("narx tushdi" -> bir bosishda lot sahifasi).
+        `public_site_url` bo'sh bo'lsa havola qo'shilmaydi.
+        """
+        text = f"{title}\n\n{body}" if body else title
+        link = _deep_link(payload)
+        return f"{text}\n\n{link}" if link else text
 
     def list_mine(self, user: User, only_unread: bool = False) -> list[Notification]:
         return self.notifications.list_for_user(user.id, only_unread=only_unread)

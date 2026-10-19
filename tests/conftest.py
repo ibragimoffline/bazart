@@ -77,6 +77,22 @@ def _ensure_test_database_exists(url: str) -> None:
         admin_engine.dispose()
 
 
+def _reset_test_schema(engine: Engine) -> None:
+    """Test bazasi sxemasini to'liq tozalaydi (DROP SCHEMA public CASCADE).
+
+    `metadata.drop_all` faqat JORIY modellardagi jadvallarni biladi: model olib
+    tashlansa (masalan narx ko'rsatkichi), uning eski jadvali `users`ga FK bilan bog'liq
+    qolib, drop_all'ni yiqitadi va barcha testlar ERROR beradi. Shuning uchun sxema
+    butunlay qayta yaratiladi. Himoya: faqat nomi `_test` bilan tugaydigan baza.
+    """
+    database = engine.url.database or ""
+    if not database.endswith("_test"):
+        raise RuntimeError(f"Xavfsizlik: '{database}' test bazasi emas — sxema tozalanmaydi")
+    with engine.begin() as conn:
+        conn.execute(text("DROP SCHEMA public CASCADE"))
+        conn.execute(text("CREATE SCHEMA public"))
+
+
 @pytest.fixture(scope="session")
 def db_engine() -> Generator[Engine]:
     """Sessiya davomida bitta engine + sxema bir marta quriladi.
@@ -95,7 +111,7 @@ def db_engine() -> Generator[Engine]:
         )
 
     engine = create_engine(TEST_DATABASE_URL)
-    Base.metadata.drop_all(bind=engine)
+    _reset_test_schema(engine)
     Base.metadata.create_all(bind=engine)
     try:
         yield engine

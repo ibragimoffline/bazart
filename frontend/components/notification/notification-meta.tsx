@@ -2,6 +2,10 @@ import {
   BellIcon,
   ClockAlertIcon,
   HandCoinsIcon,
+  HandshakeIcon,
+  MessageSquareReplyIcon,
+  TagIcon,
+  XCircleIcon,
   GavelIcon,
   PackageCheckIcon,
   ShieldAlertIcon,
@@ -33,6 +37,12 @@ const META: Record<NotificationType, NotificationMeta> = {
   dispute: { label: "Nizo", Icon: ShieldAlertIcon, tone: "text-destructive" },
   second_chance: { label: "Ikkinchi imkoniyat", Icon: HandCoinsIcon, tone: "text-primary" },
   ending_soon: { label: "Tugashiga oz qoldi", Icon: ClockAlertIcon, tone: "text-warning" },
+  offer_received: { label: "Yangi taklif", Icon: TagIcon, tone: "text-primary" },
+  offer_countered: { label: "Qarshi taklif", Icon: MessageSquareReplyIcon, tone: "text-warning" },
+  offer_accepted: { label: "Bitim tuzildi", Icon: HandshakeIcon, tone: "text-success" },
+  offer_closed: { label: "Taklif yopildi", Icon: XCircleIcon, tone: "text-muted-foreground" },
+  dutch_started: { label: "Narx pasaymoqda", Icon: TrendingDownIcon, tone: "text-primary" },
+  price_dropped: { label: "Narx tushdi", Icon: TrendingDownIcon, tone: "text-success" },
 }
 
 const FALLBACK: NotificationMeta = {

@@ -40,6 +40,64 @@ def soum_to_tiyin(value: Decimal | int | str) -> Tiyin:
     return int(tiyin)
 
 
+def calc_descending_price(
+    starting_price: Tiyin, price_decrement: Tiyin, intervals: int, floor_price: Tiyin
+) -> Tiyin:
+    """Pasayuvchi auksion narxi: boshlang'ich - (o'tgan oraliqlar x qadam), pastki chegaradan
+    past emas.
+
+    Butun son ayirmasi — yaxlitlash yo'q. `intervals` — butun oraliqlar soni (vaqt
+    hisobi `services/price_schedule.py` da). Narx hech qachon `floor_price` (rezerv)
+    dan pastga tushmaydi va boshlang'ichdan oshmaydi.
+    """
+    if starting_price <= 0 or price_decrement <= 0 or floor_price <= 0:
+        raise ValueError("Narx, qadam va pastki chegara musbat bo'lishi shart")
+    if floor_price > starting_price:
+        raise ValueError("Pastki chegara boshlang'ich narxdan yuqori bo'lishi mumkin emas")
+    if intervals <= 0:
+        return starting_price
+    return max(floor_price, starting_price - intervals * price_decrement)
+
+
+def calc_dutch_step(
+    starting_price: Tiyin, floor_price: Tiyin, steps: int, unit: Tiyin = TIYIN_PER_SOUM
+) -> Tiyin:
+    """Pasayuvchi bosqich qadami: boshlang'ichdan chegaragacha `steps` qadamda yetish uchun.
+
+    YUQORIGA yaxlitlanadi (`unit` ga, default 1 so'm): qadam kichik chiqsa narx
+    belgilangan vaqtda chegaraga yetmay qolardi; katta chiqsa — biroz oldinroq yetadi
+    va chegarada to'xtaydi (`calc_descending_price` pastga tushirmaydi). Kamida `unit`.
+    """
+    if steps <= 0 or unit <= 0:
+        raise ValueError("Qadamlar soni va birlik musbat bo'lishi shart")
+    if not 0 < floor_price < starting_price:
+        raise ValueError("Chegara 0 dan katta va boshlang'ich narxdan past bo'lishi shart")
+    raw = -(-(starting_price - floor_price) // steps)  # butun sonli ceil
+    rounded = -(-raw // unit) * unit
+    return max(unit, rounded)
+
+
+def dropped_by_at_least(previous: Tiyin, current: Tiyin, min_bps: int) -> bool:
+    """`current` `previous` dan kamida `min_bps` (1000 = 10%) past-mi.
+
+    Butun son taqqoslash (bo'lish yo'q): current * 10000 <= previous * (10000 - bps).
+    """
+    if previous <= 0 or not 0 < min_bps < _BPS_DIVISOR:
+        raise ValueError("Narx musbat, bps esa 0..10000 oralig'ida bo'lishi shart")
+    return current * _BPS_DIVISOR <= previous * (_BPS_DIVISOR - min_bps)
+
+
+def calc_line_total(unit_price: Tiyin, quantity: int) -> Tiyin:
+    """Dona narxi x miqdor = jami (taklif / order qatori).
+
+    Narxlar har doim DONA uchun saqlanadi; jami faqat shu yerda hisoblanadi —
+    butun son ko'paytmasi, yaxlitlash yo'q.
+    """
+    if unit_price < 0 or quantity < 1:
+        raise ValueError("Dona narxi manfiy, miqdor esa 1 dan kichik bo'lishi mumkin emas")
+    return unit_price * quantity
+
+
 def tiyin_to_soum(value: Tiyin) -> Decimal:
     """Tiyinni so'mga o'giradi (ko'rsatish uchun): 6_200_050 -> Decimal('62000.50').
 
@@ -55,6 +113,13 @@ def format_soum(value: Tiyin) -> str:
     whole, _, fraction = f"{soum:.2f}".partition(".")
     grouped = f"{int(whole):,}".replace(",", " ")
     return f"{grouped}.{fraction}"
+
+
+def format_soum_text(value: Tiyin) -> str:
+    """Xabar matni uchun: butun so'mda kasrsiz — 420_000_000 -> '4 200 000'; tiyin bo'lsa
+    `format_soum` kabi '62 000.50' (yaxlitlanmaydi, faqat ".00" tashlanadi)."""
+    text = format_soum(value)
+    return text[:-3] if text.endswith(".00") else text
 
 
 def calc_buyer_premium(price: Tiyin, bps: int = BUYER_PREMIUM_BPS) -> Tiyin:

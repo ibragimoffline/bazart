@@ -1,41 +1,36 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 
-import type { Lot } from "@/lib/api/types"
+import type { CatalogEntry } from "@/lib/catalog"
 import { Button } from "@/components/ui/button"
-import { LotCard } from "@/components/lot/lot-card"
+import { EntryCard } from "@/components/catalog/entry-card"
+import { SectionHeading } from "@/components/site/section-heading"
 
 function LotRail({
   title,
   href,
-  lots,
+  entries,
 }: {
   title: string
   href?: string
-  lots: Lot[]
+  /** Auksion lotlari va taklifli e'lonlar aralash. */
+  entries: CatalogEntry[]
 }) {
   const ref = React.useRef<HTMLDivElement>(null)
   const scrollBy = (dir: 1 | -1) =>
     ref.current?.scrollBy({ left: dir * 320, behavior: "smooth" })
 
-  if (lots.length === 0) return null
+  if (entries.length === 0) return null
 
   return (
-    <section aria-label={title} className="mx-auto max-w-6xl px-4 pt-10 sm:px-6">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-        <div className="flex items-center gap-2">
-          {href && (
-            <Link
-              href={href}
-              className="rounded-sm text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              Barchasi
-            </Link>
-          )}
+    <section aria-label={title} className="mx-auto max-w-6xl px-4 pt-10 sm:px-6 md:pt-14">
+      <SectionHeading
+        title={title}
+        href={href}
+        className="mb-4 md:mb-5"
+        aside={
           <div className="hidden items-center gap-1 md:flex">
             <Button
               variant="outline"
@@ -54,18 +49,18 @@ function LotRail({
               <ChevronRightIcon aria-hidden="true" />
             </Button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div
         ref={ref}
-        className="flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]"
+        className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:gap-4 sm:px-0 sm:[scrollbar-width:thin]"
       >
-        {lots.map((lot) => (
-          <LotCard
-            key={lot.auction.id}
-            lot={lot}
-            className="w-40 shrink-0 snap-start sm:w-48"
+        {entries.map((entry) => (
+          <EntryCard
+            key={entry.key}
+            entry={entry}
+            className="w-40 shrink-0 snap-start sm:w-52"
           />
         ))}
       </div>

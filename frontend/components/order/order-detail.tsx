@@ -164,6 +164,13 @@ function OrderDetail({ orderId }: { orderId: number }) {
                   ? "Sotuvchi"
                   : "Kuzatuvchi"}
             </Row>
+            {order.quantity > 1 && (
+              <Row label="Miqdor">
+                <span className="tabular-nums">
+                  {order.quantity} dona x {formatTiyin(order.unit_price)}
+                </span>
+              </Row>
+            )}
             <Row label="Yakuniy narx">
               <span className="tabular-nums">{formatTiyin(order.final_price)}</span>
             </Row>

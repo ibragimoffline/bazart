@@ -13,6 +13,7 @@ from app.repositories.order_repository import OrderRepository
 from app.repositories.payment_repository import PaymentRepository
 from app.schemas.payment import HoldCreate, PaymentIntentCreate
 from app.services.audit_service import AuditService
+from app.services.offer_service import OfferService
 from app.services.payment_providers import PaymentProviderError, get_payment_provider
 from app.services.payment_state import ALLOWED_TRANSITIONS, assert_payment_transition
 
@@ -295,8 +296,10 @@ class PaymentService:
         payment.status = result.status
 
         order = self.orders.get(payment.order_id)
-        if order is not None:
+        if order is not None and order.status != OrderStatus.CANCELLED:
             order.status = OrderStatus.CANCELLED
+            # Taklif bitimi bekor bo'ldi — donalar zaxiraga qaytadi (shu tranzaksiyada).
+            OfferService(self.db).restore_stock(order)
 
         AuditService(self.db).record(
             action="PAYMENT_CANCELLED_HOLD",
@@ -369,8 +372,12 @@ class PaymentService:
                 order.auto_complete_at = now + timedelta(hours=settings.auto_complete_hours)
             elif target_status == PaymentStatus.RELEASED:
                 order.status = OrderStatus.COMPLETED
-            elif target_status == PaymentStatus.CANCELLED_HOLD:
+            elif (
+                target_status == PaymentStatus.CANCELLED_HOLD
+                and order.status != OrderStatus.CANCELLED
+            ):
                 order.status = OrderStatus.CANCELLED
+                OfferService(self.db).restore_stock(order)
 
         AuditService(self.db).record(
             action=f"PAYMENT_WEBHOOK_{target_status.value.upper()}",

@@ -6,6 +6,7 @@ from app.models.enums import OrderStatus, is_admin
 from app.models.order import Order
 from app.models.user import User
 from app.repositories.order_repository import OrderRepository
+from app.services.offer_service import OfferService
 from app.services.order_state import InvalidOrderTransition, assert_order_transition
 
 
@@ -63,4 +64,7 @@ class OrderService:
             assert_order_transition(order.status, new_status)
         except InvalidOrderTransition as exc:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+        if new_status == OrderStatus.CANCELLED:
+            # Taklif bitimi bekor — donalar zaxiraga qaytadi (update_status commit qiladi).
+            OfferService(self.db).restore_stock(order)
         return self.orders.update_status(order, new_status)

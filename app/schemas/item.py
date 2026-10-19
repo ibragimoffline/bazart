@@ -1,8 +1,9 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from app.models.enums import ItemCondition, ItemStatus
+from app.models.enums import ItemCondition, ItemStatus, ListingType
 from app.money.fields import TiyinAmount
 
 
@@ -14,6 +15,9 @@ class ItemImageRead(BaseModel):
     image_url: str
     is_primary: bool
     created_at: datetime
+
+
+MAX_QUANTITY = 10_000
 
 
 class ItemCreate(BaseModel):
@@ -37,6 +41,8 @@ class ItemCreate(BaseModel):
     # Pul tiyinda, JSON'da string: {"starting_price": "6200050"}
     starting_price: TiyinAmount = Field(gt=0)
     reserve_price: TiyinAmount | None = Field(default=None, gt=0)
+    # Necha dona sotiladi. Auksion faqat 1 dona; taklifli e'lon — istalgancha.
+    quantity: int = Field(default=1, ge=1, le=MAX_QUANTITY)
 
 
 class ItemUpdate(BaseModel):
@@ -56,6 +62,8 @@ class ItemUpdate(BaseModel):
     district_id: int | None = None
     starting_price: TiyinAmount | None = Field(default=None, gt=0)
     reserve_price: TiyinAmount | None = Field(default=None, gt=0)
+    # Faqat e'lon qilinmagan qoralamada o'zgartiriladi (service tekshiradi).
+    quantity: int | None = Field(default=None, ge=1, le=MAX_QUANTITY)
 
 
 class ItemRead(BaseModel):
@@ -85,6 +93,13 @@ class ItemRead(BaseModel):
     # buziladi. Faqat rezerv BORLIGI has_reserve orqali bildiriladi.
     reserve_price: TiyinAmount | None = Field(default=None, exclude=True)
     item_images: list[ItemImageRead] = Field(default_factory=list)
+    # Qayta joylangan e'lon bo'lsa — asl (sotilmagan) e'lon id'si.
+    relisted_from_id: int | None = None
+    listing_type: ListingType | None = None
+    quantity_total: int = 1
+    quantity_available: int = 1
+    listing_duration_days: int | None = None
+    listing_ends_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -97,3 +112,10 @@ class ItemRead(BaseModel):
 
 class ItemImageUploadRead(BaseModel):
     image: ItemImageRead
+
+
+class ItemPublish(BaseModel):
+    """Qoralamani taklifli e'lon sifatida e'lon qilish (yoki muddati o'tganini qayta)."""
+
+    # Bazart'ning asosiy qoidasi — majburiy muddat (e'lon oylab osilib qolmasin).
+    duration_days: Literal[3, 5, 7]

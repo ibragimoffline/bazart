@@ -48,6 +48,8 @@ function payloadId(payload: Notification["payload"], key: string): number | null
 function notificationHref(item: Notification): string | null {
   const orderId = payloadId(item.payload, "order_id")
   if (orderId !== null) return `/orders/${orderId}`
+  const offerId = payloadId(item.payload, "offer_id")
+  if (offerId !== null) return `/offers?focus=${offerId}`
   const auctionId = payloadId(item.payload, "auction_id")
   if (auctionId !== null) return `/lot/${auctionId}`
   return null
@@ -111,7 +113,7 @@ function NotificationRow({
                       .catch(() => {})
                   }
                 }}
-                className="rounded-sm outline-none transition-colors hover:text-primary hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="rounded-sm outline-none transition-colors hover:text-primary underline decoration-foreground/30 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50 underline-offset-4"
               >
                 {item.title || label}
               </Link>
@@ -250,7 +252,7 @@ function NotificationList() {
     <div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold text-foreground">Bildirishnomalar</h1>
+          <h1 className="font-heading text-xl font-bold tracking-tight text-foreground uppercase md:text-2xl">Bildirishnomalar</h1>
           {refetching && <Spinner className="text-muted-foreground" />}
         </div>
         <div className="flex flex-wrap items-center gap-3">

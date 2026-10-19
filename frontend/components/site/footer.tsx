@@ -1,23 +1,23 @@
 import Link from "next/link"
 import { MailIcon, CreditCardIcon } from "lucide-react"
 
+import { Logo } from "@/components/site/logo"
+
 const PAYMENTS = ["Uzcard", "Humo", "Visa", "Mastercard"]
 
 function SiteFooter() {
   return (
-    <footer className="mt-12 border-t border-border bg-card">
-      <div className="mx-auto grid gap-8 px-4 py-10 sm:px-6 md:grid-cols-3">
+    <footer className="mt-16 border-t border-border bg-background">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-3">
         <div className="grid gap-3">
-          <span className="font-heading text-lg font-semibold text-foreground">
-            Bazart
-          </span>
+          <Logo size="sm" className="w-fit" />
           <p className="max-w-xs text-sm text-muted-foreground">
-            Muddatli auksion marketplace. Har mahsulotda majburiy deadline va escrow
+            Muddatli savdo: narx taklifi yoki auksion. Har eʼlonda majburiy deadline va escrow
             himoyasi.
           </p>
           <Link
             href="/catalog/hammasi"
-            className="w-fit rounded-sm text-sm font-medium text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="w-fit rounded-sm text-sm font-medium text-primary outline-none underline decoration-foreground/30 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50 underline-offset-4"
           >
             Barcha mahsulotlar
           </Link>

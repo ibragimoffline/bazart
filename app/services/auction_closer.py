@@ -23,8 +23,39 @@ from app.db.session import SessionLocal
 from app.models.auction import Auction
 from app.models.enums import AuctionStatus
 from app.services.auction_service import AuctionService
+from app.services.ending_soon import notify_ending_soon
+from app.services.offer_service import OfferService
+from app.services.price_alerts import notify_price_drops
 
 logger = logging.getLogger(__name__)
+
+
+def activate_due_auctions(db: Session) -> int:
+    """Boshlanish vaqti kelgan SCHEDULED auksionlarni ACTIVE qiladi (faollashganlar soni).
+
+    Ilgari rejalashtirilgan auksion faqat birinchi bid'da "dangasa" faollashardi:
+    katalogda ko'rinmasdi, buy-now (pasayuvchi auksionda yagona yo'l) uni rad etardi va
+    closer faqat ACTIVE'ni yopgani uchun bunday auksion hech qachon yopilmasdi.
+    Har auksion qulf ostida (`AuctionService.activate_if_started`), alohida tranzaksiyada.
+    """
+    now = datetime.now(UTC)
+    due_ids = (
+        db.execute(
+            select(Auction.id)
+            .where(Auction.status == AuctionStatus.SCHEDULED)
+            .where(Auction.start_time <= now)
+        )
+        .scalars()
+        .all()
+    )
+    activated = 0
+    for auction_id in due_ids:
+        try:
+            if AuctionService(db).activate_if_started(auction_id):
+                activated += 1
+        except Exception:
+            logger.warning("Auksion %s ni faollashtirish muvaffaqiyatsiz", auction_id)
+    return activated
 
 
 def close_due_auctions(db: Session) -> int:
@@ -41,6 +72,9 @@ def close_due_auctions(db: Session) -> int:
     ENDED qilib qo'ygan) `HTTPException` ko'tarsa ham butun loop
     to'xtamasligi kerak — xatoni log qilib keyingisiga o'tamiz.
     """
+    # Avval vaqti kelgan rejalashtirilganlarni faollashtiramiz — muddati ham o'tgan
+    # bo'lsa, ular shu tik'da yopiladi.
+    activate_due_auctions(db)
     now = datetime.now(UTC)
     due_ids = (
         db.execute(
@@ -82,12 +116,25 @@ async def _closer_loop() -> None:
 
 
 def _run_once() -> None:
-    """Bitta tik: sessiya ochib, yop, yop."""
+    """Bitta tik: sessiya ochib, muddati o'tganlarni yopadi va eslatmalarni yuboradi."""
     db = SessionLocal()
     try:
         closed = close_due_auctions(db)
         if closed:
             logger.info("Auksion closer %s ta auksionni yopdi", closed)
+        # Eslatma xatosi yopishni to'xtatmasin — alohida himoyalangan.
+        try:
+            notify_ending_soon(db)
+        except Exception:
+            logger.exception("ENDING_SOON eslatmasini yuborishda xato")
+        try:
+            OfferService(db).expire_due()
+        except Exception:
+            logger.exception("Takliflar muddatini yopishda xato")
+        try:
+            notify_price_drops(db)
+        except Exception:
+            logger.exception("PRICE_DROPPED xabarlarida xato")
     finally:
         db.close()
 

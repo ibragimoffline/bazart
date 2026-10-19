@@ -12,6 +12,7 @@ import {
   PlusIcon,
   PackageIcon,
   TagIcon,
+  HandshakeIcon,
   MessageCircleIcon,
   CircleUserIcon,
   ScaleIcon,
@@ -24,6 +25,7 @@ import type { Category } from "@/lib/api/types"
 import { listCategories } from "@/lib/api/endpoints"
 import { useAuthStore } from "@/lib/store/auth"
 import { Button } from "@/components/ui/button"
+import { Logo } from "@/components/site/logo"
 import { NotificationBell } from "@/components/notification/notification-bell"
 
 function SearchForm({ className }: { className?: string }) {
@@ -38,7 +40,7 @@ function SearchForm({ className }: { className?: string }) {
   return (
     <form role="search" onSubmit={submit} className={cn("relative", className)}>
       <SearchIcon
-        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
         aria-hidden="true"
       />
       <input
@@ -48,7 +50,7 @@ function SearchForm({ className }: { className?: string }) {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Mahsulot yoki kategoriya qidiring"
         aria-label="Qidiruv"
-        className="h-10 w-full rounded-lg border border-input bg-background pr-3 pl-9 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="h-10 w-full rounded-full border border-border bg-card pr-4 pl-10 text-sm outline-none transition-colors placeholder:text-muted-foreground hover:border-foreground/20 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
       />
     </form>
   )
@@ -197,6 +199,15 @@ function AuthArea() {
               </Link>
               <Link
                 role="menuitem"
+                href="/offers"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-popover-foreground outline-none transition-colors hover:bg-muted focus-visible:bg-muted"
+              >
+                <HandshakeIcon className="size-4" aria-hidden="true" />
+                Takliflar
+              </Link>
+              <Link
+                role="menuitem"
                 href="/my/watchlist"
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-popover-foreground outline-none transition-colors hover:bg-muted focus-visible:bg-muted"
@@ -275,14 +286,9 @@ function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-6">
-        <Link
-          href="/"
-          className="shrink-0 rounded-md font-heading text-xl font-semibold tracking-tight text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          Bazart
-        </Link>
+        <Logo />
 
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-1 md:flex">
           <CategoriesMenu />
         </div>
 

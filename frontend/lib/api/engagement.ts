@@ -22,7 +22,16 @@ export type NotificationType =
   /** Rezervga yetmadi — sotuvchiga "eng yuqori taklifga sotish" taklifi. payload: auction_id, expires_at. */
   | "second_chance"
   /** Kuzatilayotgan auksion tugashiga oz qoldi. */
-  | "ending_soon";
+  | "ending_soon"
+  /** Taklifli savdo: payload — offer_id, item_id (qabulda order_id ham). */
+  | "offer_received"
+  | "offer_countered"
+  | "offer_accepted"
+  | "offer_closed"
+  /** Taklifsiz tugagan lot pasayuvchi auksionga o'tdi. payload: auction_id (yangi). */
+  | "dutch_started"
+  /** Pasayuvchi auksionda narx sezilarli tushdi (kuzatuvchilarga). payload: auction_id, previous_price, current_price, at_floor. */
+  | "price_dropped";
 
 /** NotificationRead sxemasi. */
 export interface Notification {

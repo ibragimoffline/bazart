@@ -1,9 +1,10 @@
 # Bazart — CLAUDE.md
 
-C2C **muddatli auksion** marketplace (O'zbekiston). Backend: Python 3.12 + FastAPI.
+C2C **muddatli, taklifga asoslangan** marketplace (O'zbekiston). Backend: Python 3.12 + FastAPI.
 
 **Muammo:** OLX'da e'lonlar oylab sotilmaydi — deadline yo'q, narx muzlab qoladi.
-**Yechim:** har e'londa **majburiy deadline** (3/5/7 kun) + **auksion** + **escrow**.
+**Yechim:** har e'londa **majburiy deadline** (3/5/7 kun) + **erkin narx takliflari** (asosiy) yoki
+**auksion** (ixtiyoriy) + **escrow**.
 
 ## Muhim qarorlar (O'ZGARMAYDI)
 
@@ -15,9 +16,16 @@ C2C **muddatli auksion** marketplace (O'zbekiston). Backend: Python 3.12 + FastA
 | **Pul = butun son (tiyin), BIGINT** | Float **TAQIQ**. Bajarildi (Faza B): `app/money/`. API'da pul — **string, tiyinda**: `{"amount": "6200050"}` = 62 000.50 so'm |
 | Barcha vaqt UTC | Ko'rsatishda `Asia/Tashkent` |
 | Jonli video YO'Q | Pozitsiyaga zid, xarajat + moderatsiya yuki |
-| Anti-sniping | <2 daqiqa qolganda bid → end_time +2 daqiqa |
-| Proxy bidding (max-bid) | `high_bidder_max` **HECH QACHON** API'da oshkor bo'lmaydi |
-| Bid atomik | `SELECT ... FOR UPDATE` majburiy |
+| **Taklifli savdo — asosiy rejim** (`docs/OFFERS.md`) | Sotuvchi mo'ljal narx (DONA uchun) + miqdor beradi; xaridor istalgan musbat narx va miqdor taklif qiladi. Min qadam / "oldingidan yuqori" / avtomatik rad **YO'Q**. Sotuvchi qabul qiladi, rad etadi yoki qarshi taklif beradi |
+| Narx dona uchun | `unit_price` saqlanadi; jami = `calc_line_total(unit, qty)` (`app/money`) |
+| Zaxira atomik | Qabul: item `FOR UPDATE` + shartli `UPDATE ... WHERE quantity_available >= q` (`take_stock`). CHECK constraint lost update'ni USHLAMAYDI |
+| Auksion — ixtiyoriy, faqat 1 dona | Quyidagi auksion qoidalari faqat `listing_type = auction` e'lonlarga |
+| Pasayuvchi auksion (`pricing_mode=descending`) | Narx BAZADA SAQLANMAYDI — vaqtdan hisoblanadi (`calc_descending_price` + `price_schedule`), pastki chegara = `reserve_price`; bid yo'q, buy-now qulf ostida joriy narxda (`docs/AUCTION_ENGINE.md` §10) |
+| Gibrid: taklifsiz -> golland | Sotuvchi roziligi (`dutch_fallback_floor`) bilan taklifsiz tugagan auksion `close_auction` ichida 3 kunlik pasayuvchi auksionga o'tadi; rozilik ommaga OSHKOR EMAS (`docs/AUCTION_ENGINE.md` §11) |
+| Narx rejimi boshlanishgacha | `PATCH /auctions/{id}/pricing` faqat `SCHEDULED` va boshlanmagan; standart rejim holatga qarab — faqat UI tavsiyasi (§12) |
+| Anti-sniping (auksion) | <2 daqiqa qolganda bid → end_time +2 daqiqa |
+| Proxy bidding (max-bid, auksion) | `high_bidder_max` **HECH QACHON** API'da oshkor bo'lmaydi |
+| Bid atomik (auksion) | `SELECT ... FOR UPDATE` majburiy |
 | Idempotentlik | Har to'lov operatsiyasi `idempotency_key` bilan |
 | Auksion holati faqat state machine orqali | Qo'lda `status = ...` **TAQIQ** |
 | Karta PAN hech qachon saqlanmaydi | Faqat PSP token |
@@ -94,9 +102,14 @@ Bu qoidalar barcha frontend ishlariga tatbiq etiladi. Buzilishi — code review'
    - gradient matnlar, gradient tugmalar, glassmorphism, keraksiz blur;
    - har bo'limda `01/02/03` raqamli markerlar;
    - "Lorem ipsum" — barcha kontent real mahsulot nomlari, narxlar va tavsiflar bilan yoziladi.
-3. **Rang tizimi:** neytral asos (iliq oq fon `#F7F6F4`, to'q matn `#1B1A18`) + **bitta** brend
-   aksenti — **majolika ko'ki `#12659E`** (`--brand`/`--primary`; sovuq ko'k tovar fotolari bilan
-   raqobatlashmaydi) + semantik ranglar (`--success #0E7A46`, `--warning #E1900B`, `--error #C4362C`).
+3. **Rang tizimi — "lajuvard bloklar, siyoh tugmalar":** iliq qog'oz fon `#F4F2EE`, oq sirt,
+   siyoh matn `#1B1A18`. Brend = **lajuvard** `#1F4E9D` (`--brand`, och fon `--brand-soft #E6EBF5`)
+   — KATTA bloklarda ishlatiladi (bosh banner, kategoriya plitkalari, foto o'rni, faol tab), kichik
+   tugmalarda emas. Asosiy tugmalar — **siyoh** (`--primary #1B1A18`). Semantik ranglar faqat holat
+   uchun (`--success #0E7A46`, `--warning #E1900B`, `--error #C4362C`). Matn havolalari — siyoh +
+   doimiy yumshoq tagchiziq. Shakllar: `--radius` 14px, tugma/chip/qidiruv `rounded-full`;
+   bo'lim sarlavhalari — qalin, BOSH HARF (`SectionHeading`); mahsulot kartasi — plitka + chegarali
+   teg, quti emas.
    Hammasi `app/globals.css` da CSS token sifatida e'lon qilinadi (batafsil: `docs/DESIGN.md`).
    **Komponentlarda hardcode rang TAQIQ** — faqat token orqali (`bg-primary`, `text-muted-foreground`,
    `text-success` …). warning'ga oq matn qo'yilmaydi — quyuq matn (`--warning-foreground`).
@@ -117,10 +130,15 @@ Bu qoidalar barcha frontend ishlariga tatbiq etiladi. Buzilishi — code review'
 1. **Bid atomik bo'lishi shart** — `with_for_update()` bilan auksion qatorini lock qilib.
    Hozir bu YO'Q → race condition mavjud. Bid kodiga tegsang, lock qo'sh.
 2. **Sotuvchi o'z lotiga bid qo'yolmaydi** (shill) — `bid_service.py:56-60`.
-3. **Min qadam:** `amount >= current_price + minimum_bid_increment`.
+3. **Min qadam (faqat auksion):** `amount >= current_price + minimum_bid_increment`.
+   Taklifli e'londa min qadam YO'Q — har qanday musbat dona narxi qabul qilinadi.
 4. **Anti-sniping** — `SOFT_CLOSE_WINDOW_SECONDS=120`, `SOFT_CLOSE_EXTENSION_SECONDS=120`.
 5. **Mock to'lov faqat local/test** — `settings.allow_mock_payments`. Prod'da mock = bepul tovar.
 6. **Prod'da default SECRET_KEY bilan ko'tarilish bloklangan** — `config.py` model_validator.
+7. **Taklifli savdo** (`offer_service.py`): sotuvchi o'z e'loniga taklif berolmaydi; bitta xaridor —
+   bitta ochiq taklif (partial unique index); faqat navbatdagi tomon (`awaiting`) qabul/qarshi
+   taklif qiladi; javobsiz taklif 48 soatda yopiladi. Qulf tartibi: avval item, keyin offer.
+   Order bekor bo'lsa (`restore_stock`) donalar zaxiraga qaytadi.
 
 ## Komandalar
 
@@ -146,7 +164,8 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 - `datetime.now(UTC)` — naive datetime TAQIQ.
 - **Pul: har doim `Tiyin` (butun son)**. `Decimal`/`float` TAQIQ. Hisob-kitob faqat `app/money/`
   orqali. Sxemada `TiyinAmount` turi ishlatiladi (`app/money/fields.py`) — u JSON'ga string yozadi.
-  Yaxlitlash faqat `calc_buyer_premium` ichida; boshqa joyda takrorlanmaydi.
+  Yaxlitlash faqat `app/money/` ichida (`calc_buyer_premium`, `calc_dutch_step`);
+  boshqa joyda takrorlanmaydi.
 
 ## Test qoidalari
 
@@ -184,6 +203,7 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 
 | Fayl | Nima haqida |
 |---|---|
+| `docs/HOW_IT_WORKS.md` | To'liq jarayon (inglizcha): e'londan sotuvgacha — taklif va auksion yo'llari, order, escrow, handover, nizo, xabarlar |
 | `docs/PROJECT_OVERVIEW.md` | Loyihaning to'liq tavsifi: barcha funksiyalar, bajarilgan ishlar, raqamlar |
 | `docs/ARCHITECTURE.md` | Tizim arxitekturasi, qatlamlar, oqimlar, nega monolith |
 | `docs/DOMAIN.md` | Real jadvallar, ustunlar, enum'lar, maqsadli o'zgarishlar |
@@ -191,3 +211,4 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 | `docs/PAYMENTS.md` | Escrow, PSP adapter, idempotentlik, webhook imzo, audit log, huquq |
 | `docs/ROADMAP.md` | Fazalar A→D va keyingilari, bajarilganlar belgilangan |
 | `docs/DESIGN.md` | Frontend dizayn tizimi: palitra (hex+kontrast), shrift, layout, imzo element |
+| `docs/OFFERS.md` | Taklifli savdo: narx/miqdor taklifi, muzokara, zaxira va poyga himoyasi, API |

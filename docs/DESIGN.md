@@ -1,8 +1,11 @@
 # Bazart — Dizayn tizimi
 
 Frontend (`frontend/`) dizayn qarorlari. Yo'naltiruvchi tamoyil: **fotolar — qahramon,
-interfeys — sahna**. Chrome neytral bo'lib orqaga chekinadi; yagona aksent faqat harakat va
-shoshilinchlikni bildiradi. Har sahifaning bitta vazifasi bor.
+interfeys — sahna**. Uslub (Behance do'kon loyihalari tahlilidan: VORS, pole, Drip Riot):
+**bitta kuchli rang katta bloklarda** (lajuvard), **qalin bosh harfli sarlavhalar**, mahsulotlar
+yumshoq plitkalarda chegarali teg bilan, tugmalar neytral siyoh. Telefon — asosiy qurilma:
+chetdan-chetga banner, gorizontal suriladigan qatorlar, ilova uslubidagi pastki tab-bar.
+Har sahifaning bitta vazifasi bor.
 
 Auditoriya: telefondan xarid qiluvchi 20–45 yoshli xaridorlar (O'zbekiston, narx so'mda, til o'zbekcha).
 
@@ -13,22 +16,34 @@ tekshirilgan. **Komponentlarda hardcode rang TAQIQ** — faqat token.
 
 | Rol | Token | Yorug' | Qorong'u | Kontrast (AA) |
 |---|---|---|---|---|
-| Asos (sahifa foni) | `--background` | `#F7F6F4` | `#171614` | matn 16.1:1 / 16.3:1 |
-| Sirt (karta/bar) | `--card` `--popover` | `#FFFFFF` | `#1E1D1B` | — |
-| Matn 1-daraja | `--foreground` | `#1B1A18` | `#F4F3F0` | 16.1:1 |
-| Matn 2-daraja | `--muted-foreground` | `#6B6863` | `#A8A49D` | 5.14:1 / 7.29:1 |
-| Brend aksenti | `--brand` `--primary` | `#12659E` | `#1F72AD` | oq matn 6.21:1 / 5.16:1 |
+| Asos (qog'oz) | `--background` | `#F4F2EE` | `#171614` | siyoh matn 15.5:1 / 16.3:1 |
+| Sirt (karta/maydon) | `--card` `--popover` | `#FFFFFF` | `#1E1D1B` | — |
+| Foto o'rni / chip | `--muted` | `#EBE8E3` | `#26241F` | — |
+| Matn 1-daraja (siyoh) | `--foreground` | `#1B1A18` | `#F4F3F0` | 15.5:1 |
+| Matn 2-daraja | `--muted-foreground` | `#66625C` | `#A8A49D` | 5.4:1 (oq ustida 6.1:1) / 7.29:1 |
+| Brend (lajuvard) | `--brand` | `#1F4E9D` | `#2D5AAB` | oq matn 8.0:1 / 6.6:1; qog'oz ustida matn 7.1:1 |
+| Brend och fon | `--brand-soft` | `#E6EBF5` | `#1C2436` | siyoh 14.6:1, 2-daraja matn 5.1:1 |
+| Asosiy tugma (siyoh) | `--primary` | `#1B1A18` | `#F4F3F0` | qog'oz matn 15.5:1 / 16.3:1 |
 | Success | `--success` | `#0E7A46` | `#0E7A46` | oq matn 5.4:1 |
 | Warning | `--warning` | `#E1900B` | `#F0A420` | **quyuq matn** 6.79:1 / 8.64:1 |
 | Error | `--error` | `#C4362C` | `#C4362C` | oq matn 5.37:1 |
 
-Chegara: `--border #E7E4DF` (dark: `oklch(1 0 0 / 10%)`).
+Chegara: `--border #E3DFD8` (dark: `oklch(1 0 0 / 10%)`).
 
-**Nega majolika ko'ki:** marketplace fotolari (kiyim, elektronika, mebel) iliq va to'yingan —
-ranglar oldinga intiladi. Sovuq, o'rta-to'yingan ko'k kompozitsion jihatdan orqaga chekinadi,
-tovar rasmi bilan raqobatlashmaydi, ammo CTA/faol holatda aniq ko'rinadi. Yashil "success",
-qizil/amber "urgency" bilan band — shu sabab brend ko'k bo'lishi funksional jihatdan to'g'ri.
-Ildizi — Samarqand/Buxoro koshin an'anasi.
+**Nega lajuvard bloklar + siyoh tugmalar (2026-oktabr):** avval brend majolika ko'ki `#12659E`
+kichik tugmalarda edi — oq qutilar bilan birga sayt Fongabi kabi oddiy savdo platformalariga
+o'xshardi. Keyin to'liq rangsiz "siyoh va qog'oz" sinab ko'rildi — juda sodda chiqdi. Yechim:
+rang **katta, ishonchli bloklarda** (banner, plitkalar), harakat tugmalari esa neytral siyoh —
+rang va tugma raqobatlashmaydi. Lajuvard — Samarqand/Registon koshinlari ko'ki (mahalliy ildiz).
+
+**Shakllar:** `--radius` 14px (kartalar 18px). Tugma, chip, qidiruv, belgilar — `rounded-full`.
+Mahsulot kartasi — quti emas: 4:5 plitka (rasm yo'q bo'lsa `brand-soft`), chap tepada chegarali
+bosh harfli teg ("ISHLATILGAN"), pastda muddat "pill"i va 2px o'lchagich; ostida qalin nom,
+narx (Inter, tabular) va bir qator tafsilot ("Auksion · 3 ta taklif").
+Bo'lim sarlavhasi — `SectionHeading`: qalin bosh harf + ingichka chiziq + "BARCHASI →" pill.
+Bosh sahifa ritmi: lajuvard banner -> kategoriya plitkalari -> qatorlar -> siyoh "Nega Bazart"
+bloki (qog'oz -> rang -> qog'oz -> siyoh).
+Havola — siyoh rangida, doimiy yumshoq tagchiziq (`decoration-foreground/30`).
 
 ## 2. Tipografika
 
@@ -75,7 +90,7 @@ Deadline yaqinlashgani sari kuchayadi:
 | ≤ 30 daqiqa | `--error` (qizil) | shoshilinch |
 
 - Bazart'ning yagona farqi — majburiy deadline. Imzo shu farqni ko'zga aylantiradi.
-- Rasm **chetida**, yarim-shaffof scrim ustida — fotoni yopmaydi, u bilan raqobatlashmaydi.
+- Rasm **burchagida** ixcham "pill" + pastki chetda 2px chiziq — fotoni yopmaydi.
 - Motion: faqat raqam jonli yangilanadi (dekorativ sikl yo'q); `prefers-reduced-motion` mos.
 - CLAUDE.md dagi taqiqlangan shablonlarning hech biri emas. Egalik — izchillik + eskalatsiya orqali.
 

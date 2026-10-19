@@ -43,6 +43,20 @@ class Settings(BaseSettings):
     # o'zgartirmasligi kerak. Local/prod'da .env orqali yoqiladi.
     auction_closer_enabled: bool = False
     auction_closer_interval_seconds: int = 5
+    # "Tugashiga oz qoldi" eslatmasi: auksion tugashidan shuncha daqiqa oldin
+    # kuzatuvchi va bidderlarga bir marta yuboriladi (closer bilan bir tik'da).
+    # 2 soat: oxirgi raqobatga qaytish uchun yetarli vaqt (mahsulot talabi).
+    ending_soon_lead_minutes: int = 120
+    ending_soon_interval_seconds: int = 60
+    # Taklifli savdo: muddati o'tgan takliflar va e'lonlarni yopish oralig'i.
+    offer_expiry_interval_seconds: int = 60
+    # "Narx tushdi" (pasayuvchi auksion): kuzatuvchilarga oxirgi xabardagi narxdan kamida
+    # shuncha bps (1000 = 10%) pasaygach yoki chegaraga yetganda bir marta xabar — har
+    # soatlik pasayishda emas (spam bo'lmasin).
+    price_drop_notify_min_bps: int = 1000
+    price_drop_interval_seconds: int = 300
+    # Telegram/push xabarlarida lot/buyurtma havolasi uchun sayt manzili (bo'sh — havolasiz).
+    public_site_url: str = ""
 
     # Dinamik (darajali) minimal stavka qadami poli. Prod'da yoqiq: narxga
     # qarab qadam avtomatik oshadi (5 000 so'mdan boshlab). Test muhitida

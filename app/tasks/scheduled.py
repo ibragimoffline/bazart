@@ -13,6 +13,9 @@ from app.core.celery_app import celery_app
 from app.db.session import SessionLocal
 from app.services.auction_closer import close_due_auctions
 from app.services.auto_complete import auto_complete_due_orders
+from app.services.ending_soon import notify_ending_soon
+from app.services.offer_service import OfferService
+from app.services.price_alerts import notify_price_drops
 
 logger = logging.getLogger(__name__)
 
@@ -39,5 +42,44 @@ def auto_complete_orders_task() -> int:
         if done:
             logger.info("Celery: %s ta order avtomatik yakunlandi", done)
         return done
+    finally:
+        db.close()
+
+
+@celery_app.task(name="app.tasks.scheduled.notify_ending_soon_task")
+def notify_ending_soon_task() -> int:
+    """Tugashiga oz qolgan auksionlar bo'yicha eslatma. Eslatilganlar sonini qaytaradi."""
+    db = SessionLocal()
+    try:
+        notified = notify_ending_soon(db)
+        if notified:
+            logger.info("Celery: %s ta auksion bo'yicha ENDING_SOON yuborildi", notified)
+        return notified
+    finally:
+        db.close()
+
+
+@celery_app.task(name="app.tasks.scheduled.expire_offers_task")
+def expire_offers_task() -> int:
+    """Muddati o'tgan takliflar va taklifli e'lonlarni yopadi. Yopilganlar soni."""
+    db = SessionLocal()
+    try:
+        offers, listings = OfferService(db).expire_due()
+        if offers or listings:
+            logger.info("Celery: %s ta taklif, %s ta e'lon muddati yopildi", offers, listings)
+        return offers + listings
+    finally:
+        db.close()
+
+
+@celery_app.task(name="app.tasks.scheduled.price_drop_alerts_task")
+def price_drop_alerts_task() -> int:
+    """Pasayuvchi auksionlarda "narx tushdi" xabari. Xabarlangan auksionlar soni."""
+    db = SessionLocal()
+    try:
+        notified = notify_price_drops(db)
+        if notified:
+            logger.info("Celery: %s ta auksion bo'yicha PRICE_DROPPED yuborildi", notified)
+        return notified
     finally:
         db.close()

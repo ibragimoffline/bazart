@@ -237,7 +237,7 @@ function AuthForm({ mode }: { mode: "login" | "register" }) {
         {isLogin ? "Hisobingiz yoʻqmi? " : "Hisobingiz bormi? "}
         <Link
           href={isLogin ? "/register" : "/login"}
-          className="rounded-sm font-medium text-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="rounded-sm font-medium text-primary outline-none underline decoration-foreground/30 hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50 underline-offset-4"
         >
           {isLogin ? "Roʻyxatdan oʻtish" : "Kirish"}
         </Link>

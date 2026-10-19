@@ -14,6 +14,48 @@ class ItemStatus(StrEnum):
     ACTIVE = "active"
     SOLD = "sold"
     CANCELLED = "cancelled"
+    # Taklifli e'lon muddati tugadi, zaxira qolgan (sotuvchi qayta joylay oladi).
+    EXPIRED = "expired"
+
+
+class ListingType(StrEnum):
+    """E'lon qanday sotiladi. NULL (item'da) — hali e'lon qilinmagan qoralama.
+
+    OFFER — asosiy rejim: sotuvchi mo'ljal narx (dona uchun) va miqdor beradi,
+    xaridorlar istalgan musbat narx va miqdor taklif qiladi, sotuvchi qabul qiladi,
+    rad etadi yoki qarshi taklif beradi. Min qadam / anti-sniping YO'Q.
+    AUCTION — ixtiyoriy muddatli auksion (bitta dona, eski qoidalar bilan).
+    """
+
+    OFFER = "offer"
+    AUCTION = "auction"
+
+
+class OfferStatus(StrEnum):
+    """Taklif holati. PENDING — javob kutilmoqda (kimdan — `Offer.awaiting`)."""
+
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    WITHDRAWN = "withdrawn"
+    EXPIRED = "expired"
+
+
+class OfferParty(StrEnum):
+    BUYER = "buyer"
+    SELLER = "seller"
+
+
+class PricingMode(StrEnum):
+    """Auksion narx yo'nalishi.
+
+    ASCENDING — klassik: bidlar narxni oshiradi, eng yuqori taklif yutadi.
+    DESCENDING — "golland" auksioni: narx vaqt o'tishi bilan qadam-baqadam pasayadi
+    (pastki chegara — reserve_price); birinchi "hoziroq sotib olish" yutadi, bid yo'q.
+    """
+
+    ASCENDING = "ascending"
+    DESCENDING = "descending"
 
 
 class AuctionStatus(StrEnum):
@@ -72,6 +114,12 @@ class NotificationType(StrEnum):
     DISPUTE = "dispute"
     SECOND_CHANCE = "second_chance"  # rezervga yetmadi — sotuvchiga taklif
     ENDING_SOON = "ending_soon"  # auksion tugashiga oz qoldi
+    OFFER_RECEIVED = "offer_received"  # sotuvchiga yangi taklif
+    OFFER_COUNTERED = "offer_countered"  # qarshi taklif keldi
+    OFFER_ACCEPTED = "offer_accepted"  # taklif qabul qilindi -> order
+    OFFER_CLOSED = "offer_closed"  # rad etildi / muddati o'tdi / zaxira tugadi
+    PRICE_DROPPED = "price_dropped"  # pasayuvchi auksionda narx sezilarli tushdi
+    DUTCH_STARTED = "dutch_started"  # taklifsiz auksion pasayuvchi bosqichga o'tdi
 
 
 class DisputeReason(StrEnum):

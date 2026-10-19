@@ -101,6 +101,12 @@ qilib `end_time` yo'lini olib tashlash) frontend tayyor bo'lganda.
 | **Handover** | ✅ Kod bilan tasdiq oqimi (`handover_service`), kod yashirin, tasdiq -> capture |
 | **Xabarnomalar** | ✅ In-app (`notification_service`), OUTBID/WON/SOLD eventlarga ulangan. SMS/push — TODO |
 | **Anti-fraud** | ✅ Signal tahlili (`fraud_service`): bir device/IP ko'p akkaunt, shill overlap, velocity. `bids.ip/device_id`. Admin endpoint |
+| **Auksion qulayliklari** | ✅ Buy-now (birinchi taklifgacha), sotilmagan lotni qayta joylash, "tugashiga oz qoldi" eslatmasi (`docs/AUCTION_ENGINE.md` §9) |
+| **Kuzatuv xabarlari** | ✅ Narx tushdi (10%/chegara, spamsiz), 2 soat qoldi, ortda qoldingiz — in-app + Telegram (havola bilan) (`docs/AUCTION_ENGINE.md` §13). Keyin: real push (FCM/web-push, qurilma tokenlari), foydalanuvchi xabar sozlamalari |
+| **Rejim standartlari va narx jadvali** | ✅ Yangi -> pasayuvchi, ishlatilgan -> o'suvchi + buy-now (UI); boshlanishgacha rejimni o'zgartirish; rejalashtirilgan auksion o'z vaqtida faollashadi; xaridor uchun kunlik narx prognozi (`docs/AUCTION_ENGINE.md` §12) |
+| **Gibrid auksion** | ✅ Taklifsiz tugagan auksion sotuvchi roziligi bilan 3 kunlik pasayuvchi bosqichga o'tadi (`docs/AUCTION_ENGINE.md` §11). Keyin: roziligini e'lon qilingach o'zgartirish (hozir faqat yaratishda) |
+| **Pasayuvchi auksion** | ✅ `pricing_mode=descending`: narx vaqtdan hisoblanadi (Celery'siz), pastki chegara = rezerv, atomik buy-now (`docs/AUCTION_ENGINE.md` §10). Keyin: real-time narx tushishi push (hozir sahifa pasayish vaqtida qayta yuklaydi) |
+| **Taklifli savdo** | ✅ Asosiy rejim: erkin dona narxi + miqdor, qarshi taklif, 48 soatlik javob muddati, atomik zaxira (qulf + shartli UPDATE), bekor order zaxirani qaytaradi (`docs/OFFERS.md`). Auksion — ixtiyoriy, 1 dona |
 | **Nizolar** | ✅ Dispute oqimi (`dispute_service`): xaridor ochadi, admin capture/release. Auto-complete ochiq nizoda to'xtaydi |
 | **Observability** | ✅ Strukturaviy JSON logging + `request_id` middleware |
 | Mobil | Mobil klient (API allaqachon shunga mo'ljallangan) |
@@ -132,6 +138,19 @@ webhook secret prod guard, order state machine, proxy tie-break, WS auth.
 - [ ] Push/SMS ni notification_service.create() ga ulash (adapter tayyor)
 - [ ] Redis fan-out (ko'p instansiya WS), `X-Forwarded-For` ishonchli proxy ro'yxati
 - [ ] Real PSP adapteri, yurist xulosasi (tashqi bog'liq)
+- [ ] Auksion dvigateli: proxy max rezervni qoplasa, ko'rinadigan narx rezervgacha KO'TARILMAYDI
+      (eBay ko'taradi). Natija: yagona bidder max=6000, rezerv=5000 bo'lsa auksion 1100 da
+      RESERVE_NOT_MET bilan yopiladi. Buy-now (Option B) buni qulf ostida hisobga oladi, lekin
+      yopilish mantig'i hali tuzatilmagan
+- [ ] Taklif order'i to'lanmasa avtomatik bekor qilish (hozir auksion order'lari kabi muddatsiz
+      kutadi — sotilgan donalar to'lovsiz band bo'lib qolishi mumkin)
+- [ ] Taklifli e'lonlar uchun kuzatuv ro'yxati va "tugashiga oz qoldi" (hozir faqat auksion)
+- [ ] `message-thread.tsx`: suhbatdagi havola `/lot/{item_id}` — auksion id kutiladi (oldindan bor xato)
+- [ ] Moderatsiya: auksioni **allaqachon sotilmay tugagan** e'lonni admin rad etsa, rad
+      etish hech qayerda saqlanmaydi (closer item'ni baribir `CANCELLED` qiladi) — sotuvchi
+      uni `POST /auctions/{id}/relist` bilan qaytara oladi. Jonli auksion rad etilganda bu
+      yopiq (auksion `CANCELLED` -> relist 409). Yechim: `items.rejected_at` (yoki moderatsiya
+      holati) ustuni + relist'da tekshiruv
 
 ## Qat'iy tartib qoidasi
 

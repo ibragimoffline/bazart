@@ -8,6 +8,8 @@
  * Kelayotgan xabar shakli (bid_service.place_bid):
  *   { type: "BID_PLACED", auction_id, current_price (tiyin string),
  *     highest_bidder_id, end_time (ISO) }
+ * Buy-now (auction_service.buy_now) xuddi shu shaklda `type: "BUY_NOW"` yuboradi —
+ * auksion yakunlangan; handler turga qaramay auksionni qayta yuklaydi.
  *
  * Real-time QO'SHIMCHA — u boshlang'ich fetch yoki bid oqimini almashtirmaydi.
  * Socket ishlamasa (token yo'q, URL qurib bo'lmadi, server o'chiq) sahifa
