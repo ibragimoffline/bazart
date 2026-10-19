@@ -42,6 +42,27 @@ class BidRepository:
         )
         return self.db.scalar(statement)
 
+    def get_highest_live_bid_excluding(
+        self, auction_id: int, exclude_bidder_ids: set[int]
+    ) -> Bid | None:
+        """Eng yuqori tirik bid (VALID/OUTBID) — berilgan bidderlarnikidan tashqari.
+
+        Keyingi bidderga taklif (E2.10) uchun: sotuvchi, bekor qilingan kelishuv xaridorlari
+        va oldin taklif olganlar chiqarib tashlanadi — bid tarixi O'ZGARMAYDI. Teng summada
+        erta qo'yilgani ustun.
+        """
+        statement = (
+            select(Bid)
+            .where(
+                Bid.auction_id == auction_id,
+                Bid.status.in_([BidStatus.VALID, BidStatus.OUTBID]),
+                Bid.bidder_id.not_in(exclude_bidder_ids or {-1}),
+            )
+            .order_by(Bid.amount.desc(), Bid.created_at.asc())
+            .limit(1)
+        )
+        return self.db.scalar(statement)
+
     def get_highest_active_bid(self, auction_id: int) -> Bid | None:
         """Eng yuqori TIRIK bid (VALID yoki OUTBID — RETRACTED/INVALIDATED emas).
 

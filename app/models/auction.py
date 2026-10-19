@@ -146,4 +146,13 @@ class Auction(Base):
         foreign_keys="Bid.auction_id",
     )
     winning_bid = relationship("Bid", foreign_keys=[winning_bid_id], post_update=True)
-    deal = relationship("Deal", back_populates="auction", uselist=False)
+    # Bir auksionda bekor qilingan va keyingi bidder bilan tuzilgan kelishuv bo'lishi mumkin
+    # (E2.10) — shuning uchun kolleksiya; tirigi `active_deal` orqali.
+    deals = relationship("Deal", back_populates="auction")
+
+    @property
+    def active_deal(self):
+        """Bekor qilinmagan kelishuv (ko'pi bilan bitta — `uq_deals_auction_active`)."""
+        from app.models.enums import DealStatus
+
+        return next((d for d in self.deals if d.status != DealStatus.CANCELLED), None)

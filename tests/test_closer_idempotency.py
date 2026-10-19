@@ -161,9 +161,9 @@ def test_parallel_close_creates_exactly_one_order(db_session: Session, db_engine
         )
         assert order_count == 1, f"kutilgan 1 deal, aslida {order_count}"
 
-        # get_by_auction_id ham bittani qaytaradi (dublikat bo'lsa u yerda ham
+        # get_active_by_auction_id ham bittani qaytaradi (dublikat bo'lsa u yerda ham
         # MultipleResultsFound bo'lardi).
-        deal = DealRepository(check).get_by_auction_id(auction_id)
+        deal = DealRepository(check).get_active_by_auction_id(auction_id)
         assert deal is not None
         assert deal.final_price == BID_AMOUNT
     finally:

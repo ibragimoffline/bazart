@@ -2,7 +2,8 @@ from fastapi import APIRouter
 
 from app.core.dependencies import CurrentActiveUser, CurrentAdminUser, DbSession
 from app.models.deal import Deal
-from app.schemas.deal import DealCancel, DealDetail, DealRead
+from app.schemas.deal import DealCancel, DealDetail, DealRead, NextBidderOffer
+from app.services.auction_service import AuctionService
 from app.services.deal_service import DealService
 
 router = APIRouter()
@@ -47,3 +48,12 @@ def cancel_deal(
 ) -> Deal:
     """Istalgan tomon (yoki admin), sabab bilan."""
     return DealService(db).cancel(deal_id, current_user, payload.reason)
+
+
+@router.post("/{deal_id}/offer-next-bidder", response_model=NextBidderOffer)
+def offer_next_bidder(
+    deal_id: int, current_user: CurrentActiveUser, db: DbSession
+) -> NextBidderOffer:
+    """Sotuvchi: g'olib javob bermay bekor qilingan kelishuvdan keyin keyingi bidderga taklif."""
+    offer = AuctionService(db).offer_next_bidder(deal_id, current_user)
+    return NextBidderOffer.model_validate(offer)

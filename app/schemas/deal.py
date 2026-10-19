@@ -50,5 +50,16 @@ class DealDetail(DealRead):
     counterparty: DealContact | None = None
 
 
+class NextBidderOffer(BaseModel):
+    """Keyingi bidderga yuborilgan taklif (E2.10). Bidder kimligi sotuvchiga ham maskalangan:
+    kontakt faqat kelishuvdan keyin."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    auction_id: int
+    amount: TiyinAmount
+    expires_at: datetime
+
+
 class DealCancel(BaseModel):
     reason: DealCancelReason

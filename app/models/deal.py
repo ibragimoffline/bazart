@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, Index, text
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,11 +17,23 @@ class Deal(Base):
             "(auction_id IS NULL) <> (offer_id IS NULL)", name="ck_deals_single_source"
         ),
         CheckConstraint("quantity >= 1", name="ck_deals_quantity_positive"),
+        # Auksionda bir vaqtda faqat BITTA tirik kelishuv: g'olib javob bermay bekor bo'lsa,
+        # keyingi bidder bilan yangi kelishuv tuziladi (E2.10), lekin mahsulot ikki marta
+        # sotilmaydi. Oddiy UNIQUE bekor qilingan kelishuv tufayli qayta urinishni to'sardi.
+        # Shart "bekor qilinmagan" (holatlar ro'yxati emas) — E5 dagi fee_pending ham qamraladi.
+        # Taklif kelishuvlari (auction_id NULL) bir e'londan bir nechta bo'ladi — chiqariladi.
+        # Enum DB'da NOMI bilan saqlanadi: 'CANCELLED' (katta harf).
+        Index(
+            "uq_deals_auction_active",
+            "auction_id",
+            unique=True,
+            postgresql_where=text("auction_id IS NOT NULL AND status <> 'CANCELLED'"),
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     auction_id: Mapped[int | None] = mapped_column(
-        ForeignKey("auctions.id"), unique=True, nullable=True
+        ForeignKey("auctions.id"), index=True, nullable=True
     )
     offer_id: Mapped[int | None] = mapped_column(
         ForeignKey("offers.id"), unique=True, nullable=True
@@ -67,7 +79,7 @@ class Deal(Base):
         nullable=False,
     )
 
-    auction = relationship("Auction", back_populates="deal")
+    auction = relationship("Auction", back_populates="deals")
     offer = relationship("Offer", back_populates="deal")
     buyer = relationship("User", foreign_keys=[buyer_id], back_populates="deals_as_buyer")
     seller = relationship("User", foreign_keys=[seller_id], back_populates="deals_as_seller")

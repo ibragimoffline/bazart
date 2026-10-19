@@ -1,25 +1,32 @@
 from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.auction import Auction
 from app.models.bid import Bid
+from app.models.deal import Deal
 from app.models.enums import (
     AuctionStatus,
     BidStatus,
+    DealCancelReason,
+    DealStatus,
     ItemStatus,
     ListingType,
     NotificationType,
     PricingMode,
 )
 from app.models.item import Item
+from app.models.next_bidder_offer import NextBidderOffer
 from app.models.user import User
-from app.money import calc_dutch_step
+from app.money import calc_dutch_step, format_soum_text
 from app.realtime import manager
 from app.repositories.auction_repository import AuctionRepository
 from app.repositories.bid_repository import BidRepository
+from app.repositories.deal_repository import DealRepository
 from app.repositories.item_repository import ItemRepository
+from app.repositories.next_offer_repository import NextOfferRepository
 from app.repositories.watchlist_repository import WatchlistRepository
 from app.schemas.auction import (
     AuctionCreate,
@@ -453,6 +460,15 @@ class AuctionService:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN, detail="Not your auction"
                 )
+            if any(
+                o.is_open(datetime.now(UTC))
+                for o in NextOfferRepository(self.db).list_for_auction(old.id)
+            ):
+                # Mahsulot ikki marta sotilmasin: taklif ochiq turganda qayta joylash yo'q.
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Keyingi bidderga ochiq taklif bor",
+                )
             unsold = (
                 old.status == AuctionStatus.ENDED and old.winner_id is None
             ) or old.status == AuctionStatus.RESERVE_NOT_MET
@@ -810,6 +826,143 @@ class AuctionService:
 
         self.db.refresh(auction)
         return auction
+
+    # --- Keyingi bidderga taklif (E2.10, docs/DEALS.md §6) ---------------------------
+
+    def offer_next_bidder(self, deal_id: int, seller: User) -> NextBidderOffer:
+        """G'olib javob bermagani uchun bekor qilingan auksion kelishuvidan keyin sotuvchi
+        keyingi bidderga 24 soatlik taklif yuboradi (uning bid narxida).
+
+        Faqat `no_response` va aybdor = xaridor: sotuvchi o'zi fikridan qaytgan bo'lsa bu yo'l
+        yo'q. Tanlovdan chiqariladi: sotuvchi, shu auksion kelishuvlarining xaridorlari va
+        oldin taklif olgan bidderlar (`next_bidder_offers`). Bid tarixi o'zgarmaydi.
+        Auksion qatori FOR UPDATE — ikki parallel so'rov ikki taklif yaratmaydi.
+        """
+        deal = DealRepository(self.db).get(deal_id)
+        if deal is None or deal.seller_id != seller.id or deal.auction_id is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deal not found")
+        if not (
+            deal.status == DealStatus.CANCELLED
+            and deal.cancel_reason == DealCancelReason.NO_RESPONSE
+            and deal.at_fault_id == deal.buyer_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Keyingi bidderga taklif faqat g'olib javob bermagach (no_response)",
+            )
+        try:
+            auction = self.auctions.get_for_update(deal.auction_id)
+            if auction is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
+                )
+            now = datetime.now(UTC)
+            self.db.refresh(auction, ["deals"])
+            if auction.active_deal is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT, detail="Auksionda faol kelishuv bor"
+                )
+            offers = NextOfferRepository(self.db)
+            previous = offers.list_for_auction(auction.id)
+            if any(o.is_open(now) for o in previous):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT, detail="Ochiq taklif hali amalda"
+                )
+            excluded = {auction.seller_id}
+            excluded |= {d.buyer_id for d in auction.deals}
+            excluded |= {o.bidder_id for o in previous}
+            nxt = BidRepository(self.db).get_highest_live_bid_excluding(auction.id, excluded)
+            if nxt is None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Keyingi bidder yo'q — mahsulotni qayta joylang",
+                )
+            offer = offers.add(
+                NextBidderOffer(
+                    auction_id=auction.id,
+                    bidder_id=nxt.bidder_id,
+                    bid_id=nxt.id,
+                    amount=nxt.amount,
+                    offered_at=now,
+                    expires_at=now + SECOND_CHANCE_TTL,
+                )
+            )
+            NotificationService(self.db).create(
+                user_id=nxt.bidder_id,
+                type=NotificationType.SECOND_CHANCE,
+                title="Sotuvchi sizga taklif yubordi",
+                body=(
+                    f"«{auction.item.title}» sizning {format_soum_text(nxt.amount)} "
+                    "taklifingiz bo'yicha. 24 soat ichida qabul qiling."
+                ),
+                payload={
+                    "auction_id": auction.id,
+                    "amount": str(nxt.amount),
+                    "expires_at": offer.expires_at.isoformat(),
+                },
+            )
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+        self.db.refresh(offer)
+        return offer
+
+    def accept_next_offer(self, auction_id: int, bidder: User) -> Deal:
+        """Keyingi bidder taklifni qabul qiladi -> yangi kelishuv (create_deal orqali).
+
+        Auksion qatori FOR UPDATE: bir vaqtda kelgan ikkinchi qabul qulfdan keyin
+        `accepted_at` ni ko'rib aniq 409 oladi. `uq_deals_auction_active` — oxirgi himoya;
+        u ham ishga tushsa (kutilmagan poyga) foydalanuvchi baribir 409 ko'radi.
+        """
+        TrustService(self.db).ensure_can_trade(bidder)
+        try:
+            auction = self.auctions.get_for_update(auction_id)
+            offer = (
+                NextOfferRepository(self.db).get_for_bidder(auction_id, bidder.id)
+                if auction is not None
+                else None
+            )
+            if offer is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Offer not found")
+            now = datetime.now(UTC)
+            if offer.accepted_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT, detail="Taklif allaqachon qabul qilingan"
+                )
+            if not offer.is_open(now):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Taklif muddati o'tgan yoki yopilgan",
+                )
+
+            auction.winning_bid = offer.bid
+            auction.winner_id = offer.bidder_id
+            auction.highest_bidder_id = offer.bidder_id
+            self.db.add(auction)
+            self.db.flush()
+            deal = DealService(self.db).create_for_winning_auction(auction)
+            offer.accepted_at = now
+            offer.deal_id = deal.id
+            self.db.add(offer)
+            NotificationService(self.db).create(
+                user_id=auction.seller_id,
+                type=NotificationType.SOLD,
+                title="Keyingi bidder taklifni qabul qildi",
+                body=f"«{auction.item.title}»: {format_soum_text(offer.amount)}. Kelishuv tuzildi.",
+                payload={"auction_id": auction.id, "deal_id": deal.id},
+            )
+            self.db.commit()
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Auksionda faol kelishuv bor"
+            ) from exc
+        except Exception:
+            self.db.rollback()
+            raise
+        self.db.refresh(deal)
+        return deal
 
 
 AuctionSettlementService = AuctionService

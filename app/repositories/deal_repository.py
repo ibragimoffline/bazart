@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.deal import Deal
+from app.models.enums import DealStatus
 
 
 class DealRepository:
@@ -11,8 +12,11 @@ class DealRepository:
     def get(self, deal_id: int) -> Deal | None:
         return self.db.get(Deal, deal_id)
 
-    def get_by_auction_id(self, auction_id: int) -> Deal | None:
-        statement = select(Deal).where(Deal.auction_id == auction_id)
+    def get_active_by_auction_id(self, auction_id: int) -> Deal | None:
+        """Auksionning tirik (bekor qilinmagan) kelishuvi — ko'pi bilan bitta."""
+        statement = select(Deal).where(
+            Deal.auction_id == auction_id, Deal.status != DealStatus.CANCELLED
+        )
         return self.db.scalar(statement)
 
     def add(self, deal: Deal) -> Deal:

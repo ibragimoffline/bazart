@@ -8,6 +8,7 @@ from app.models.deal import Deal
 from app.models.item import Item, ItemImage
 from app.models.legal_consent import LegalConsent
 from app.models.message import Conversation, Message
+from app.models.next_bidder_offer import NextBidderOffer
 from app.models.notification import Notification
 from app.models.offer import Offer, OfferEvent
 from app.models.otp import OtpCode
@@ -30,6 +31,7 @@ __all__ = [
     "ItemImage",
     "LegalConsent",
     "Message",
+    "NextBidderOffer",
     "Notification",
     "Deal",
     "OtpCode",

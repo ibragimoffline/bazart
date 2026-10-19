@@ -72,7 +72,7 @@ class DealService:
         """Auksion g'olibi (yopilish, buy-now, tushuvchi narx, keyingi bidder). Idempotent."""
         if auction.winner_id is None or auction.winning_bid is None:
             return None
-        existing = self.deals.get_by_auction_id(auction.id)
+        existing = self.deals.get_active_by_auction_id(auction.id)
         if existing is not None:
             return existing
         return self.create_deal(

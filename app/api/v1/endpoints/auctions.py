@@ -7,6 +7,7 @@ from app.core.rate_limit import RateLimiter
 from app.core.request_meta import client_ip, device_id
 from app.models.auction import Auction
 from app.models.bid import Bid
+from app.models.deal import Deal
 from app.models.enums import AuctionStatus
 from app.repositories.auction_repository import AuctionRepository
 from app.repositories.bid_repository import BidRepository
@@ -19,6 +20,7 @@ from app.schemas.auction import (
     AuctionStatusUpdate,
 )
 from app.schemas.bid import BidCreate, BidRead
+from app.schemas.deal import DealRead
 from app.services.auction_service import AuctionService
 from app.services.bid_service import BidService
 
@@ -188,3 +190,9 @@ def create_bid(
         user_agent=ua[:512] if ua else None,
         idempotency_key=idem[:128] if idem else None,
     )
+
+
+@router.post("/{auction_id}/next-offer/accept", response_model=DealRead)
+def accept_next_offer(auction_id: int, current_user: CurrentVerifiedUser, db: DbSession) -> Deal:
+    """Keyingi bidder sotuvchi taklifini qabul qiladi -> kelishuv (E2.10)."""
+    return AuctionService(db).accept_next_offer(auction_id, current_user)
