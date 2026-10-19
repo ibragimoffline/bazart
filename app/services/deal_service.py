@@ -12,6 +12,7 @@ from app.models.user import User
 from app.money import Tiyin, calc_line_total
 from app.repositories.deal_repository import DealRepository
 from app.repositories.offer_repository import OfferRepository
+from app.schemas.deal import DealContact, DealDetail
 from app.services.deal_state import InvalidDealTransition, assert_deal_transition
 
 
@@ -85,12 +86,30 @@ class DealService:
         )
 
     def get_deal_for_user(self, deal_id: int, user: User) -> Deal:
+        """Ishtirokchi yoki admin. Begona — 404 (kelishuv mavjudligi ham oshkor bo'lmaydi)."""
         deal = self.deals.get(deal_id)
-        if deal is None:
+        if deal is None or not (is_admin(user.role) or user.id in {deal.buyer_id, deal.seller_id}):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deal not found")
-        if is_admin(user.role) or user.id in {deal.buyer_id, deal.seller_id}:
-            return deal
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your deal")
+        return deal
+
+    def detail_for_user(self, deal_id: int, user: User) -> DealDetail:
+        """Kelishuv + ikkinchi tomon kontakti (docs/DEALS.md §4).
+
+        Kontakt faqat ISHTIROKCHIGA (admin ham emas) va faqat `contacts_revealed_at` dan keyin.
+        Ochilgan kontakt kelishuv bekor bo'lsa ham qayta yashirilmaydi (raqam allaqachon ma'lum).
+        """
+        deal = self.get_deal_for_user(deal_id, user)
+        detail = DealDetail.model_validate(deal)
+        participant = user.id in {deal.buyer_id, deal.seller_id}
+        if participant and deal.contacts_revealed_at is not None:
+            other = deal.seller if user.id == deal.buyer_id else deal.buyer
+            detail.counterparty = DealContact(
+                user_id=other.id,
+                full_name=other.full_name,
+                phone=other.phone if other.phone_verified_at is not None else None,
+                telegram_username=other.telegram_username,
+            )
+        return detail
 
     def list_buyer_deals(self, buyer: User) -> list[Deal]:
         return self.deals.list_for_buyer(buyer.id)

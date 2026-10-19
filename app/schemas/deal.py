@@ -30,5 +30,24 @@ class DealRead(BaseModel):
     updated_at: datetime
 
 
+class DealContact(BaseModel):
+    """Ikkinchi tomon kontakti — faqat kelishuv ishtirokchisiga, kontaktlar ochilgandan keyin.
+
+    `phone` faqat OTP bilan tasdiqlangan bo'lsa (raqam o'zgarsa tasdiq bekor bo'ladi va bu
+    yerda None qaytadi — tasdiqlanmagan raqam ishonch belgisi sifatida ko'rsatilmaydi).
+    """
+
+    user_id: int
+    full_name: str | None
+    phone: str | None
+    telegram_username: str | None
+
+
+class DealDetail(DealRead):
+    """GET /deals/{id}: kelishuv + (ishtirokchiga) ikkinchi tomon kontakti."""
+
+    counterparty: DealContact | None = None
+
+
 class DealCancel(BaseModel):
     reason: DealCancelReason

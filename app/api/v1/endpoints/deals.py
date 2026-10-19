@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.core.dependencies import CurrentActiveUser, CurrentAdminUser, DbSession
 from app.models.deal import Deal
-from app.schemas.deal import DealCancel, DealRead
+from app.schemas.deal import DealCancel, DealDetail, DealRead
 from app.services.deal_service import DealService
 
 router = APIRouter()
@@ -23,9 +23,10 @@ def read_admin_deals(current_user: CurrentAdminUser, db: DbSession) -> list[Deal
     return DealService(db).list_admin_deals(current_user)
 
 
-@router.get("/{deal_id}", response_model=DealRead)
-def read_deal(deal_id: int, current_user: CurrentActiveUser, db: DbSession) -> Deal:
-    return DealService(db).get_deal_for_user(deal_id, current_user)
+@router.get("/{deal_id}", response_model=DealDetail)
+def read_deal(deal_id: int, current_user: CurrentActiveUser, db: DbSession) -> DealDetail:
+    """Kelishuv; ishtirokchiga ikkinchi tomon kontakti bilan. Begona — 404."""
+    return DealService(db).detail_for_user(deal_id, current_user)
 
 
 @router.post("/{deal_id}/complete", response_model=DealRead)

@@ -137,7 +137,7 @@ def test_unauthorized_user_cannot_view_or_manage_another_users_order(client: Tes
         f"/api/v1/deals/{deal['id']}",
         headers={"Authorization": f"Bearer {stranger_token}"},
     )
-    assert read_response.status_code == 403
+    assert read_response.status_code == 404
 
     # Xaridor "Sotildi" belgilay olmaydi, begona umuman ko'rmaydi (404).
     assert (

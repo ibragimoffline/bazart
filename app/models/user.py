@@ -35,6 +35,9 @@ class User(Base):
     )
     # Telegram bildirishnoma kanali (bot bilan bog'langanda to'ldiriladi).
     telegram_chat_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # Telegram foydalanuvchi nomi (@siz) — kelishuvda ikkinchi tomonga kontakt sifatida ochiladi.
+    # `telegram_chat_id` (ichki bot identifikatori) hech qachon ochilmaydi.
+    telegram_username: Mapped[str | None] = mapped_column(String(32), nullable=True)
     # Interfeys tili (uz/ru) — B2B segmenti uchun rus tili zarur.
     preferred_language: Mapped[str] = mapped_column(String(5), default="uz", nullable=False)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
