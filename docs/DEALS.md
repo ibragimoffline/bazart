@@ -1,7 +1,9 @@
 # Kelishuv (deal) modeli — Faza E
 
 Holat: **reja** (kod E2 da yoziladi; hozircha kodda `orders` va to'lov oqimi bor — E1/E2 da almashadi).
-Manba: `docs/FAZA_E_BAJARISH_TARTIBI.md` (1-bo'lim qarorlari, E2, E3, E5).
+Manba: Claude Docs hujjati "Bazart: Faza E, to'lovsiz kelishuv modeli va soddalashtirish rejasi"
+(https://claude.ai/artifact/5865awHpiTvm44fudNLotm) va `docs/FAZA_E_BAJARISH_TARTIBI.md`.
+Hujjat bilan solishtirildi: 2026-10-19.
 
 **Asosiy g'oya.** Bazart to'lovda ishtirok etmaydi. Savdo **kelishuv** bilan tugaydi: narx va
 miqdor qayd qilinadi, ikki tomonga bir-birining tasdiqlangan kontaktlari ochiladi, ular o'zlari
@@ -38,6 +40,8 @@ bitta tranzaksiyada yoziladi (mavjud qulflar saqlanadi).
 | `buyer_confirmed_at` | Xaridor tasdiqlagan vaqt |
 | `completed_at` | Yakunlangan vaqt |
 | `cancelled_by_id`, `cancel_reason` | Kim va nima sababdan bekor qildi |
+| `at_fault_id` | Bekor qilishda aybdor tomon (sababdan aniqlanadi, §7) — hisoblagich shunga yoziladi |
+| `contacts_revealed_at` | Kontaktlar birinchi marta ochilgan vaqt (`agreed` ga kirganda) |
 | `created_at`, `updated_at` | |
 
 `cancel_reason` (taxminiy): `no_response` (javob bermadi), `changed_mind` (fikridan qaytdi),
@@ -67,7 +71,12 @@ stateDiagram-v2
 ## 4. Kontaktlar
 
 - `GET /deals/{id}`: ikkinchi tomonning **tasdiqlangan telefoni** va **Telegram'i** faqat kelishuv
-  ishtirokchisiga va faqat `agreed` yoki `completed` holatda. `fee_pending` va `cancelled` da yopiq.
+  ishtirokchisiga va faqat kontaktlar ochilgandan keyin (`contacts_revealed_at`): kelishuv `agreed`
+  ga kirganda ochiladi. `fee_pending` da yopiq.
+- **Ochilgan kontakt qayta yashirilmaydi:** kelishuv keyin `cancelled` bo'lsa ham ishtirokchilar bir-
+  birining raqamini ko'rishda davom etadi (raqam allaqachon ma'lum — yashirish yolg'on himoya). Shu
+  sababli kelishuv tuzilishidan oldin ogohlantirish matni ko'rsatiladi. `fee_pending` dan to'g'ridan-
+  to'g'ri bekor bo'lgan kelishuvda kontakt hech qachon ochilmaydi.
 - Begona foydalanuvchi (va admin bo'lmagan) kelishuvni ko'ra olmaydi — 404 (IDOR testi majburiy).
 - Bid va taklif beruvchi ismining maskalanishi o'zgarmaydi; kontakt faqat kelishuvdan keyin.
 - Telefon tasdig'i (OTP) bid, taklif va e'lon yaratish uchun majburiy (E2.1) — ochilgan raqam doim
@@ -101,13 +110,25 @@ bo'yicha **ochiq shikoyat yo'q** — `completed`. Ochiq shikoyat avto-tasdiqni t
 |---|---|
 | Ko'p donali taklif kelishuvi bekor | Donalar zaxiraga qaytadi; e'lon muddati o'tmagan bo'lsa yana `active` (E2.8, E3.7) |
 | Bitta donali mahsulot kelishuvi bekor | Item `sold` → `unsold` (E3.7); sotuvchi qayta joylaydi yoki olib tashlaydi |
-| Har bekor qilish | Bekor qilgan tomonning hisoblagichi oshadi |
+| Har bekor qilish | **Aybdor tomonning** hisoblagichi oshadi (`at_fault_id`, quyida) |
 | E5 komissiyasi | Xaridor aybi bilan (`no_response`, `changed_mind` xaridor tomonidan) — hamyonga qaytadi; sotuvchi bekor qilsa yoki `not_as_described` bo'lmasa — qaytmaydi (aniq qoida E5.2 da) |
+
+**Aybdor tomon sababdan aniqlanadi:**
+
+| Sabab | Aybdor |
+|---|---|
+| `no_response` | Bekor qilmagan tomon (javob bermagan) |
+| `changed_mind` | Bekor qilgan tomon |
+| `not_as_described` | Sotuvchi |
+| `other` | Bekor qilgan tomon |
+
+`no_response` ni suiiste'mol qilish xavfi: ikkinchi tomonga xabar boradi, e'tiroz shikoyat sifatida
+admin'ga tushadi; takroriy holatlar fraud signali.
 
 ## 8. Hisoblagichlar va cheklov (E2.9)
 
 Foydalanuvchida: tugallangan kelishuvlar; xaridor sifatida bekor qilganlari; sotuvchi sifatida bekor
-qilganlari; bid yoki ochiq takliflar bo'la turib olib tashlangan e'lonlar.
+qilganlari (aybdor sifatida); bid yoki ochiq takliflar bo'la turib olib tashlangan e'lonlar.
 
 **Cheklov:** 30 kun ichida 3 ta bekor qilish → 14 kun bid va taklif taqiqi. Uchala son sozlamada.
 Hisoblagichlar profilda ishonch signali sifatida ko'rinadi.
@@ -127,6 +148,8 @@ Hisoblagichlar profilda ishonch signali sifatida ko'rinadi.
 Escrow yo'q, shuning uchun quyidagilar E2 ning **majburiy** qismi (keyinga qoldirilmaydi):
 
 - UI ogohlantirishi: **"Mahsulotni ko'rmasdan oldindan to'lamang"** — kelishuv sahifasi va kontakt kartasida.
+- Bid va taklif formasida: **"Bid — sotib olish niyati"**; bekor qilishlar hisoblagichga yozilishi aytiladi.
+- Backlog (E2 dan tashqari): kelishuvgacha chatda telefon raqam va havolalarni yashirish.
 - Kelishuv sahifasida shikoyat tugmasi.
 - Hisoblagichlar va sharhlar ommaviy profilda.
 - Foydalanuvchi shartlari: "Bazart to'lov va topshirishda ishtirok etmaydi" (yurist ko'rib chiqadi, E2.14).

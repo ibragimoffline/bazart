@@ -28,7 +28,7 @@ Bajarish tartibi va tekshiruvlar: `docs/FAZA_E_BAJARISH_TARTIBI.md` (ish branch'
 | Modular monolith, mikroservis EMAS | MVP tezligi, tranzaksiya butunligi |
 | PostgreSQL asosiy DB | Narx, zaxira, hamyon = ACID |
 | **Bazart to'lovda ishtirok etmaydi** | Escrow, PSP hold, buyer premium, topshirish kodi va nizolar YO'Q. Xaridor va sotuvchi o'zaro hisob-kitob qiladi. Daromad faqat sotuvchidan (E5, hamyon) |
-| **Kontaktlar faqat kelishuvdan keyin** | Ikkinchi tomonning tasdiqlangan telefoni va Telegram'i faqat kelishuv ishtirokchisiga va faqat `agreed`/`completed` holatda (`docs/DEALS.md`). Bid/taklif beruvchi ismi maskalangan qoladi |
+| **Kontaktlar faqat kelishuvdan keyin** | Ikkinchi tomonning tasdiqlangan telefoni va Telegram'i faqat kelishuv ishtirokchisiga, kelishuv `agreed` ga kirgandan keyin; ochilgan kontakt bekor qilinganda ham qayta yashirilmaydi (`docs/DEALS.md`). Bid/taklif beruvchi ismi maskalangan qoladi |
 | **Pul = butun son (tiyin), BIGINT** | Float **TAQIQ**. Hisob faqat `app/money/`. API'da pul — **string, tiyinda**: `{"amount": "6200050"}` = 62 000.50 so'm |
 | Barcha vaqt UTC | Ko'rsatishda `Asia/Tashkent` |
 | Jonli video YO'Q | Pozitsiyaga zid, xarajat + moderatsiya yuki |
@@ -212,7 +212,7 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 - Karta ma'lumotlari saqlanmaydi (to'lov yo'q; hamyon to'ldirish — provayder tomonida, E5.4).
 - Webhook imzosiz qabul qilinmaydi (`core/webhook.py`), takrorlanishi `webhook_events` bilan to'siladi.
 - `high_bidder_max` javob sxemasiga hech qachon qo'shilmaydi.
-- Kontaktlar (telefon, Telegram) faqat kelishuv ishtirokchisiga, faqat `agreed`/`completed` da.
+- Kontaktlar (telefon, Telegram) faqat kelishuv ishtirokchisiga, faqat ochilgandan keyin (`contacts_revealed_at`).
 - IDOR: har resursda egalik tekshiruvi; yangi endpoint — IDOR testi bilan.
 - Secret'lar `.env`da, git'ga tushmaydi.
 
