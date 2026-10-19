@@ -90,6 +90,5 @@ export function requestPhoneOtp(phone: string): Promise<OtpRequestResult> {
 export function verifyPhoneOtp(phone: string, code: string): Promise<OtpVerifyResult> {
   return apiFetch<OtpVerifyResult>("/auth/otp/verify", {
     body: { phone, code, purpose: "phone_verify" },
-    auth: false,
   });
 }

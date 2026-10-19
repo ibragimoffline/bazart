@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from app.core.dependencies import CurrentActiveUser, CurrentUser, DbSession
+from app.core.dependencies import CurrentActiveUser, CurrentUser, CurrentVerifiedUser, DbSession
 from app.core.rate_limit import RateLimiter
 from app.core.request_meta import client_ip, device_id
 from app.models.auction import Auction
@@ -31,7 +31,7 @@ LimitQuery = Annotated[int, Query(ge=1, le=100)]
 @router.post("", response_model=AuctionRead, status_code=status.HTTP_201_CREATED)
 def create_item_auction(
     payload: AuctionCreate,
-    current_user: CurrentUser,
+    current_user: CurrentVerifiedUser,
     db: DbSession,
 ) -> Auction:
     item = ItemRepository(db).get(payload.item_id)
@@ -121,7 +121,7 @@ def accept_second_chance(
     dependencies=[Depends(RateLimiter("bid", 60))],
 )
 def buy_now(
-    auction_id: int, current_user: CurrentActiveUser, db: DbSession, request: Request
+    auction_id: int, current_user: CurrentVerifiedUser, db: DbSession, request: Request
 ) -> Auction:
     """Lotni "hoziroq sotib olish" narxida sotib olish (faqat birinchi taklifgacha).
 
@@ -144,7 +144,7 @@ def buy_now(
 def relist_auction(
     auction_id: int,
     payload: AuctionRelist,
-    current_user: CurrentActiveUser,
+    current_user: CurrentVerifiedUser,
     db: DbSession,
 ) -> Auction:
     """Sotilmagan lotni yangi narx va muddat bilan qayta joylash (yangi auksion qaytadi).
@@ -173,7 +173,7 @@ def read_auction_bids(auction_id: int, db: DbSession, limit: LimitQuery = 50) ->
 def create_bid(
     auction_id: int,
     payload: BidCreate,
-    current_user: CurrentUser,
+    current_user: CurrentVerifiedUser,
     db: DbSession,
     request: Request,
 ) -> Bid:

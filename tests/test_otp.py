@@ -29,6 +29,9 @@ from app.services.sms_provider import (
 
 PHONE = "+998901112233"
 
+# Telefon tasdig'i sinovlari tasdiqlanmagan foydalanuvchidan boshlanadi.
+pytestmark = pytest.mark.usefixtures("unverified_phones")
+
 
 def _request_otp(client: TestClient, phone: str = PHONE, purpose: str = "phone_verify") -> dict:
     response = client.post(
@@ -196,6 +199,7 @@ def test_phone_verify_marks_user(client: TestClient, db_session: Session, test_u
     code = _request_otp(client).json()["debug_code"]
     verify_response = client.post(
         "/api/v1/auth/otp/verify",
+        headers=test_user.headers,
         json={"phone": PHONE, "code": code, "purpose": "phone_verify"},
     )
     assert verify_response.status_code == 200
@@ -218,3 +222,63 @@ def test_verify_without_matching_user_still_succeeds(client: TestClient):
     body = response.json()
     assert body["verified"] is True
     assert body["phone_verified"] is False
+
+
+def _set_phone(db_session: Session, user_id: int, phone: str) -> User:
+    user = db_session.get(User, user_id)
+    user.phone = phone
+    db_session.add(user)
+    db_session.commit()
+    return user
+
+
+def test_anonymous_verify_does_not_mark_any_user(
+    client: TestClient, db_session: Session, test_user
+) -> None:
+    """Login'siz tasdiq raqami shu bo'lgan akkauntni belgilamaydi (faqat so'rovchi)."""
+    user = _set_phone(db_session, test_user.id, PHONE)
+    code = _request_otp(client).json()["debug_code"]
+    response = client.post(
+        "/api/v1/auth/otp/verify",
+        json={"phone": PHONE, "code": code, "purpose": "phone_verify"},
+    )
+    assert response.status_code == 200
+    assert response.json()["phone_verified"] is False
+    db_session.refresh(user)
+    assert user.phone_verified_at is None
+
+
+def test_verify_marks_only_requester_not_other_holder(
+    client: TestClient, db_session: Session, test_user, test_seller
+) -> None:
+    """Ikki akkauntda bir xil raqam: kodni kiritgan (login qilgan) tasdiqlanadi, boshqasi yo'q."""
+    other = _set_phone(db_session, test_user.id, PHONE)
+    me = _set_phone(db_session, test_seller.id, PHONE)
+    code = _request_otp(client).json()["debug_code"]
+    response = client.post(
+        "/api/v1/auth/otp/verify",
+        headers=test_seller.headers,
+        json={"phone": PHONE, "code": code, "purpose": "phone_verify"},
+    )
+    assert response.json()["phone_verified"] is True
+    db_session.refresh(other)
+    db_session.refresh(me)
+    assert me.phone_verified_at is not None
+    assert other.phone_verified_at is None
+
+
+def test_phone_verified_on_another_account_is_rejected(
+    client: TestClient, db_session: Session, test_user, test_seller
+) -> None:
+    """Bitta raqam = bitta tasdiqlangan akkaunt: ikkinchisi 409 oladi."""
+    owner = _set_phone(db_session, test_user.id, PHONE)
+    owner.phone_verified_at = datetime.now(UTC)
+    db_session.commit()
+    _set_phone(db_session, test_seller.id, PHONE)
+    code = _request_otp(client).json()["debug_code"]
+    response = client.post(
+        "/api/v1/auth/otp/verify",
+        headers=test_seller.headers,
+        json={"phone": PHONE, "code": code, "purpose": "phone_verify"},
+    )
+    assert response.status_code == 409

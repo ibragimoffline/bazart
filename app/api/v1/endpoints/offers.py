@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 
-from app.core.dependencies import CurrentActiveUser, CurrentUser, DbSession
+from app.core.dependencies import CurrentActiveUser, CurrentUser, CurrentVerifiedUser, DbSession
 from app.models.enums import OfferParty, OfferStatus
 from app.models.offer import Offer
 from app.schemas.offer import OfferCounter, OfferRead
@@ -30,14 +30,14 @@ def read_offer(offer_id: int, current_user: CurrentUser, db: DbSession) -> Offer
 
 
 @router.post("/{offer_id}/accept", response_model=OfferRead)
-def accept_offer(offer_id: int, current_user: CurrentActiveUser, db: DbSession) -> Offer:
+def accept_offer(offer_id: int, current_user: CurrentVerifiedUser, db: DbSession) -> Offer:
     """Navbatdagi tomon shartlarni qabul qiladi — zaxira kamayadi, order yaratiladi."""
     return OfferService(db).accept(offer_id, current_user)
 
 
 @router.post("/{offer_id}/counter", response_model=OfferRead)
 def counter_offer(
-    offer_id: int, payload: OfferCounter, current_user: CurrentActiveUser, db: DbSession
+    offer_id: int, payload: OfferCounter, current_user: CurrentVerifiedUser, db: DbSession
 ) -> Offer:
     return OfferService(db).counter(offer_id, current_user, payload)
 

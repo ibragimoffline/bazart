@@ -1,7 +1,9 @@
+import pytest
 from conftest import AuthenticatedUser
 from fastapi.testclient import TestClient
 
 
+@pytest.mark.usefixtures("unverified_phones")
 def test_user_can_read_and_update_profile(
     client: TestClient,
     test_user: AuthenticatedUser,

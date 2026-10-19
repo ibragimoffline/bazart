@@ -16,15 +16,27 @@ export function mediaUrl(path: string): string {
   return `${BASE}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
+/**
+ * Backend mashina kodlari -> foydalanuvchi matni. `code` kodni saqlaydi (UI shunga qarab
+ * harakat taklif qiladi), `detail` esa ko'rsatiladigan matn.
+ */
+const DETAIL_TEXT: Record<string, string> = {
+  phone_verification_required:
+    "Avval telefon raqamingizni tasdiqlang (Profil sahifasi). Kelishuvda raqamingiz ikkinchi tomonga koʻrinadi.",
+};
+
 /** Backend qaytargan xatolik (detail matni bilan). */
 export class ApiError extends Error {
   status: number;
   detail: string;
-  constructor(status: number, detail: string) {
+  /** Backend'ning asl `detail` qiymati (mashina kodi bo'lsa, masalan phone_verification_required). */
+  code: string;
+  constructor(status: number, detail: string, code: string = detail) {
     super(detail);
     this.name = "ApiError";
     this.status = status;
     this.detail = detail;
+    this.code = code;
   }
 }
 
@@ -77,7 +89,7 @@ export async function apiFetch<T>(
     } catch {
       // JSON emas — statusText qoladi.
     }
-    throw new ApiError(res.status, detail);
+    throw new ApiError(res.status, DETAIL_TEXT[detail] ?? detail, detail);
   }
 
   if (res.status === 204) return undefined as T;

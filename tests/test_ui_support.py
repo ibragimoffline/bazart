@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.region import District, Region
+from app.models.user import User
 from app.services.auth_service import AuthService
 from tests.conftest import create_auction, create_bid, create_item, create_user
 
@@ -58,6 +59,7 @@ def test_bid_history_unknown_auction(client: TestClient) -> None:
     assert client.get("/api/v1/auctions/999999/bids").status_code == 404
 
 
+@pytest.mark.usefixtures("unverified_phones")
 def test_users_me_exposes_phone_verified_at(client: TestClient, db_session: Session) -> None:
     user = create_user(client, db_session, email="me@example.com")
     me = client.get("/api/v1/users/me", headers=user.headers).json()
@@ -119,6 +121,7 @@ def test_item_district_must_belong_to_region(client: TestClient, db_session: Ses
     assert patch.status_code == 400
 
 
+@pytest.mark.usefixtures("unverified_phones")
 def test_profile_phone_is_normalized_and_change_resets_verification(
     client: TestClient, db_session: Session
 ) -> None:
@@ -130,7 +133,8 @@ def test_profile_phone_is_normalized_and_change_resets_verification(
     assert response.json()["phone"] == "+998901234567"
 
     # OTP tasdig'i profil raqamini endi topadi (avval format farqi tufayli topolmasdi).
-    assert AuthService(db_session).mark_phone_verified("+998901234567") is True
+    owner = db_session.get(User, user.id)
+    assert AuthService(db_session).mark_phone_verified("+998901234567", owner) is True
     me = client.get("/api/v1/users/me", headers=user.headers).json()
     assert me["phone_verified_at"] is not None
 

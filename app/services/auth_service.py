@@ -134,18 +134,30 @@ class AuthService:
         revoke_token(token)
         return verified_user
 
-    def mark_phone_verified(self, phone: str) -> bool:
-        """Telefon OTP tasdig'idan keyin foydalanuvchini tasdiqlangan deb belgilaydi.
+    def mark_phone_verified(self, phone: str, user: User | None) -> bool:
+        """Telefon OTP tasdig'idan keyin SO'ROVCHI foydalanuvchini tasdiqlangan deb belgilaydi.
 
-        Raqam bo'yicha foydalanuvchi topilsa `phone_verified_at` ni belgilaydi.
-        Ro'yxatdan o'tish oqimida raqam hali hech kimga bog'lanmagan bo'lishi
-        mumkin — u holda hech narsa qilinmaydi (kod baribir tasdiqlangan).
+        Ilgari raqam bo'yicha istalgan foydalanuvchi topilib belgilanardi: `phone` unique
+        emas, ya'ni boshqa akkaunt shu raqamni profiliga yozib, egasining OTP'si bilan
+        "tasdiqlangan" bo'lib qolishi mumkin edi. Faza E da tasdiqlangan raqam kelishuvda
+        ikkinchi tomonga ochiladi, shuning uchun faqat tizimga kirgan va profilida aynan shu
+        raqam turgan foydalanuvchi belgilanadi. Raqam boshqa akkauntda allaqachon
+        tasdiqlangan bo'lsa — 409 (bitta raqam = bitta tasdiqlangan akkaunt).
 
-        :return: foydalanuvchi topilib, tasdiqlangan bo'lsa True.
+        :return: so'rovchi tasdiqlangan bo'lsa True (anonim yoki raqam mos emas — False).
         """
-        user = self.db.scalar(select(User).where(User.phone == phone))
-        if user is None:
+        if user is None or user.phone != phone:
             return False
+        taken = self.db.scalar(
+            select(User.id).where(
+                User.phone == phone, User.phone_verified_at.is_not(None), User.id != user.id
+            )
+        )
+        if taken is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Bu raqam boshqa akkauntda tasdiqlangan",
+            )
         if user.phone_verified_at is None:
             user.phone_verified_at = datetime.now(UTC)
             self.db.add(user)

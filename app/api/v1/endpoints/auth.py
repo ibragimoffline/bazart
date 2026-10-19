@@ -1,7 +1,14 @@
 from fastapi import APIRouter, Depends, Request, status
 
 from app.core.config import settings
-from app.core.dependencies import BearerToken, CurrentActiveUser, CurrentUser, DbSession, LoginForm
+from app.core.dependencies import (
+    BearerToken,
+    CurrentActiveUser,
+    CurrentUser,
+    DbSession,
+    LoginForm,
+    OptionalUser,
+)
 from app.core.rate_limit import RateLimiter
 from app.models.enums import OtpPurpose
 from app.models.user import User
@@ -163,11 +170,13 @@ def request_otp(
     response_model=OtpVerifyResponse,
     dependencies=[Depends(RateLimiter("auth", 60))],
 )
-def verify_otp(payload: OtpVerifyIn, db: DbSession) -> OtpVerifyResponse:
+def verify_otp(
+    payload: OtpVerifyIn, db: DbSession, current_user: OptionalUser
+) -> OtpVerifyResponse:
     OtpService(db).verify_otp(payload.phone, payload.code, payload.purpose)
     phone_verified = False
     if payload.purpose == OtpPurpose.PHONE_VERIFY:
-        phone_verified = AuthService(db).mark_phone_verified(payload.phone)
+        phone_verified = AuthService(db).mark_phone_verified(payload.phone, current_user)
     return OtpVerifyResponse(
         message="Kod tasdiqlandi",
         verified=True,

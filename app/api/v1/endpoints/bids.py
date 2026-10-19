@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request, status
 
-from app.core.dependencies import CurrentAdminUser, CurrentUser, DbSession
+from app.core.dependencies import CurrentAdminUser, CurrentUser, CurrentVerifiedUser, DbSession
 from app.core.rate_limit import RateLimiter
 from app.core.request_meta import client_ip, device_id
 from app.models.bid import Bid
@@ -31,7 +31,7 @@ def _idempotency_key(request: Request) -> str | None:
 def create_bid_for_auction(
     auction_id: int,
     payload: BidCreate,
-    current_user: CurrentUser,
+    current_user: CurrentVerifiedUser,
     db: DbSession,
     request: Request,
 ) -> Bid:

@@ -1,3 +1,4 @@
+import itertools
 import os
 from collections.abc import Generator
 from dataclasses import dataclass
@@ -5,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -15,6 +16,7 @@ from app.db.session import get_db
 from app.main import app
 from app.models.base import Base
 from app.models.enums import UserRole
+from app.models.user import User
 from app.repositories.user_repository import UserRepository
 
 # Test to'plami "test" muhitida ishlaydi: rate
@@ -45,6 +47,37 @@ TEST_DATABASE_URL = os.getenv(
     "postgresql+psycopg://postgres:postgres@localhost:5433/bazart_test",
 )
 TEST_PASSWORD = "Password1"
+
+# Faza E2.1: bid, taklif, e'lon va xarid uchun telefon tasdig'i majburiy. Mavjud test korpusi
+# foydalanuvchilarni API orqali ro'yxatdan o'tkazadi (OTP'siz), shuning uchun har yangi
+# foydalanuvchiga zaxira oralig'idan (+998 00 ...) noyob tasdiqlangan raqam beriladi. Talab
+# o'zi O'CHIRILMAYDI — u har testda ishlaydi. Tasdiqlanmagan holatni sinovchi testlar
+# `unverified_phones` fixture'ini ishlatadi.
+#
+# Holat `User` klassida saqlanadi: ba'zi testlar `conftest`, ba'zilari `tests.conftest` deb
+# import qiladi — modul ikki marta yuklansa ham listener va bayroq bitta bo'lib qoladi.
+_STATE_ATTR = "_test_auto_verify_phones"
+if _STATE_ATTR not in User.__dict__:
+    _state = {"on": True, "seq": itertools.count(1)}
+
+    def _auto_verify_test_phone(mapper, connection, target: User) -> None:  # noqa: ARG001
+        if _state["on"] and target.phone is None and target.phone_verified_at is None:
+            target.phone = f"+99800{next(_state['seq']):07d}"
+            target.phone_verified_at = datetime.now(UTC)
+
+    setattr(User, _STATE_ATTR, _state)
+    event.listen(User, "before_insert", _auto_verify_test_phone)
+_AUTO_VERIFY_PHONES: dict = User.__dict__[_STATE_ATTR]
+
+
+@pytest.fixture
+def unverified_phones() -> Generator[None]:
+    """Shu test davomida yangi foydalanuvchilar telefonsiz va tasdiqlanmagan yaratiladi."""
+    _AUTO_VERIFY_PHONES["on"] = False
+    try:
+        yield
+    finally:
+        _AUTO_VERIFY_PHONES["on"] = True
 
 
 @dataclass(frozen=True)

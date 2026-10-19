@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 
-from app.core.dependencies import CurrentActiveUser, CurrentUser, DbSession
+from app.core.dependencies import CurrentActiveUser, CurrentUser, CurrentVerifiedUser, DbSession
 from app.core.rate_limit import RateLimiter
 from app.models.enums import ItemStatus, ListingType
 from app.models.item import Item
@@ -29,7 +29,7 @@ PrimaryImageForm = Annotated[bool, Form()]
 
 
 @router.post("", response_model=ItemRead, status_code=status.HTTP_201_CREATED)
-def create_listing(payload: ItemCreate, current_user: CurrentActiveUser, db: DbSession) -> Item:
+def create_listing(payload: ItemCreate, current_user: CurrentVerifiedUser, db: DbSession) -> Item:
     return ItemService(db).create_item(current_user, payload)
 
 
@@ -101,7 +101,7 @@ def upload_item_image(
 
 @router.post("/{item_id}/publish", response_model=ItemRead)
 def publish_listing(
-    item_id: int, payload: ItemPublish, current_user: CurrentActiveUser, db: DbSession
+    item_id: int, payload: ItemPublish, current_user: CurrentVerifiedUser, db: DbSession
 ) -> Item:
     """Qoralamani taklifli e'lon qiladi (yoki muddati o'tganini qayta ochadi)."""
     return OfferService(db).publish(item_id, current_user, payload)
@@ -114,7 +114,7 @@ def publish_listing(
     dependencies=[Depends(RateLimiter("bid", 60))],
 )
 def create_offer(
-    item_id: int, payload: OfferCreate, current_user: CurrentActiveUser, db: DbSession
+    item_id: int, payload: OfferCreate, current_user: CurrentVerifiedUser, db: DbSession
 ) -> Offer:
     """Xaridor narx va miqdor taklif qiladi (istalgan musbat dona narxi)."""
     return OfferService(db).make_offer(item_id, current_user, payload)
