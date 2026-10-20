@@ -14,6 +14,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/store/auth"
+import { Skeleton } from "@/components/ui/skeleton"
 
 type Tab = { href: string; label: string; icon: LucideIcon; match: string }
 
@@ -34,8 +35,11 @@ const AUTHED: Tab[] = [
 
 function MobileTabBar() {
   const pathname = usePathname()
-  const authed = useAuthStore((s) => s.status) === "authenticated"
-  const tabs = authed ? AUTHED : ANON
+  const status = useAuthStore((s) => s.status)
+  // Sessiya tiklanayotganda "Kirish" ko'rsatilmaydi — o'rnida joy egallovchi turadi.
+  const restoring = status === "idle"
+  const tabs = status === "authenticated" ? AUTHED : restoring ? ANON.slice(0, 2) : ANON
+  const columns = restoring ? 3 : tabs.length
 
   return (
     <nav
@@ -45,7 +49,7 @@ function MobileTabBar() {
       <ul
         className={cn(
           "mx-auto grid max-w-md",
-          tabs.length === 5 ? "grid-cols-5" : tabs.length === 4 ? "grid-cols-4" : "grid-cols-3"
+          columns === 5 ? "grid-cols-5" : columns === 4 ? "grid-cols-4" : "grid-cols-3"
         )}
       >
         {tabs.map((tab) => {
@@ -75,6 +79,12 @@ function MobileTabBar() {
             </li>
           )
         })}
+        {restoring && (
+          <li aria-hidden="true" className="flex flex-col items-center gap-1 px-1 pt-2 pb-2.5">
+            <Skeleton className="h-7 w-12 rounded-full" />
+            <Skeleton className="h-3 w-10" />
+          </li>
+        )}
       </ul>
     </nav>
   )

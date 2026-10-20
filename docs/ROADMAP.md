@@ -7,6 +7,9 @@ Real holatga asoslangan. `[x]` = kodda bor va ishlaydi. `[ ]` = yo'q.
 - [x] FastAPI + SQLAlchemy 2 + Alembic + Postgres 16 skeleti
 - [x] Qatlamli struktura: api → services → repositories → models
 - [x] Auth: register / login / refresh / logout / password reset / email verification (JWT + bcrypt)
+- [x] Sessiyalar: refresh token HttpOnly cookie'da, rotation + replay detection (`auth_sessions`),
+      30 kunlik mutlaq chegara, frontend'da jim yangilash (single-flight, Web Lock),
+      WS auth birinchi xabarda — `docs/AUTH.md`
 - [x] Rollar va DI: `CurrentUser`, `CurrentActiveUser`, `CurrentAdmin`, `require_roles`
 - [x] Kategoriyalar (parent-child daraxt)
 - [x] E'lonlar (items) + rasm yuklash (`StorageService`, lokal disk)
@@ -142,6 +145,12 @@ Kelishuv modeli: `docs/DEALS.md`. Ish branch'i `faza-e`, boshlang'ich teg `pre-f
 / WS auth / Push abstraksiyasi ✅ MVP darajasida.**
 
 ## Xavfsizlik backlog (code+security review'dan, hali ochiq)
+
+- [ ] Auth: `LEGACY_REFRESH_BODY_ENABLED` ni o'chirish (eski localStorage tokenlari 14 kunda eskiradi)
+- [ ] Auth: WS `?token=` query parametrini olib tashlash (yangi klient birinchi `AUTH` xabarini yuboradi)
+- [ ] WS relay: mijoz yuborgan istalgan JSON room'dagi hammaga tarqatiladi — soxta `BID_PLACED`
+      yuborish mumkin. Server-only broadcast'ga o'tkazish (mijoz xabarlarini rad etish)
+- [ ] Auth: eskirgan/bekor qilingan `auth_sessions` qatorlarini tozalovchi beat vazifasi
 
 Katta review'da topilib **tuzatilgan**: forgot-password token leak, capture/release
 FOR UPDATE, xaridor self-release, hold idempotency IDOR, dispute decision+lock,

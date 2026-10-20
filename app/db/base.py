@@ -1,6 +1,7 @@
 from app.models.auction import Auction
 from app.models.auction_extension import AuctionExtension
 from app.models.audit_log import AuditLog
+from app.models.auth_session import AuthSession
 from app.models.bid import Bid
 from app.models.category import Category
 from app.models.complaint import Complaint
@@ -21,6 +22,7 @@ from app.models.webhook_event import WebhookEvent
 __all__ = [
     "AuctionExtension",
     "AuditLog",
+    "AuthSession",
     "Auction",
     "Bid",
     "Category",

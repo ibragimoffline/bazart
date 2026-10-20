@@ -34,27 +34,6 @@ def test_register_login_and_read_current_user(client: TestClient) -> None:
     assert me_response.json()["email"] == "founder@example.com"
 
 
-def test_refresh_token(client: TestClient) -> None:
-    client.post(
-        "/api/v1/auth/register",
-        json={"email": "refresh@example.com", "password": "Password1"},
-    )
-    login_response = client.post(
-        "/api/v1/auth/login",
-        data={"username": "refresh@example.com", "password": "Password1"},
-    )
-    assert login_response.status_code == 200
-
-    refresh_response = client.post(
-        "/api/v1/auth/refresh",
-        json={"refresh_token": login_response.json()["refresh_token"]},
-    )
-
-    assert refresh_response.status_code == 200
-    assert refresh_response.json()["access_token"]
-    assert "refresh_token" not in refresh_response.json()
-
-
 def test_protected_endpoint_requires_access_token(client: TestClient) -> None:
     unauthorized_response = client.get("/api/v1/auth/me")
     assert unauthorized_response.status_code == 401

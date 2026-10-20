@@ -6,8 +6,7 @@
  * `fetch` ishlatiladi (Content-Type'ni brauzer boundary bilan oʻzi qoʻyadi).
  */
 
-import { apiFetch, API_BASE, ApiError } from "@/lib/api/client";
-import { getAccessToken } from "@/lib/api/token";
+import { apiFetch, API_BASE, ApiError, authFetch } from "@/lib/api/client";
 import type {
   Item,
   ItemImage,
@@ -75,7 +74,7 @@ export function createItem(payload: CreateItemPayload): Promise<Item> {
 /**
  * Tovarga rasm yuklash. POST /items/{id}/images (multipart).
  * FormData ishlatilgani uchun Content-Type qoʻlda qoʻyilmaydi — brauzer
- * multipart boundary bilan avtomatik qoʻyadi. Bearer qoʻlda qoʻshiladi.
+ * multipart boundary bilan avtomatik qoʻyadi. Bearer va 401-yangilash — authFetch.
  */
 export async function uploadItemImage(
   itemId: number,
@@ -86,20 +85,10 @@ export async function uploadItemImage(
   form.append("file", file);
   form.append("is_primary", isPrimary ? "true" : "false");
 
-  const headers: Record<string, string> = {};
-  const token = getAccessToken();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  let res: Response;
-  try {
-    res = await fetch(`${API_BASE}/items/${itemId}/images`, {
-      method: "POST",
-      headers,
-      body: form,
-    });
-  } catch {
-    throw new ApiError(0, "Serverga ulanib boʻlmadi. Backend ishga tushganini tekshiring.");
-  }
+  const res = await authFetch(`${API_BASE}/items/${itemId}/images`, {
+    method: "POST",
+    body: form,
+  });
 
   if (!res.ok) {
     let detail = res.statusText || "Rasm yuklanmadi";

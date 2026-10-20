@@ -1,14 +1,20 @@
 import { create } from "zustand";
 
-import type { User } from "@/lib/api/types";
+import type { AuthToken, User } from "@/lib/api/types";
 import * as api from "@/lib/api/endpoints";
+import { ApiError, endSession, onSessionEnded } from "@/lib/api/client";
 import {
-  setTokens,
-  clearTokens,
   getAccessToken,
-  getRefreshToken,
+  hasSessionHint,
+  setAccessToken,
+  setSessionHint,
+  takeLegacyRefreshToken,
 } from "@/lib/api/token";
 
+/**
+ * idle — sessiya hali tiklanmoqda (UI skeleton ko'rsatadi, login'ga yo'naltirmaydi);
+ * authenticated / anonymous — aniq holat.
+ */
 type AuthStatus = "idle" | "authenticated" | "anonymous";
 
 type AuthState = {
@@ -21,53 +27,86 @@ type AuthState = {
   logout: () => Promise<void>;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  status: "idle",
+const RETRY_MAX_MS = 30_000;
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+let retryAttempt = 0;
 
-  loadMe: async () => {
-    if (!getAccessToken()) {
-      set({ status: "anonymous", user: null });
-      return;
-    }
-    try {
-      const user = await api.me();
-      set({ user, status: "authenticated" });
-    } catch {
-      clearTokens();
-      set({ user: null, status: "anonymous" });
-    }
-  },
+function clearRetry(): void {
+  if (retryTimer) clearTimeout(retryTimer);
+  retryTimer = null;
+  retryAttempt = 0;
+}
 
-  login: async (email, password) => {
-    const token = await api.login(email, password);
-    setTokens({ access: token.access_token, refresh: token.refresh_token });
+export const useAuthStore = create<AuthState>((set, get) => {
+  const startSession = async (token: AuthToken) => {
+    setAccessToken(token.access_token, token.expires_in);
+    setSessionHint(true);
     const user = await api.me();
+    clearRetry();
     set({ user, status: "authenticated" });
-  },
+  };
 
-  loginWithGoogle: async (credential) => {
-    const token = await api.googleLogin(credential);
-    setTokens({ access: token.access_token, refresh: token.refresh_token });
-    const user = await api.me();
-    set({ user, status: "authenticated" });
-  },
-
-  register: async (email, password, fullName) => {
-    await api.register({ email, password, full_name: fullName });
-    const token = await api.login(email, password);
-    setTokens({ access: token.access_token, refresh: token.refresh_token });
-    const user = await api.me();
-    set({ user, status: "authenticated" });
-  },
-
-  logout: async () => {
-    try {
-      await api.logout(getRefreshToken());
-    } catch {
-      // logout xatosi bo'lsa ham lokal tokenni tozalaymiz.
-    }
-    clearTokens();
+  // Server sessiyani rad etdi (refresh 401) yoki boshqa tabda chiqildi.
+  onSessionEnded(() => {
+    clearRetry();
     set({ user: null, status: "anonymous" });
-  },
-}));
+  });
+
+  return {
+    user: null,
+    status: "idle",
+
+    /**
+     * Sessiyani tiklaydi: access token bo'lmasa refresh cookie bilan jimgina yangilanadi
+     * (apiFetch ichida), keyin profil olinadi. Faqat 401 — "chiqildi". Tarmoq yoki server
+     * xatosida holat o'zgarmaydi: tiklanayotgan bo'lsa backoff bilan qayta uriniladi.
+     */
+    loadMe: async () => {
+      if (!getAccessToken() && !hasSessionHint()) {
+        clearRetry();
+        set({ user: null, status: "anonymous" });
+        return;
+      }
+      try {
+        const user = await api.me();
+        clearRetry();
+        set({ user, status: "authenticated" });
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          endSession();
+          return;
+        }
+        if (get().status === "idle" && typeof window !== "undefined") {
+          const delay = Math.min(1000 * 2 ** retryAttempt, RETRY_MAX_MS);
+          retryAttempt += 1;
+          if (retryTimer) clearTimeout(retryTimer);
+          retryTimer = setTimeout(() => void get().loadMe(), delay);
+        }
+      }
+    },
+
+    login: async (email, password) => {
+      await startSession(await api.login(email, password));
+    },
+
+    loginWithGoogle: async (credential) => {
+      await startSession(await api.googleLogin(credential));
+    },
+
+    register: async (email, password, fullName) => {
+      await api.register({ email, password, full_name: fullName });
+      await startSession(await api.login(email, password));
+    },
+
+    logout: async () => {
+      try {
+        await api.logout();
+      } catch {
+        // Tarmoq xatosi bo'lsa ham lokal sessiya tozalanadi. Server sessiyasi o'z muddatigacha
+        // ochiq qolishi mumkin, lekin hint yo'q — bu brauzer uni boshqa ishlatmaydi.
+      }
+      takeLegacyRefreshToken();
+      endSession();
+    },
+  };
+});

@@ -23,6 +23,23 @@ class Settings(BaseSettings):
     secret_key: str = Field(default=INSECURE_DEFAULT_SECRET_KEY, min_length=32)
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 14
+    # Refresh token HttpOnly cookie'da (JS o'qiy olmaydi). Path faqat /auth — boshqa
+    # so'rovlarga yuborilmaydi. Secure: None bo'lsa prod/staging'da yoqiladi (localhost http).
+    refresh_cookie_name: str = "bazart_refresh"
+    refresh_cookie_path: str = "/api/v1/auth"
+    refresh_cookie_domain: str | None = None
+    refresh_cookie_secure: bool | None = None
+    # Lax: frontend va API bitta saytda (bazart.uz + api.bazart.uz, localhost:3000 + :8000).
+    refresh_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
+    # Sirpanuvchi muddat (refresh_token_expire_days) bilan ham sessiya login'dan shuncha kun
+    # o'tgach albatta tugaydi: o'g'irlangan va doim yangilanib turgan sessiya abadiy yashamasin.
+    refresh_session_max_days: int = 30
+    # Oldingi refresh token shu oynada kelsa replay emas (sahifa refresh paytida yangilandi,
+    # javob yo'qoldi, Web Locks'siz brauzer). Tablar Web Lock bilan navbatlashgani uchun qisqa.
+    refresh_reuse_grace_seconds: int = 10
+    # Eski klientlar (refresh token localStorage'da) bir marta body orqali o'tkaziladi.
+    # TODO(ROADMAP): 14 kundan keyin (eski tokenlar eskirgach) o'chirish.
+    legacy_refresh_body_enabled: bool = True
     password_reset_token_expire_minutes: int = 30
     email_verification_token_expire_minutes: int = 60
     soft_close_window_seconds: int = 120
@@ -146,6 +163,12 @@ class Settings(BaseSettings):
         """Prod yoki staging — ya'ni real pul va real foydalanuvchilar muhiti."""
         return self.environment in {"staging", "production"}
 
+    @property
+    def refresh_cookie_secure_effective(self) -> bool:
+        if self.refresh_cookie_secure is not None:
+            return self.refresh_cookie_secure
+        return self.is_production
+
     @model_validator(mode="after")
     def _forbid_insecure_secret_in_production(self) -> "Settings":
         """Prod/staging'da default SECRET_KEY bilan ishga tushishni bloklaydi.
@@ -165,6 +188,12 @@ class Settings(BaseSettings):
                 f"PSP_WEBHOOK_SECRET '{self.environment}' muhitida default qiymatda qolgan. "
                 "Soxta webhook imzosi bilan tovar bepul ketishi mumkin — kuchli kalit bering."
             )
+        if self.is_production and not self.refresh_cookie_secure_effective:
+            raise ValueError("REFRESH_COOKIE_SECURE prod/staging'da o'chirilmaydi (faqat HTTPS).")
+        if self.refresh_cookie_samesite == "none" and not self.refresh_cookie_secure_effective:
+            raise ValueError("SameSite=None faqat Secure cookie bilan ishlaydi.")
+        if self.refresh_session_max_days < self.refresh_token_expire_days:
+            raise ValueError("REFRESH_SESSION_MAX_DAYS < REFRESH_TOKEN_EXPIRE_DAYS bo'lmaydi.")
         return self
 
 

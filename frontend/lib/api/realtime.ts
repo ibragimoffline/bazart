@@ -3,8 +3,10 @@
 /**
  * Auksion real-time WebSocket hook'i.
  *
- * Backend `/api/v1/ws/auctions/{auction_id}?token=<JWT>` kanaliga ulanadi va
- * bid qo'yilganda `bid_service` tarqatgan narx yangilanishlarini oladi.
+ * Backend `/api/v1/ws/auctions/{auction_id}` kanaliga ulanadi va bid qo'yilganda
+ * `bid_service` tarqatgan narx yangilanishlarini oladi. Access token URL'da EMAS
+ * (proxy/access log'larga tushmasin): ulangach birinchi xabar
+ * `{ type: "AUTH", token }`, server `{ type: "AUTH_OK" }` bilan tasdiqlaydi.
  * Kelayotgan xabar shakli (bid_service.place_bid):
  *   { type: "BID_PLACED", auction_id, current_price (tiyin string),
  *     highest_bidder_id, end_time (ISO) }
@@ -18,7 +20,7 @@
 
 import * as React from "react"
 
-import { getAccessToken } from "@/lib/api/token"
+import { getFreshAccessToken } from "@/lib/api/client"
 
 /** Kanaldan kelayotgan xabar. Pul maydonlari — TIYIN (string). */
 export type AuctionSocketMessage = {
@@ -37,11 +39,15 @@ export type SocketStatus = "idle" | "connecting" | "open" | "closed"
 const MAX_BACKOFF_MS = 15000
 
 /**
- * WS URL'ni `NEXT_PUBLIC_API_URL` dan quradi (http->ws, https->wss).
+ * WS URL'ni `NEXT_PUBLIC_API_URL` dan quradi (http->ws, https->wss) va AUTH uchun token oladi.
  * Token bo'lmasa yoki URL yaroqsiz bo'lsa `null` — anonim ulanish
  * backend'da 4401 bilan yopiladi, shuning uchun umuman urinilmaydi.
+ * Token har (qayta) ulanishda yangidan olinadi: 30 daqiqadan keyingi reconnect
+ * eskirgan token bilan ketmasin.
  */
-function buildWsUrl(auctionId: number): string | null {
+async function prepareConnection(
+  auctionId: number
+): Promise<{ url: string; token: string } | null> {
   const raw = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
   let base: URL
   try {
@@ -50,11 +56,11 @@ function buildWsUrl(auctionId: number): string | null {
     return null
   }
 
-  const token = getAccessToken()
+  const token = await getFreshAccessToken()
   if (!token) return null
 
   const proto = base.protocol === "https:" ? "wss:" : "ws:"
-  return `${proto}//${base.host}/api/v1/ws/auctions/${auctionId}?token=${encodeURIComponent(token)}`
+  return { url: `${proto}//${base.host}/api/v1/ws/auctions/${auctionId}`, token }
 }
 
 /**
@@ -89,7 +95,7 @@ export function useAuctionSocket(
     const schedule = (delay: number) => {
       if (unmounted) return
       if (timer) clearTimeout(timer)
-      timer = setTimeout(connect, delay)
+      timer = setTimeout(() => void connect(), delay)
     }
 
     const scheduleReconnect = () => {
@@ -99,9 +105,10 @@ export function useAuctionSocket(
       schedule(Math.min(1000 * 2 ** (attempts - 1), MAX_BACKOFF_MS))
     }
 
-    function connect() {
-      const url = buildWsUrl(auctionId)
-      if (url === null) {
+    async function connect() {
+      const target = await prepareConnection(auctionId)
+      if (unmounted) return
+      if (target === null) {
         // Token yo'q / URL yaroqsiz — jimgina to'xtaymiz (reconnect qilmaymiz).
         setStatus("closed")
         return
@@ -109,20 +116,26 @@ export function useAuctionSocket(
 
       setStatus("connecting")
       try {
-        socket = new WebSocket(url)
+        socket = new WebSocket(target.url)
       } catch {
         scheduleReconnect()
         return
       }
+      const ws = socket
 
-      socket.onopen = () => {
-        attempts = 0
-        setStatus("open")
+      // Ochiq, lekin hali autentifikatsiyasiz — "open" faqat AUTH_OK dan keyin.
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: "AUTH", token: target.token }))
       }
 
-      socket.onmessage = (event) => {
+      ws.onmessage = (event) => {
         try {
           const data = JSON.parse(String(event.data)) as AuctionSocketMessage
+          if (data?.type === "AUTH_OK") {
+            attempts = 0
+            setStatus("open")
+            return
+          }
           // Faqat narx yangilanishi bor xabarlarni uzatamiz.
           if (data && typeof data === "object" && data.current_price != null) {
             onUpdateRef.current(data)

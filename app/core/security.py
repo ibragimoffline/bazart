@@ -52,6 +52,24 @@ def create_refresh_token(subject: str) -> str:
     )
 
 
+def create_session_refresh_token(
+    subject: str, session_id: str, jti: str, expires_at: datetime
+) -> str:
+    """Sessiyaga bog'langan refresh token: `sid` + sessiya qatoridagi `jti`.
+
+    `jti` va muddat tashqaridan beriladi — ular `auth_sessions` qatori bilan mos bo'lishi
+    shart (rotation tekshiruvi aynan shu jti'ni solishtiradi).
+    """
+    payload = {
+        "sub": subject,
+        "exp": expires_at,
+        "type": REFRESH_TOKEN_TYPE,
+        "jti": jti,
+        "sid": session_id,
+    }
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+
 def create_password_reset_token(subject: str) -> str:
     return create_token(
         subject=subject,

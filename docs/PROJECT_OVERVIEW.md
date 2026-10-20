@@ -393,6 +393,8 @@ Tovar topshirish **kod bilan tasdiqlash** orqali:
 bcrypt parol hash · HS256 · access token (30 daq) · refresh token (14 kun) ·
 parol tiklash tokeni (30 daq) · email tasdiqlash tokeni (60 daq). Har token `type` bilan
 belgilangan — refresh tokenni access sifatida ishlatib bo'lmaydi.
+Refresh token — HttpOnly cookie'da, har ishlatilganda almashtiriladi (rotation + replay
+detection, `auth_sessions` jadvali). Batafsil: `docs/AUTH.md`.
 
 ### Token bekor qilish (`core/token_store.py`)
 `TokenRevocationStore` abstraksiyasi: `InMemoryTokenStore` (default) yoki `RedisTokenStore`
@@ -626,8 +628,9 @@ Deadline yaqinlashgani sari kuchayadi: **>24 soat** neytral → **≤6 soat** am
 
 ### API qatlami
 - Pul maydonlari — **tiyin, string** (`"6200050"`), `formatTiyin()` bilan so'mga o'giriladi.
-- `lib/api/realtime.ts` — auksion WS hook'i (JWT query param bilan).
-- `lib/api/token.ts` — JWT localStorage'da (client-only, aylanma importsiz).
+- `lib/api/realtime.ts` — auksion WS hook'i (access token URL'da emas — birinchi `AUTH` xabarida).
+- `lib/api/token.ts` — access token faqat xotirada; refresh — HttpOnly cookie. `client.ts` 401 da
+  jimgina yangilaydi (single-flight, tablar orasida Web Lock). Batafsil: `docs/AUTH.md`.
 - `lib/item-image.ts` — tovar rasmlari uchun yagona manba (`item_images` + `images` fallback).
 - `components/product/assurance-block.tsx` — **hech qanday yolg'on va'da yo'q**:
   kuryer xizmati / bepul yetkazish / qaytarish kafolati platformada mavjud emas,

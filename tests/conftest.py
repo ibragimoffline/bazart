@@ -217,7 +217,8 @@ def login_user(
         data={"username": email, "password": password},
     )
     assert response.status_code == 200
-    return response.json()
+    # Refresh token tanada emas, HttpOnly cookie'da — testlar uchun shu yerdan olinadi.
+    return {**response.json(), "refresh_token": response.cookies[settings.refresh_cookie_name]}
 
 
 def create_user(

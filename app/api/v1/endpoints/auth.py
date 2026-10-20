@@ -1,13 +1,22 @@
-from fastapi import APIRouter, Depends, Request, status
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse
+
+from app.core.auth_cookie import (
+    clear_refresh_cookie,
+    read_refresh_cookie,
+    require_trusted_origin,
+    set_refresh_cookie,
+)
 from app.core.config import settings
 from app.core.dependencies import (
-    BearerToken,
     CurrentActiveUser,
     CurrentUser,
     DbSession,
     LoginForm,
     OptionalUser,
+    optional_oauth2_scheme,
 )
 from app.core.rate_limit import RateLimiter
 from app.models.enums import OtpPurpose
@@ -25,16 +34,26 @@ from app.schemas.auth import (
     PasswordResetTokenResponse,
     RefreshTokenRequest,
     ResetPasswordRequest,
-    Token,
     UserCreate,
     UserRead,
     VerificationTokenResponse,
     VerifyEmailRequest,
 )
-from app.services.auth_service import AuthService
+from app.services.auth_service import AuthService, SessionTokens
 from app.services.otp_service import OtpService
 
 router = APIRouter()
+
+OptionalBearerToken = Annotated[str | None, Depends(optional_oauth2_scheme)]
+
+
+def _session_response(response: Response, tokens: SessionTokens) -> AccessToken:
+    """Refresh — HttpOnly cookie'ga, access — tanaga. Ikki login yo'li ham shu orqali."""
+    set_refresh_cookie(response, tokens.refresh_token, tokens.refresh_expires_at)
+    return AccessToken(
+        access_token=tokens.access_token,
+        expires_in=settings.access_token_expire_minutes * 60,
+    )
 
 
 def _client_ip(request: Request) -> str | None:
@@ -66,20 +85,24 @@ def register(payload: UserCreate, db: DbSession) -> User:
 
 @router.post(
     "/login",
-    response_model=Token,
+    response_model=AccessToken,
     dependencies=[Depends(RateLimiter("login", 60))],
 )
-def login(form_data: LoginForm, db: DbSession) -> Token:
-    return AuthService(db).login_user(form_data.username, form_data.password)
+def login(form_data: LoginForm, response: Response, db: DbSession) -> AccessToken:
+    tokens = AuthService(db).login_user(form_data.username, form_data.password)
+    return _session_response(response, tokens)
 
 
 @router.post(
     "/google",
-    response_model=Token,
+    response_model=AccessToken,
     dependencies=[Depends(RateLimiter("login", 60))],
 )
-def login_with_google(payload: GoogleLoginRequest, db: DbSession) -> Token:
-    return AuthService(db).login_with_google(payload.credential)
+def login_with_google(
+    payload: GoogleLoginRequest, response: Response, db: DbSession
+) -> AccessToken:
+    tokens = AuthService(db).login_with_google(payload.credential)
+    return _session_response(response, tokens)
 
 
 @router.get("/me", response_model=UserRead)
@@ -87,14 +110,52 @@ def read_me(current_user: CurrentUser) -> User:
     return current_user
 
 
-@router.post("/refresh", response_model=AccessToken)
-def refresh_token(payload: RefreshTokenRequest, db: DbSession) -> AccessToken:
-    return AuthService(db).refresh_access_token(payload.refresh_token)
+@router.post(
+    "/refresh",
+    response_model=AccessToken,
+    dependencies=[Depends(require_trusted_origin)],
+)
+def refresh_token(
+    request: Request,
+    response: Response,
+    db: DbSession,
+    payload: RefreshTokenRequest | None = None,
+) -> AccessToken | JSONResponse:
+    """Refresh cookie bilan yangi access token (rotation). Body — faqat eski klientlar.
+
+    401 = sessiya tugagan (muddati o'tgan, bekor qilingan, qayta ishlatilgan) — klient
+    shundagina foydalanuvchini chiqaradi. Bunda cookie ham tozalanadi.
+    """
+    token = read_refresh_cookie(request) or (payload.refresh_token if payload else None)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        )
+    try:
+        tokens = AuthService(db).refresh_session(token)
+    except HTTPException as exc:
+        failed = JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+        clear_refresh_cookie(failed)
+        return failed
+    return _session_response(response, tokens)
 
 
-@router.post("/logout", response_model=MessageResponse)
-def logout(payload: LogoutRequest, token: BearerToken, db: DbSession) -> MessageResponse:
-    AuthService(db).logout_user(access_token=token, refresh_token=payload.refresh_token)
+@router.post(
+    "/logout",
+    response_model=MessageResponse,
+    dependencies=[Depends(require_trusted_origin)],
+)
+def logout(
+    request: Request,
+    response: Response,
+    token: OptionalBearerToken,
+    db: DbSession,
+    payload: LogoutRequest | None = None,
+) -> MessageResponse:
+    """Access token shart EMAS: u eskirgan bo'lsa ham refresh sessiya yopilishi kerak."""
+    refresh = read_refresh_cookie(request) or (payload.refresh_token if payload else None)
+    AuthService(db).logout_user(access_token=token, refresh_token=refresh)
+    clear_refresh_cookie(response)
     return MessageResponse(message="Logged out")
 
 

@@ -7,19 +7,19 @@ from app.schemas.user import UserCreate, UserRead
 from app.schemas.user import normalize_phone as _normalize_phone
 
 
-class Token(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-
-
 class AccessToken(BaseModel):
+    """Login / Google / refresh javobi. Refresh token tanada EMAS — HttpOnly cookie'da."""
+
     access_token: str
     token_type: str = "bearer"
+    # Access token umri (soniya) — klient muddatidan oldin jimgina yangilaydi.
+    expires_in: int
 
 
 class RefreshTokenRequest(BaseModel):
-    refresh_token: str
+    """Faqat eski klientlar uchun (refresh token localStorage'da edi). Odatda — cookie."""
+
+    refresh_token: str | None = None
 
 
 class GoogleLoginRequest(BaseModel):
@@ -120,7 +120,6 @@ __all__ = [
     "PasswordResetTokenResponse",
     "RefreshTokenRequest",
     "ResetPasswordRequest",
-    "Token",
     "UserCreate",
     "UserRead",
     "VerificationTokenResponse",

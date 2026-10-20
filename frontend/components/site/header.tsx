@@ -24,6 +24,7 @@ import type { Category } from "@/lib/api/types"
 import { listCategories } from "@/lib/api/endpoints"
 import { useAuthStore } from "@/lib/store/auth"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Logo } from "@/components/site/logo"
 import { NotificationBell } from "@/components/notification/notification-bell"
 
@@ -126,6 +127,12 @@ function AuthArea() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const [open, setOpen] = React.useState(false)
+
+  // Sessiya tiklanmoqda (refresh cookie tekshirilmoqda) — "Kirish" ko'rsatilmaydi, aks holda
+  // kirgan foydalanuvchi har sahifa yangilanishida bir lahza "chiqib ketgan"dek ko'rinadi.
+  if (status === "idle") {
+    return <Skeleton aria-label="Yuklanmoqda" className="h-8 w-28 rounded-full" />
+  }
 
   if (status !== "authenticated" || !user) {
     return (

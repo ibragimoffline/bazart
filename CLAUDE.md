@@ -84,7 +84,7 @@ app/
   services/            # biznes mantiq: offer_service, bid_service, auction_service, price_schedule, ...
   tasks/               # Celery: scheduled (beat), notifications, email, dispatch
 alembic/versions/      # 29 migratsiya
-tests/                 # 56 fayl, 349 test
+tests/                 # 65 fayl, 432 test
 ```
 
 Qatlam yo'nalishi: **api → services → repositories → models**. Teskari import TAQIQ.
@@ -111,6 +111,7 @@ frontend/
 ```
 
 **Komandalar** (`frontend/` ichida): `npm run dev` · `npm run build` · `npm run lint` ·
+`npm test` (Vitest — sessiya/refresh mantig'i) ·
 yangi komponent: `npx shadcn@latest add <nom>`. Dev server ishlab turganda `npm run build`
 qilma — ikkalasi bitta `.next` papkasini ishlatadi va dev server buziladi.
 
@@ -170,7 +171,7 @@ Bu qoidalar barcha frontend ishlariga tatbiq etiladi. Buzilishi — code review'
 
 ```bash
 docker compose up -d db redis minio       # testlardan OLDIN — testlar real Postgres talab qiladi
-.venv/Scripts/python.exe -m pytest        # 349 test (~9 daqiqa)
+.venv/Scripts/python.exe -m pytest        # 432 test (~10 daqiqa)
 .venv/Scripts/python.exe -m pytest tests/test_bids.py
 ruff check . && ruff format --check .     # CI shu ikkalasini tekshiradi
 alembic upgrade head                      # toza bazada
@@ -214,6 +215,9 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 - `high_bidder_max` javob sxemasiga hech qachon qo'shilmaydi.
 - Kontaktlar (telefon, Telegram) faqat kelishuv ishtirokchisiga, faqat ochilgandan keyin (`contacts_revealed_at`).
 - IDOR: har resursda egalik tekshiruvi; yangi endpoint — IDOR testi bilan.
+- Refresh token faqat HttpOnly cookie'da (`docs/AUTH.md`): javob tanasiga, `localStorage`'ga va log'ga
+  tushmaydi. Frontend faqat refresh 401 da chiqaradi — tarmoq/5xx/403 sessiyani buzmaydi.
+  Token URL'ga qo'yilmaydi (WS — birinchi `AUTH` xabari). Sessiya holati `auth_sessions` (Postgres).
 - Secret'lar `.env`da, git'ga tushmaydi.
 
 ## Ish tartibi
@@ -235,6 +239,7 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 
 | Fayl | Nima haqida |
 |---|---|
+| `docs/AUTH.md` | Sessiyalar: HttpOnly refresh cookie, rotation/replay, jim yangilash, CSRF |
 | `docs/DEALS.md` | Kelishuv modeli (Faza E): holatlar, kontaktlar, tasdiqlash, bekor qilish, hisoblagichlar |
 | `docs/OFFERS.md` | Taklifli savdo: narx/miqdor taklifi, muzokara, zaxira va poyga himoyasi, API |
 | `docs/AUCTION_ENGINE.md` | Atomik bid, proxy bidding, anti-sniping, tushuvchi narx, closer, state machine |

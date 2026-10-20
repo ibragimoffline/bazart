@@ -223,10 +223,12 @@ export interface Order {
 /** Kelishuvni bekor qilish sababi (app/models/enums.py DealCancelReason). */
 export type DealCancelReason = "no_response" | "changed_mind" | "not_as_described" | "other";
 
+/** Login/Google javobi. Refresh token tanada yo'q — HttpOnly cookie'da. */
 export interface AuthToken {
   access_token: string;
-  refresh_token: string;
   token_type: string;
+  /** Access token umri, soniya. */
+  expires_in: number;
 }
 
 /** Frontend tushunchasi: LOT = auksion + uning tovari (item). */

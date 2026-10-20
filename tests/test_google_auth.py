@@ -134,3 +134,24 @@ def test_google_disabled_without_client_id(
     monkeypatch.setattr(settings, "google_client_id", "")
     response = client.post(URL, json={"credential": make_credential()})
     assert response.status_code == 503
+
+
+def test_google_login_gets_same_refresh_session(client: TestClient) -> None:
+    """Google kirishdan keyin Bazart sessiyasi — access eskirsa Google qayta so'ralmaydi."""
+    response = client.post(URL, json={"credential": make_credential()})
+    assert response.status_code == 200
+    assert "refresh_token" not in response.json()
+    refresh_cookie = response.cookies[settings.refresh_cookie_name]
+
+    client.cookies.clear()
+    refreshed = client.post(
+        "/api/v1/auth/refresh",
+        headers={"Cookie": f"{settings.refresh_cookie_name}={refresh_cookie}"},
+    )
+    assert refreshed.status_code == 200
+    me = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {refreshed.json()['access_token']}"},
+    )
+    assert me.status_code == 200
+    assert me.json()["email"] == "aziza@gmail.com"

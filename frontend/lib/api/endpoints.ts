@@ -1,4 +1,5 @@
-import { apiFetch } from "@/lib/api/client";
+import { API_BASE, apiFetch } from "@/lib/api/client";
+import { getAccessToken } from "@/lib/api/token";
 import type {
   AuthToken,
   User,
@@ -26,21 +27,32 @@ export function login(email: string, password: string): Promise<AuthToken> {
   const form = new URLSearchParams();
   form.set("username", email);
   form.set("password", password);
-  return apiFetch<AuthToken>("/auth/login", { body: form, auth: false });
+  return apiFetch<AuthToken>("/auth/login", { body: form, auth: false, withCookies: true });
 }
 
 /** Google Identity Services bergan ID token (`credential`) bilan kirish/ro'yxatdan o'tish. */
 export function googleLogin(credential: string): Promise<AuthToken> {
-  return apiFetch<AuthToken>("/auth/google", { body: { credential }, auth: false });
+  return apiFetch<AuthToken>("/auth/google", {
+    body: { credential },
+    auth: false,
+    withCookies: true,
+  });
 }
 
 export function me(): Promise<User> {
   return apiFetch<User>("/auth/me");
 }
 
-export function logout(refresh: string | null): Promise<{ message: string }> {
-  return apiFetch<{ message: string }>("/auth/logout", {
-    body: { refresh_token: refresh },
+/**
+ * Server sessiyasini yopadi: refresh cookie (HttpOnly) va joriy access token bekor bo'ladi.
+ * Access token eskirgan bo'lsa ham ishlaydi — shuning uchun refresh/qayta urinishsiz.
+ */
+export async function logout(): Promise<void> {
+  const token = getAccessToken();
+  await fetch(`${API_BASE}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
 }
 
