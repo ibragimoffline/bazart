@@ -11,7 +11,7 @@ testlar limiter'ni ATAYLAB yoqadi: muhitni "local" ga o'zgartiradi, kichik
 limit qo'yadi va har test boshida hisoblagichni tozalaydi.
 """
 
-from conftest import TEST_PASSWORD
+from conftest import TEST_PASSWORD, freeze_rate_limit_window
 from fastapi.testclient import TestClient
 
 from app.core.config import settings
@@ -23,6 +23,7 @@ def _enable_limiter(monkeypatch, *, limit: int = 3) -> None:
     monkeypatch.setattr(settings, "environment", "local")
     monkeypatch.setattr(settings, "rate_limit_enabled", True)
     monkeypatch.setattr(settings, "rate_limit_login_per_minute", limit)
+    freeze_rate_limit_window(monkeypatch)
     reset_rate_limits()
 
 

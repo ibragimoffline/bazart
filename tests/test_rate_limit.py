@@ -12,6 +12,7 @@ from conftest import (
     create_auction,
     create_item,
     create_user,
+    freeze_rate_limit_window,
     register_user,
 )
 from fastapi.testclient import TestClient
@@ -26,6 +27,7 @@ def _enable_limiter(monkeypatch) -> None:
     """Limiter'ni yoqadi: NON-test muhit + rate_limit_enabled=True."""
     monkeypatch.setattr(settings, "environment", "local")
     monkeypatch.setattr(settings, "rate_limit_enabled", True)
+    freeze_rate_limit_window(monkeypatch)
 
 
 def test_login_under_limit_ok_then_over_limit_429(

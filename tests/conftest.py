@@ -1,5 +1,6 @@
 import itertools
 import os
+import time
 from collections.abc import Generator
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -10,6 +11,7 @@ from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core import rate_limit
 from app.core.config import settings
 from app.db import base  # noqa: F401
 from app.db.session import get_db
@@ -181,6 +183,25 @@ def client(db_session: Session) -> Generator[TestClient]:
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+class _FrozenWallClock:
+    """Redis fixed-window bucket'i (`time.time() // window`) test davomida o'zgarmaydi.
+
+    Redis bor muhitda (local docker, CI) so'rovlar daqiqa chegarasini kesib o'tsa hisoblagich
+    yangi bucket'dan boshlanadi va limitdan oshgan so'rov 429 o'rniga o'tib ketadi —
+    tasodifiy yiqilish. In-memory zaxira `monotonic` ishlatadi, u haqiqiy qoladi.
+    """
+
+    monotonic = staticmethod(time.monotonic)
+
+    @staticmethod
+    def time() -> float:
+        return 1_800_000_000.0
+
+
+def freeze_rate_limit_window(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(rate_limit, "time", _FrozenWallClock)
 
 
 def auth_headers(access_token: str) -> dict[str, str]:
