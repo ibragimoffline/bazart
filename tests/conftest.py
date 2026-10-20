@@ -31,6 +31,10 @@ settings.environment = "test"
 # mantig'i alohida test_tiered_increment.py da (pure-function + floor yoqilgan
 # integratsiya testi) tekshiriladi.
 settings.tiered_bid_increment_enabled = False
+# O'suvchi auksion prod'da bayroq bilan o'chirilgan (FEATURE_ASCENDING_AUCTION=false), lekin
+# dvigatel saqlanadi: mavjud test korpusi uni sinashda davom etadi. O'chirilgan holat
+# test_feature_ascending_auction.py da sinaladi.
+settings.feature_ascending_auction = True
 
 # REAL Postgres — SQLite EMAS.
 #

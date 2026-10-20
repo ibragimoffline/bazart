@@ -76,6 +76,10 @@ class Settings(BaseSettings):
     # conftest uni o'chiradi — kichik-summali mavjud test korpusi buzilmasin;
     # jadval mantig'i pure-function + bitta integratsiya testida tekshiriladi.
     tiered_bid_increment_enabled: bool = True
+    # O'suvchi (ingliz) auksion: False — YANGI o'suvchi auksion yaratilmaydi va UI'da
+    # yashiriladi. Mavjudlari (bid, yopish, second chance, fallback) o'z qoidasida
+    # tugaydi. Qayta yoqish — faqat shu bayroq (migratsiyasiz). docs/AUCTION_ENGINE.md §14.
+    feature_ascending_auction: bool = False
 
     # Rate limiting (bid/login brute-force himoyasi).
     rate_limit_enabled: bool = True

@@ -20,6 +20,7 @@ import {
 } from "@/lib/api/seller"
 import { publishItem } from "@/lib/api/offers"
 import { useAuthStore } from "@/lib/store/auth"
+import { useFeatures } from "@/lib/features"
 import {
   DESCRIPTION_MAX,
   NO_DEFECTS_TEXT,
@@ -335,6 +336,10 @@ function SellForm() {
   const isOffer = mode === "offer"
   const pricing = useWatch({ control, name: "pricing" })
   const isDescending = !isOffer && pricing === "descending"
+  // O'suvchi auksion bayroq bilan o'chirilgan bo'lsa — faqat pasayuvchi (tanlov yashiriladi,
+  // o'suvchiga xos maydonlar `!isDescending` bloki bilan birga yo'qoladi).
+  const features = useFeatures()
+  const ascendingEnabled = features?.ascending_auction === true
   const dutchFallback = useWatch({ control, name: "dutch_fallback" })
   const startLater = useWatch({ control, name: "start_later" })
   const startAt = useWatch({ control, name: "start_at" })
@@ -348,10 +353,15 @@ function SellForm() {
     step: (saved?.values?.price_decrement ?? 0) > 0,
   })
   React.useEffect(() => {
+    if (features && !features.ascending_auction) {
+      // Qoralamadan tiklangan "ascending" ham shu yerda almashtiriladi.
+      setValue("pricing", "descending")
+      return
+    }
     if (!touched.current.pricing) {
       setValue("pricing", condition === "new" ? "descending" : "ascending")
     }
-  }, [condition, setValue])
+  }, [condition, features, setValue])
   React.useEffect(() => {
     if (!(startingPrice > 0)) return
     if (!touched.current.floor) setValue("floor_price", suggestDutchFloorSoum(startingPrice))
@@ -881,7 +891,9 @@ function SellForm() {
                 <span className="grid gap-0.5">
                   <span className="font-medium text-foreground">Auksion</span>
                   <span className="text-xs text-muted-foreground">
-                    Bitta dona, eng yuqori taklif yutadi. Minimal qadam va zaxira narx bilan.
+                    {ascendingEnabled
+                      ? "Bitta dona, eng yuqori taklif yutadi. Minimal qadam va zaxira narx bilan."
+                      : "Bitta dona, narx vaqt oʻtishi bilan tushadi, birinchi sotib olgan yutadi."}
                   </span>
                 </span>
               </Label>
@@ -890,7 +902,7 @@ function SellForm() {
         />
       </Field>
 
-      {!isOffer && (
+      {!isOffer && ascendingEnabled && (
         <Field>
           <FieldLabel id="pricing-label">Narx yoʻnalishi</FieldLabel>
           <Controller

@@ -111,7 +111,7 @@ app/
   realtime/manager.py     # WebSocket ConnectionManager
   tasks/                  # Celery vazifalari (scheduled, notifications, email, dispatch)
 alembic/versions/         # 19 migratsiya
-tests/                    # 55 fayl, 305 test
+tests/                    # 66 fayl, 448 test
 scripts/                  # create_superadmin.py, seed_regions.py
 frontend/                 # Next.js 16 ilovasi (23 sahifa, 68 komponent)
 docs/                     # ARCHITECTURE, DOMAIN, AUCTION_ENGINE, PAYMENTS, DESIGN, ROADMAP
@@ -678,7 +678,7 @@ Deadline yaqinlashgani sari kuchayadi: **>24 soat** neytral → **≤6 soat** am
 
 ## 21. Testlar
 
-**305 test, 55 fayl.** Barchasi **real Postgres 16** da ishlaydi.
+**448 test, 66 fayl.** Barchasi **real Postgres 16** da ishlaydi.
 
 ### Nega SQLite emas
 SQLite `FOR UPDATE`, native ENUM, BIGINT semantikasi va tranzaksiya izolyatsiyasida
@@ -712,8 +712,8 @@ Muhit `test`: mock to'lov ruxsat etiladi, rate limiting va darajali qadam o'chiq
 
 ### Holat (2026-09-06)
 - `ruff check .` — **All checks passed**
-- `ruff format --check .` — **223 fayl formatlangan**
-- `pytest --collect-only` — **305 test yig'ildi**
+- `ruff format --check .` — **251 fayl formatlangan**
+- `pytest --collect-only` — **448 test yig'ildi**
 - To'liq `pytest` bu tekshiruvda **ishga tushirilmadi**: Docker daemon o'chiq edi,
   testlar esa real Postgres talab qiladi (`docker compose up -d db`).
 
@@ -943,7 +943,7 @@ ruff check . && ruff format --check .
 | Repozitoriylar | 18 |
 | API endpoint'lar | 90 |
 | Alembic migratsiyalar | 19 |
-| Testlar | 305 (55 fayl) |
+| Testlar | 448 (66 fayl) + frontend Vitest 25 |
 | Frontend sahifalar | 23 |
 | Frontend komponentlar | 68 |
-| ruff | toza (223 fayl formatlangan) |
+| ruff | toza (251 fayl formatlangan) |

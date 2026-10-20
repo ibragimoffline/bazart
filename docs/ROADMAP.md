@@ -104,6 +104,11 @@ qilib `end_time` yo'lini olib tashlash) frontend tayyor bo'lganda.
 
 ## Faza E — To'lovsiz kelishuv modeli va soddalashtirish  (JARAYONDA)
 
+- [x] O'suvchi auksion `FEATURE_ASCENDING_AUCTION` bayrog'i bilan vaqtincha o'chirildi (asosiy auksion —
+      pasayuvchi, asosiy sotish usuli — narx taklifi). Dvigatel saqlangan, qayta yoqish — bayroq
+      (`docs/AUCTION_ENGINE.md` §14). E3/E4'dagi o'suvchiga oid soddalashtirishlar (Dutch-fallback,
+      rezerv, sotuvchi qadami) bayroq yoqilganda ham kerakli bo'lib qoladi
+
 Bajarish tartibi, tekshiruvlar va belgilangan holat: `docs/FAZA_E_BAJARISH_TARTIBI.md`.
 Kelishuv modeli: `docs/DEALS.md`. Ish branch'i `faza-e`, boshlang'ich teg `pre-faza-e`.
 

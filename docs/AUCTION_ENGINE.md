@@ -375,3 +375,32 @@ foydalanuvchiga; `PUBLIC_SITE_URL` bo'lsa xabar oxirida lot/buyurtma havolasi).
 - **Ortda qoldingiz** (`OUTBID`): bid oqimida (oddiy va proxy himoyasi) — matnda lot nomi va
   joriy narx.
 - Matnlardagi narx — `app/money.format_soum_text` (butun so'mda ".00" yo'q, yaxlitlanmaydi).
+
+## 14. O'suvchi auksion bayrog'i (`FEATURE_ASCENDING_AUCTION`) — BOR
+
+Mahsulot qarori: asosiy auksion turi — **pasayuvchi** (golland), asosiy sotish usuli —
+**narx taklifi**. O'suvchi (ingliz) auksion vaqtincha o'chirilgan: `FEATURE_ASCENDING_AUCTION=false`
+(kod default'i). Dvigatel, jadvallar, bid tarixi va testlar **saqlanadi** — qayta yoqish
+faqat bayroq (migratsiyasiz, kod o'zgarishisiz).
+
+**O'chirilganda nima to'siladi** (`auction_service._ensure_mode_enabled`, 409 `ascending_auction_disabled`):
+
+| Yo'l | Qoida |
+|---|---|
+| `POST /auctions` | O'suvchi (shu jumladan `pricing_mode` berilmagan — default o'suvchi) rad etiladi |
+| `PATCH /auctions/{id}/pricing` | Pasayuvchidan o'suvchiga o'tish rad etiladi; **allaqachon o'suvchi** rejalashtirilgan auksion tahrirlanadi (o'z qoidasida qoladi) |
+| `POST /auctions/{id}/relist` | Yangi auksion — o'suvchi rad etiladi, pasayuvchi bilan qayta joylash mumkin (eski lot o'suvchi bo'lsa ham) |
+
+**To'silmaydi — mavjud o'suvchi auksionlar o'z qoidasida tugaydi:** bid va proxy bid,
+anti-sniping, yopish va g'olib, second chance, keyingi bidderga taklif, sotuvchi roziligi
+bilan Dutch-fallback (§11), admin bekor qilishi, lot sahifasi va bid tarixi. Rejalashtirilgan
+o'suvchi auksion o'z vaqtida faollashadi.
+
+**UI** (`GET /api/v1/features` -> `{ascending_auction}`; frontend `lib/features.ts`, xatoda —
+o'chiq deb hisoblanadi): sell-form'da narx yo'nalishi tanlovi va o'suvchiga xos maydonlar
+(minimal qadam, zaxira narx, hoziroq sotib olish, Dutch-fallback) yashiriladi, auksion —
+faqat pasayuvchi; narx rejimi oynasida o'suvchi variant faqat allaqachon o'suvchi auksionga
+ko'rinadi; qayta joylash oynasi pasayuvchi maydonlar (eng past narx, soatlik qadam) bilan.
+
+**Testlar:** `tests/test_feature_ascending_auction.py` (ikki holat), `frontend/lib/features.test.ts`.
+Test korpusi bayroqni yoqib ishlaydi (`conftest.py`) — o'suvchi dvigatel sinalishda davom etadi.

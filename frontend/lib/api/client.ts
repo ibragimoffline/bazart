@@ -32,6 +32,8 @@ export function mediaUrl(path: string): string {
 const DETAIL_TEXT: Record<string, string> = {
   phone_verification_required:
     "Avval telefon raqamingizni tasdiqlang (Profil sahifasi). Kelishuvda raqamingiz ikkinchi tomonga koʻrinadi.",
+  ascending_auction_disabled:
+    "Oʻsuvchi auksion hozircha oʻchirilgan. Pasayuvchi auksion yoki narx taklifi bilan joylang.",
   trading_restricted:
     "Soʻnggi 30 kunda 3 ta kelishuv sizning sababingiz bilan bekor boʻlgan. 14 kun davomida taklif va bid berib boʻlmaydi.",
 };

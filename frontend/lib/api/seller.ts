@@ -156,6 +156,11 @@ export type RelistPayload = {
   reserve_price?: string;
   /** tiyin (string) */
   buy_now_price?: string;
+  /** Berilmasa — o'suvchi (server default). O'suvchi bayroq bilan o'chirilgan bo'lsa "descending". */
+  pricing_mode?: PricingMode;
+  /** tiyin (string) — pasayuvchi: har oraliqda tushadigan summa */
+  price_decrement?: string;
+  price_drop_interval_minutes?: number;
 };
 
 /**

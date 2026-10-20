@@ -20,6 +20,8 @@ from app.api.v1.endpoints import (
     watchlist,
     ws,
 )
+from app.core.config import settings
+from app.schemas.features import FeatureFlags
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -40,6 +42,12 @@ api_router.include_router(legal.router, prefix="/legal", tags=["legal"])
 api_router.include_router(offers.router, prefix="/offers", tags=["offers"])
 api_router.include_router(ws.router, tags=["ws"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
+
+
+@api_router.get("/features", response_model=FeatureFlags, tags=["health"])
+def feature_flags() -> FeatureFlags:
+    """Ochiq: UI qaysi sotish usullarini ko'rsatishini biladi (API ham shu bayroqni tekshiradi)."""
+    return FeatureFlags(ascending_auction=settings.feature_ascending_auction)
 
 
 @api_router.get("/health", tags=["health"])

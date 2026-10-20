@@ -36,6 +36,7 @@ Bajarish tartibi va tekshiruvlar: `docs/FAZA_E_BAJARISH_TARTIBI.md` (ish branch'
 | **Taklifli savdo — asosiy rejim** (`docs/OFFERS.md`) | Sotuvchi mo'ljal narx (DONA uchun) + miqdor beradi; xaridor istalgan musbat narx va miqdor taklif qiladi. Min qadam / "oldingidan yuqori" / avtomatik rad **YO'Q**. Sotuvchi qabul qiladi, rad etadi yoki qarshi taklif beradi |
 | Narx dona uchun | `unit_price` saqlanadi; jami = `calc_line_total(unit, qty)` (`app/money`) |
 | Zaxira atomik | Qabul: item `FOR UPDATE` + shartli `UPDATE ... WHERE quantity_available >= q` (`take_stock`). CHECK constraint lost update'ni USHLAMAYDI |
+| **O'suvchi auksion bayroq bilan o'chiq** | `FEATURE_ASCENDING_AUCTION=false`: yangi o'suvchi auksion yaratilmaydi (409), UI'da yashirin; asosiy auksion — pasayuvchi. Mavjud o'suvchilar o'z qoidasida tugaydi. Dvigatel saqlanadi, qayta yoqish — faqat bayroq (`docs/AUCTION_ENGINE.md` §14) |
 | Auksion — faqat 1 dona | Quyidagi auksion qoidalari faqat `listing_type = auction` e'lonlarga |
 | **Rezerv narx YO'Q** | Ko'tariluvchi auksionda maxfiy minimal narx yo'q (E4.2). Tushuvchi narxning pastki chegarasi — alohida `floor_price` (E4.1; hozircha `reserve_price` ustunida) |
 | Tushuvchi narx (`pricing_mode=descending`) | Narx BAZADA SAQLANMAYDI — vaqtdan hisoblanadi (`calc_descending_price` + `price_schedule`); bid yo'q, xarid qulf ostida joriy narxda (`docs/AUCTION_ENGINE.md` §10) |
@@ -84,7 +85,7 @@ app/
   services/            # biznes mantiq: offer_service, bid_service, auction_service, price_schedule, ...
   tasks/               # Celery: scheduled (beat), notifications, email, dispatch
 alembic/versions/      # 29 migratsiya
-tests/                 # 65 fayl, 432 test
+tests/                 # 66 fayl, 448 test
 ```
 
 Qatlam yo'nalishi: **api → services → repositories → models**. Teskari import TAQIQ.
@@ -171,7 +172,7 @@ Bu qoidalar barcha frontend ishlariga tatbiq etiladi. Buzilishi — code review'
 
 ```bash
 docker compose up -d db redis minio       # testlardan OLDIN — testlar real Postgres talab qiladi
-.venv/Scripts/python.exe -m pytest        # 432 test (~10 daqiqa)
+.venv/Scripts/python.exe -m pytest        # 448 test (~10 daqiqa)
 .venv/Scripts/python.exe -m pytest tests/test_bids.py
 ruff check . && ruff format --check .     # CI shu ikkalasini tekshiradi
 alembic upgrade head                      # toza bazada

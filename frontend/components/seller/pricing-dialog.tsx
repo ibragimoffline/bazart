@@ -7,6 +7,7 @@ import { buyNowError } from "@/lib/listing"
 import type { Auction, PricingMode } from "@/lib/api/types"
 import { updateAuctionPricing } from "@/lib/api/seller"
 import { ApiError } from "@/lib/api/client"
+import { useFeatures } from "@/lib/features"
 import { ConfirmDialog } from "@/components/lot/confirm-dialog"
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
@@ -69,6 +70,11 @@ function PricingDialog({
   const [error, setError] = React.useState<string | null>(null)
 
   const descending = mode === "descending"
+  // Bayroq o'chiq: yangi o'suvchi rejimga o'tib bo'lmaydi. Allaqachon o'suvchi auksion
+  // o'z qoidasida qoladi (server ham shunday tekshiradi), shuning uchun unga tanlov ko'rinadi.
+  const features = useFeatures()
+  const ascendingAllowed =
+    features?.ascending_auction === true || auction.pricing_mode === "ascending"
   const buyNowIssue = !descending ? buyNowError(buyNow, startSoum, reserve) : null
 
   const save = async () => {
@@ -124,28 +130,30 @@ function PricingDialog({
       onConfirm={() => void save()}
     >
       <div className="grid gap-4">
-        <RadioGroup
-          aria-label="Narx yoʻnalishi"
-          value={mode}
-          onValueChange={(v) => setMode(v as PricingMode)}
-          className="grid gap-2 sm:grid-cols-2"
-          disabled={saving}
-        >
-          <Label htmlFor={`pd-asc-${auction.id}`} className={choiceClass}>
-            <RadioGroupItem id={`pd-asc-${auction.id}`} value="ascending" className="mt-0.5" />
-            <span className="grid gap-0.5">
-              <span className="font-medium text-foreground">Oʻsuvchi</span>
-              <span className="text-xs text-muted-foreground">Takliflar, eng yuqorisi yutadi</span>
-            </span>
-          </Label>
-          <Label htmlFor={`pd-desc-${auction.id}`} className={choiceClass}>
-            <RadioGroupItem id={`pd-desc-${auction.id}`} value="descending" className="mt-0.5" />
-            <span className="grid gap-0.5">
-              <span className="font-medium text-foreground">Pasayuvchi</span>
-              <span className="text-xs text-muted-foreground">Narx tushadi, birinchi xarid yutadi</span>
-            </span>
-          </Label>
-        </RadioGroup>
+        {ascendingAllowed && (
+          <RadioGroup
+            aria-label="Narx yoʻnalishi"
+            value={mode}
+            onValueChange={(v) => setMode(v as PricingMode)}
+            className="grid gap-2 sm:grid-cols-2"
+            disabled={saving}
+          >
+            <Label htmlFor={`pd-asc-${auction.id}`} className={choiceClass}>
+              <RadioGroupItem id={`pd-asc-${auction.id}`} value="ascending" className="mt-0.5" />
+              <span className="grid gap-0.5">
+                <span className="font-medium text-foreground">Oʻsuvchi</span>
+                <span className="text-xs text-muted-foreground">Takliflar, eng yuqorisi yutadi</span>
+              </span>
+            </Label>
+            <Label htmlFor={`pd-desc-${auction.id}`} className={choiceClass}>
+              <RadioGroupItem id={`pd-desc-${auction.id}`} value="descending" className="mt-0.5" />
+              <span className="grid gap-0.5">
+                <span className="font-medium text-foreground">Pasayuvchi</span>
+                <span className="text-xs text-muted-foreground">Narx tushadi, birinchi xarid yutadi</span>
+              </span>
+            </Label>
+          </RadioGroup>
+        )}
 
         {descending ? (
           <div className="grid gap-4 sm:grid-cols-3">

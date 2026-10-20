@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.auction import Auction
 from app.models.bid import Bid
 from app.models.deal import Deal
@@ -82,6 +83,24 @@ def _validate_pricing(starting: int, reserve: int | None, buy_now: int | None) -
         )
 
 
+# Mashina kodi — frontend shu bo'yicha matn ko'rsatadi (client.ts DETAIL_TEXT).
+ASCENDING_DISABLED = "ascending_auction_disabled"
+
+
+def _ensure_mode_enabled(mode: PricingMode, current: PricingMode | None = None) -> None:
+    """O'suvchi auksion bayroq bilan o'chirilgan bo'lsa yangisini yaratish/unga o'tish — 409.
+
+    `current` — mavjud auksionning rejimi: allaqachon o'suvchi bo'lgan (eski) auksion
+    o'z qoidasida qoladi va tahrirlanadi; faqat YANGI o'suvchi auksion to'siladi.
+    """
+    if (
+        mode == PricingMode.ASCENDING
+        and current != PricingMode.ASCENDING
+        and not settings.feature_ascending_auction
+    ):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=ASCENDING_DISABLED)
+
+
 def _validate_mode_pricing(
     mode: PricingMode, starting: int, reserve: int | None, buy_now: int | None
 ) -> None:
@@ -152,6 +171,7 @@ class AuctionService:
                 detail="An auction sells exactly one unit; use an offer listing for quantity",
             )
 
+        _ensure_mode_enabled(payload.pricing_mode)
         reserve = payload.reserve_price if payload.reserve_price is not None else item.reserve_price
         _validate_mode_pricing(
             payload.pricing_mode, item.starting_price, reserve, payload.buy_now_price
@@ -189,6 +209,7 @@ class AuctionService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Pricing can only be changed before the auction starts",
                 )
+            _ensure_mode_enabled(payload.pricing_mode, current=auction.pricing_mode)
             _validate_mode_pricing(
                 payload.pricing_mode,
                 auction.starting_price,
@@ -469,6 +490,8 @@ class AuctionService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="This listing has already been relisted",
                 )
+            # Qayta joylash — yangi auksion: eski lot o'suvchi bo'lsa ham bayroq tekshiriladi.
+            _ensure_mode_enabled(payload.pricing_mode)
             _validate_mode_pricing(
                 payload.pricing_mode,
                 payload.starting_price,

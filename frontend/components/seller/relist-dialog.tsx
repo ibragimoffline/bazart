@@ -3,10 +3,17 @@
 import * as React from "react"
 
 import { formatTiyin, soumToTiyin, tiyinToSoum } from "@/lib/format"
-import { autoIncrementSoum, buyNowError, suggestRelistSoum } from "@/lib/listing"
+import {
+  autoIncrementSoum,
+  buyNowError,
+  suggestDutchFloorSoum,
+  suggestDutchStepSoum,
+  suggestRelistSoum,
+} from "@/lib/listing"
 import type { Auction, Item } from "@/lib/api/types"
 import { relistAuction } from "@/lib/api/seller"
 import { ApiError } from "@/lib/api/client"
+import { useFeatures } from "@/lib/features"
 import { ConfirmDialog } from "@/components/lot/confirm-dialog"
 import { Field, FieldLabel, FieldError, FieldDescription } from "@/components/ui/field"
 import { Label } from "@/components/ui/label"
@@ -14,6 +21,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { PriceInput } from "@/components/seller/sell/price-input"
 
 const DURATIONS = ["3", "5", "7"] as const
+/** Pasayuvchi qayta joylashda narx har soatda tushadi (sell-form default'i bilan bir xil). */
+const DROP_INTERVAL_MINUTES = 60
 
 /** Radio "kartochka" — sell-form'dagi muddat tanlovi bilan bir xil ko'rinish. */
 const choiceClass =
@@ -23,6 +32,9 @@ const choiceClass =
  * Sotilmagan lotni qayta joylash oynasi. Narx oldindan tavsiya bilan to'ldiriladi
  * (`suggestRelistSoum`): narx qotib qolmasin — loyihaning asosiy g'oyasi.
  * E'lon matni va rasmlari server tomonida nusxa ko'chiriladi.
+ *
+ * O'suvchi auksion bayroq bilan o'chirilgan bo'lsa (GET /features) lot pasayuvchi auksion
+ * sifatida qayta joylanadi: eng past narx va pasayish qadami tavsiya bilan to'ldiriladi.
  */
 function RelistDialog({
   auction,
@@ -45,6 +57,9 @@ function RelistDialog({
   const [starting, setStarting] = React.useState(suggested)
   const [reserve, setReserve] = React.useState(0)
   const [buyNow, setBuyNow] = React.useState(0)
+  // null — tavsiya qiymati (boshlang'ich narx o'zgarsa qayta hisoblanadi).
+  const [floorInput, setFloorInput] = React.useState<number | null>(null)
+  const [stepInput, setStepInput] = React.useState<number | null>(null)
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -57,9 +72,20 @@ function RelistDialog({
       setStarting(suggested)
       setReserve(0)
       setBuyNow(0)
+      setFloorInput(null)
+      setStepInput(null)
       setError(null)
     }
   }
+
+  const features = useFeatures()
+  const descending = features?.ascending_auction !== true
+  const floor = floorInput ?? suggestDutchFloorSoum(starting)
+  const step = stepInput ?? suggestDutchStepSoum(starting, floor, Number(duration))
+  const floorIssue =
+    descending && starting > 0 && !(floor > 0 && floor < starting)
+      ? "Boshlangʻich narxdan past boʻlishi kerak."
+      : null
 
   const reserveTooLow = reserve > 0 && starting > 0 && reserve < starting
   const buyNowIssue = buyNowError(buyNow, starting, reserve)
@@ -72,20 +98,37 @@ function RelistDialog({
       setError("Boshlangʻich narxni kiriting.")
       return
     }
-    if (reserveTooLow || buyNowIssue) return
+    if (descending ? floorIssue || !(step > 0) : reserveTooLow || buyNowIssue) {
+      if (descending && !(step > 0)) setError("Pasayish qadamini kiriting.")
+      return
+    }
     setSubmitting(true)
     try {
-      const created = await relistAuction(auction.id, {
+      const common = {
         duration_days: Number(duration) as 3 | 5 | 7,
         starting_price: soumToTiyin(starting),
         minimum_bid_increment: soumToTiyin(autoIncrementSoum(starting)),
-        reserve_price: reserve > 0 ? soumToTiyin(reserve) : undefined,
-        buy_now_price: buyNow > 0 ? soumToTiyin(buyNow) : undefined,
-      })
+      }
+      const created = await relistAuction(
+        auction.id,
+        descending
+          ? {
+              ...common,
+              pricing_mode: "descending",
+              reserve_price: soumToTiyin(floor),
+              price_decrement: soumToTiyin(step),
+              price_drop_interval_minutes: DROP_INTERVAL_MINUTES,
+            }
+          : {
+              ...common,
+              reserve_price: reserve > 0 ? soumToTiyin(reserve) : undefined,
+              buy_now_price: buyNow > 0 ? soumToTiyin(buyNow) : undefined,
+            }
+      )
       onRelisted(created)
     } catch (e) {
       setError(
-        e instanceof ApiError && e.status === 409
+        e instanceof ApiError && e.status === 409 && e.code !== "ascending_auction_disabled"
           ? "Bu mahsulot allaqachon qayta joylangan yoki sotilgan."
           : e instanceof ApiError
             ? e.detail
@@ -103,8 +146,9 @@ function RelistDialog({
       title="Mahsulotni qayta joylash"
       description={
         <>
-          <span className="font-medium text-foreground">{item.title}</span> yangi auksion sifatida
-          joylanadi — matn va rasmlar saqlanadi.
+          <span className="font-medium text-foreground">{item.title}</span>{" "}
+          {descending ? "pasayuvchi auksion" : "yangi auksion"} sifatida joylanadi — matn va
+          rasmlar saqlanadi.
         </>
       }
       confirmLabel="Qayta joylash"
@@ -148,36 +192,65 @@ function RelistDialog({
           </RadioGroup>
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="relist-reserve">Zaxira narx</FieldLabel>
-            <PriceInput
-              id="relist-reserve"
-              placeholder="Yoʻq"
-              value={reserve}
-              onChange={setReserve}
-              disabled={submitting}
-              aria-invalid={reserveTooLow ? true : undefined}
-            />
-            <FieldError>
-              {reserveTooLow ? "Boshlangʻich narxdan past boʻlishi mumkin emas." : null}
-            </FieldError>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="relist-buy-now">Hoziroq sotib olish</FieldLabel>
-            <PriceInput
-              id="relist-buy-now"
-              placeholder="Yoʻq"
-              value={buyNow}
-              onChange={setBuyNow}
-              disabled={submitting}
-              aria-invalid={buyNowIssue ? true : undefined}
-            />
-            <FieldError>{buyNowIssue}</FieldError>
-          </Field>
-        </div>
+        {descending ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="relist-floor">Eng past narx</FieldLabel>
+              <PriceInput
+                id="relist-floor"
+                value={floor}
+                onChange={setFloorInput}
+                disabled={submitting}
+                aria-invalid={floorIssue ? true : undefined}
+              />
+              <FieldError>{floorIssue}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="relist-step">Har soatda pasayish</FieldLabel>
+              <PriceInput
+                id="relist-step"
+                value={step}
+                onChange={setStepInput}
+                disabled={submitting}
+              />
+            </Field>
+            <FieldDescription className="sm:col-span-2">
+              Narx boshlangʻich summadan har soatda shu qadam bilan tushadi va eng past narxdan
+              pastga tushmaydi. Birinchi sotib olgan xaridor yutadi.
+            </FieldDescription>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="relist-reserve">Zaxira narx</FieldLabel>
+              <PriceInput
+                id="relist-reserve"
+                placeholder="Yoʻq"
+                value={reserve}
+                onChange={setReserve}
+                disabled={submitting}
+                aria-invalid={reserveTooLow ? true : undefined}
+              />
+              <FieldError>
+                {reserveTooLow ? "Boshlangʻich narxdan past boʻlishi mumkin emas." : null}
+              </FieldError>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="relist-buy-now">Hoziroq sotib olish</FieldLabel>
+              <PriceInput
+                id="relist-buy-now"
+                placeholder="Yoʻq"
+                value={buyNow}
+                onChange={setBuyNow}
+                disabled={submitting}
+                aria-invalid={buyNowIssue ? true : undefined}
+              />
+              <FieldError>{buyNowIssue}</FieldError>
+            </Field>
+          </div>
+        )}
 
-        {auction.has_reserve && (
+        {auction.has_reserve && !descending && (
           <p className="text-xs text-muted-foreground">
             Avvalgi zaxira narx koʻchirilmaydi — kerak boʻlsa yuqorida qaytadan kiriting.
           </p>
