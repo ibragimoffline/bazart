@@ -140,7 +140,6 @@ function OffersView() {
               showItem
               highlight={o.id === focus}
               askingTiyin={o.item?.starting_price ?? o.unit_price}
-              maxQuantity={o.item?.quantity_available ?? o.quantity}
               onChanged={replace}
             />
           ))

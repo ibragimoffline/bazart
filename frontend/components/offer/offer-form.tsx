@@ -1,22 +1,20 @@
 "use client"
 
 import * as React from "react"
-import { MinusIcon, PlusIcon } from "lucide-react"
 
-import { formatNumber, formatSom, soumToTiyin, tiyinToSoum } from "@/lib/format"
+import { formatSom, soumToTiyin, tiyinToSoum } from "@/lib/format"
 import type { OfferTerms } from "@/lib/api/offers"
 import { ApiError } from "@/lib/api/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { PriceInput } from "@/components/seller/sell/price-input"
 
 const MESSAGE_MAX = 500
 
 /**
- * Taklif / qarshi taklif shakli: miqdor + DONA narxi -> jami.
+ * Taklif / qarshi taklif shakli: narx (har e'lon — 1 dona).
  *
  * Narx erkin: istalgan musbat summa (mo'ljal narxdan past ham, yuqori ham) —
  * mo'ljal narx bilan solishtirish faqat ma'lumot uchun, hech narsani bloklamaydi.
@@ -24,9 +22,7 @@ const MESSAGE_MAX = 500
  */
 function OfferForm({
   idPrefix,
-  maxQuantity,
   askingTiyin,
-  initialQuantity = 1,
   initialUnitTiyin,
   submitLabel,
   requireConsent = false,
@@ -36,10 +32,8 @@ function OfferForm({
   onCancel,
 }: {
   idPrefix: string
-  maxQuantity: number
-  /** Sotuvchining mo'ljal narxi (dona) — solishtirish uchun. */
+  /** Sotuvchining mo'ljal narxi — solishtirish uchun. */
   askingTiyin: string
-  initialQuantity?: number
   initialUnitTiyin?: string
   submitLabel: string
   /** Xaridor tomoni: rozilik bayrog'i ko'rsatiladimi. */
@@ -50,7 +44,6 @@ function OfferForm({
   onCancel?: () => void
 }) {
   const asking = tiyinToSoum(askingTiyin)
-  const [quantity, setQuantity] = React.useState(Math.min(initialQuantity, maxQuantity))
   const [unit, setUnit] = React.useState(
     initialUnitTiyin != null ? tiyinToSoum(initialUnitTiyin) : asking
   )
@@ -59,8 +52,6 @@ function OfferForm({
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
-  const clamp = (n: number) => Math.min(maxQuantity, Math.max(1, Math.floor(n) || 1))
-  const total = quantity * unit
   const diffPct = asking > 0 && unit > 0 ? Math.round(((unit - asking) / asking) * 100) : 0
   const showConsent = requireConsent && needsConsent
 
@@ -68,13 +59,13 @@ function OfferForm({
     e.preventDefault()
     setError(null)
     if (!(unit > 0)) {
-      setError("Dona narxini kiriting.")
+      setError("Narxni kiriting.")
       return
     }
     setSubmitting(true)
     try {
       await onSubmit({
-        quantity,
+        quantity: 1,
         unit_price: soumToTiyin(unit),
         message: message.trim() || undefined,
       })
@@ -93,67 +84,21 @@ function OfferForm({
 
   return (
     <form onSubmit={submit} noValidate className="grid gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field>
-          <FieldLabel htmlFor={`${idPrefix}-qty`}>Miqdor</FieldLabel>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Kamaytirish"
-              disabled={busy || quantity <= 1}
-              onClick={() => setQuantity((q) => clamp(q - 1))}
-            >
-              <MinusIcon aria-hidden="true" />
-            </Button>
-            <Input
-              id={`${idPrefix}-qty`}
-              inputMode="numeric"
-              className="w-20 text-center tabular-nums"
-              value={String(quantity)}
-              disabled={busy}
-              onChange={(e) => setQuantity(clamp(Number(e.target.value.replace(/\D/g, ""))))}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Koʻpaytirish"
-              disabled={busy || quantity >= maxQuantity}
-              onClick={() => setQuantity((q) => clamp(q + 1))}
-            >
-              <PlusIcon aria-hidden="true" />
-            </Button>
-          </div>
-          <FieldDescription>Mavjud: {formatNumber(maxQuantity)} dona</FieldDescription>
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor={`${idPrefix}-unit`}>Narx (1 dona uchun)</FieldLabel>
-          <PriceInput
-            id={`${idPrefix}-unit`}
-            value={unit}
-            onChange={setUnit}
-            disabled={busy}
-            aria-invalid={error && !(unit > 0) ? true : undefined}
-          />
-          <FieldDescription>
-            {unit > 0 && diffPct !== 0
-              ? `Sotuvchi narxidan ${Math.abs(diffPct)}% ${diffPct < 0 ? "past" : "yuqori"} — taklif qilish mumkin.`
-              : `Sotuvchi narxi: ${formatSom(asking)}. Istalgan narxni taklif qiling.`}
-          </FieldDescription>
-        </Field>
-      </div>
-
-      <div className="flex items-baseline justify-between gap-3 rounded-lg bg-muted px-3 py-2.5">
-        <span className="text-sm text-muted-foreground">
-          Jami: {formatNumber(quantity)} x {formatSom(unit)}
-        </span>
-        <span className="font-heading text-lg font-semibold tabular-nums text-foreground">
-          {formatSom(total)}
-        </span>
-      </div>
+      <Field>
+        <FieldLabel htmlFor={`${idPrefix}-unit`}>Narx</FieldLabel>
+        <PriceInput
+          id={`${idPrefix}-unit`}
+          value={unit}
+          onChange={setUnit}
+          disabled={busy}
+          aria-invalid={error && !(unit > 0) ? true : undefined}
+        />
+        <FieldDescription>
+          {unit > 0 && diffPct !== 0
+            ? `Sotuvchi narxidan ${Math.abs(diffPct)}% ${diffPct < 0 ? "past" : "yuqori"} — taklif qilish mumkin.`
+            : `Sotuvchi narxi: ${formatSom(asking)}. Istalgan narxni taklif qiling.`}
+        </FieldDescription>
+      </Field>
 
       <Field>
         <FieldLabel htmlFor={`${idPrefix}-msg`}>Izoh (ixtiyoriy)</FieldLabel>

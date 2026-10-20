@@ -15,13 +15,12 @@ export type PreviewData = {
   year?: string
   defects?: string
   equipment: string[]
-  /** "offer" — narx takliflari (dona narxi + miqdor), "auction" — auksion. */
+  /** "offer" — narx takliflari (xaridor narxi), "auction" — auksion. */
   mode: "offer" | "auction"
   /** Pasayuvchi auksion sozlamalari (bo'lsa). */
   descending?: { decrementSoum: number; intervalLabel: string; floorSoum: number }
   /** Rozilik berilgan bo'lsa — pasayuvchi zaxira bosqichining eng past narxi (so'm). */
   dutchFallbackFloorSoum?: number
-  quantity: number
   startingSoum: number
   incrementSoum: number
   incrementIsAuto: boolean
@@ -121,7 +120,6 @@ function ListingPreview({
               <CalendarClockIcon className="size-4 shrink-0" aria-hidden="true" />
               {data.durationDays} kun
               {data.endsAt ? ` · ${data.endsAt} da ${data.mode === "offer" ? "yopiladi" : "tugaydi"}` : ""}
-              {data.mode === "offer" ? ` · ${data.quantity} dona` : ""}
             </span>
           </div>
 

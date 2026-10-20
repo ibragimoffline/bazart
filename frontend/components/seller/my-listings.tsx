@@ -162,7 +162,7 @@ function RepublishDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Eʼlonni qayta joylash"
-      description={`${item.quantity_available} dona yana sotuvga chiqadi. Yangi muddatni tanlang.`}
+      description="Eʼlon yana sotuvga chiqadi. Yangi muddatni tanlang."
       confirmLabel="Qayta joylash"
       cancelLabel="Bekor qilish"
       loading={busy}
@@ -262,13 +262,9 @@ function ListingCard({
           </div>
           {isOffer ? (
             <p className="text-sm text-muted-foreground">
-              Narx (1 dona):{" "}
+              Narx:{" "}
               <span className="font-medium tabular-nums text-foreground">
                 {formatTiyin(item.starting_price)}
-              </span>
-              {" · "}
-              <span className="tabular-nums">
-                {item.quantity_available} / {item.quantity_total} dona qoldi
               </span>
             </p>
           ) : (

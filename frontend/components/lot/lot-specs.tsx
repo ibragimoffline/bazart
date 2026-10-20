@@ -49,7 +49,7 @@ function usePlace(regionId: number | null, districtId: number | null): Place {
 
 type Spec = { label: string; value: React.ReactNode; tone?: "notice" }
 
-/** auction yo'q — taklifli e'lon: dona narxi, zaxira va e'lon muddati ko'rsatiladi. */
+/** auction yo'q — taklifli e'lon: narx va e'lon muddati ko'rsatiladi. */
 function LotSpecs({ item, auction }: { item: Item; auction?: Auction }) {
   const place = usePlace(item.region_id, item.district_id)
   const placeText = [place.region, place.district].filter(Boolean).join(", ")
@@ -78,11 +78,7 @@ function LotSpecs({ item, auction }: { item: Item; auction?: Auction }) {
             : []),
         ]
       : [
-          { label: "Sotuvchi narxi (1 dona)", value: formatTiyin(item.starting_price) },
-          {
-            label: "Mavjud",
-            value: `${formatNumber(item.quantity_available)} / ${formatNumber(item.quantity_total)} dona`,
-          },
+          { label: "Sotuvchi narxi", value: formatTiyin(item.starting_price) },
           ...(item.listing_duration_days
             ? [{ label: "Muddat", value: `${item.listing_duration_days} kun` }]
             : []),

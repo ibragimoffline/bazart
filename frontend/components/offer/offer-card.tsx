@@ -34,7 +34,6 @@ import {
   OFFER_STATUS_LABEL,
   OFFER_STATUS_VARIANT,
   eventText,
-  termsText,
   timeLeftText,
   turnOf,
   useNow,
@@ -60,7 +59,6 @@ function OfferCard({
   offer,
   viewer,
   askingTiyin,
-  maxQuantity,
   showItem = false,
   highlight = false,
   onChanged,
@@ -69,8 +67,6 @@ function OfferCard({
   viewer: OfferParty
   /** Sotuvchining mo'ljal narxi (qarshi taklif shaklida solishtirish uchun). */
   askingTiyin: string
-  /** Hozir mavjud zaxira — qarshi taklif shu bilan cheklanadi. */
-  maxQuantity: number
   showItem?: boolean
   highlight?: boolean
   onChanged: (offer: Offer) => void
@@ -150,9 +146,7 @@ function OfferCard({
       </div>
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <span className="text-sm text-foreground tabular-nums">
-          {termsText(offer.quantity, offer.unit_price)}
-        </span>
+        <span className="text-sm text-muted-foreground">Taklif narxi</span>
         <span className="font-heading text-lg font-semibold tabular-nums text-foreground">
           {formatTiyin(offer.total_price)}
         </span>
@@ -211,9 +205,7 @@ function OfferCard({
         <div className="rounded-lg border border-border p-3">
           <OfferForm
             idPrefix={`counter-${offer.id}`}
-            maxQuantity={Math.max(1, maxQuantity)}
             askingTiyin={askingTiyin}
-            initialQuantity={offer.quantity}
             initialUnitTiyin={offer.unit_price}
             submitLabel="Qarshi taklif yuborish"
             onCancel={() => setCountering(false)}
@@ -271,7 +263,7 @@ function OfferCard({
         open={pending === "accept"}
         onOpenChange={(open) => !open && setPending(null)}
         title="Shartlarni qabul qilasizmi?"
-        description={`${termsText(offer.quantity, offer.unit_price)} — jami ${formatTiyin(offer.total_price)}. Bitim tuziladi va buyurtma yaratiladi.`}
+        description={`Narx: ${formatTiyin(offer.total_price)}. Bitim tuziladi va buyurtma yaratiladi.`}
         confirmLabel="Ha, qabul qilaman"
         cancelLabel="Yoʻq"
         loading={busy}

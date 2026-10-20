@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { InboxIcon, PackageIcon } from "lucide-react"
 
-import { formatNumber, formatTiyin } from "@/lib/format"
+import { formatTiyin } from "@/lib/format"
 import type { Item } from "@/lib/api/types"
 import { getItem } from "@/lib/api/endpoints"
 import { listItemOffers, makeOffer, type Offer } from "@/lib/api/offers"
@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/breadcrumb"
 
 const CLOSED_TEXT: Partial<Record<Item["status"], string>> = {
-  sold: "Barcha donalar sotildi.",
+  sold: "Sotildi.",
   expired: "Eʼlon muddati tugadi.",
   cancelled: "Eʼlon olib tashlangan.",
 }
@@ -72,7 +72,6 @@ function BuyerPanel({ item, onItemChanged }: { item: Item; onItemChanged: () => 
           offer={open}
           viewer="buyer"
           askingTiyin={item.starting_price}
-          maxQuantity={item.quantity_available}
           onChanged={replace}
         />
       ) : (
@@ -85,13 +84,12 @@ function BuyerPanel({ item, onItemChanged }: { item: Item; onItemChanged: () => 
               Narx taklif qilish
             </h2>
             <p className="text-sm text-muted-foreground">
-              Sotuvchi narxi — moʻljal. Oʻzingizga mos narx va miqdorni yozing: sotuvchi qabul
+              Sotuvchi narxi — moʻljal. Oʻzingizga mos narxni yozing: sotuvchi qabul
               qiladi, rad etadi yoki qarshi taklif beradi.
             </p>
           </div>
           <OfferForm
             idPrefix={`offer-${item.id}`}
-            maxQuantity={item.quantity_available}
             askingTiyin={item.starting_price}
             submitLabel="Taklif yuborish"
             requireConsent
@@ -117,7 +115,6 @@ function BuyerPanel({ item, onItemChanged }: { item: Item; onItemChanged: () => 
                 offer={o}
                 viewer="buyer"
                 askingTiyin={item.starting_price}
-                maxQuantity={item.quantity_available}
                 onChanged={replace}
               />
             ))}
@@ -167,7 +164,7 @@ function SellerPanel({ item, onItemChanged }: { item: Item; onItemChanged: () =>
         <div className="grid place-items-center gap-2 rounded-xl border border-border bg-card px-6 py-10 text-center">
           <InboxIcon className="size-6 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm text-muted-foreground">
-            Hozircha taklif yoʻq. Xaridorlar narx va miqdor taklif qilganda shu yerda koʻrasiz.
+            Hozircha taklif yoʻq. Xaridorlar narx taklif qilganda shu yerda koʻrasiz.
           </p>
         </div>
       ) : (
@@ -177,7 +174,6 @@ function SellerPanel({ item, onItemChanged }: { item: Item; onItemChanged: () =>
             offer={o}
             viewer="seller"
             askingTiyin={item.starting_price}
-            maxQuantity={item.quantity_available}
             onChanged={replace}
           />
         ))
@@ -187,7 +183,7 @@ function SellerPanel({ item, onItemChanged }: { item: Item; onItemChanged: () =>
 }
 
 /**
- * Taklifli e'lon sahifasi: dona narxi (mo'ljal), mavjud miqdor, muddat va
+ * Taklifli e'lon sahifasi: narx (mo'ljal), muddat va
  * muzokara paneli (xaridorga — taklif, sotuvchiga — kelgan takliflar).
  */
 function OfferListingDetail({ itemId }: { itemId: number }) {
@@ -284,12 +280,9 @@ function OfferListingDetail({ itemId }: { itemId: number }) {
           </div>
 
           <div className="grid gap-1 rounded-xl border border-border bg-card p-4">
-            <span className="text-sm text-muted-foreground">Sotuvchi narxi, 1 dona</span>
+            <span className="text-sm text-muted-foreground">Sotuvchi narxi</span>
             <span className="font-heading text-2xl font-semibold tabular-nums text-foreground">
               {formatTiyin(item.starting_price)}
-            </span>
-            <span className="text-sm text-muted-foreground tabular-nums">
-              Mavjud: {formatNumber(item.quantity_available)} / {formatNumber(item.quantity_total)} dona
             </span>
             <span className="text-xs text-muted-foreground">
               Narx majburiy emas — oʻz narxingizni taklif qiling.

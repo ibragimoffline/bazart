@@ -4,7 +4,7 @@ import Link from "next/link"
 import { ImageIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { formatNumber, formatTiyin } from "@/lib/format"
+import { formatTiyin } from "@/lib/format"
 import type { Item, ItemCondition } from "@/lib/api/types"
 import { heroImage } from "@/lib/item-image"
 import { Badge } from "@/components/ui/badge"
@@ -18,7 +18,7 @@ const CONDITION_LABEL: Record<ItemCondition, string> = {
 
 /**
  * Taklifli e'lon kartochkasi (LotCard bilan bir xil plitka uslubi): narx — DONA uchun
- * mo'ljal, ostida mavjud miqdor. Xaridor narxni o'zi taklif qiladi.
+ * mo'ljal. Xaridor narxni o'zi taklif qiladi.
  */
 function OfferItemCard({ item, className }: { item: Item; className?: string }) {
   const hero = heroImage(item)
@@ -69,10 +69,9 @@ function OfferItemCard({ item, className }: { item: Item; className?: string }) 
         </h3>
         <p className="tabular-nums text-foreground">
           <span className="text-lg font-bold">{formatTiyin(item.starting_price)}</span>
-          <span className="text-xs text-muted-foreground"> / dona</span>
         </p>
         <p className="truncate text-xs text-muted-foreground">
-          {formatNumber(item.quantity_available)} dona · narxni oʻzingiz taklif qiling
+          Narxni oʻzingiz taklif qiling
         </p>
       </div>
     </Link>

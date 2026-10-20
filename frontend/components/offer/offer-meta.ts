@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { formatNumber, formatTiyin } from "@/lib/format"
+import { formatTiyin } from "@/lib/format"
 import type { Offer, OfferEvent, OfferParty, OfferStatus } from "@/lib/api/offers"
 import {
   hasConsented,
@@ -34,10 +34,9 @@ export const OFFER_STATUS_VARIANT: Record<OfferStatus, BadgeVariant> = {
   expired: "outline",
 }
 
-/** "2 dona x 120 000 soʻm" — narx har doim DONA uchun. */
-export function termsText(quantity: number | null, unitPrice: string | null): string {
-  if (quantity == null || unitPrice == null) return ""
-  return `${formatNumber(quantity)} dona x ${formatTiyin(unitPrice)}`
+/** "120 000 soʻm" — har e'lon 1 dona, shuning uchun faqat narx. */
+export function termsText(unitPrice: string | null): string {
+  return unitPrice == null ? "" : formatTiyin(unitPrice)
 }
 
 const PARTY_LABEL: Record<OfferParty, string> = { buyer: "Xaridor", seller: "Sotuvchi" }
@@ -45,7 +44,7 @@ const PARTY_LABEL: Record<OfferParty, string> = { buyer: "Xaridor", seller: "Sot
 /** Tarix qatori: kim nima qildi. */
 export function eventText(event: OfferEvent): string {
   const who = event.actor ? PARTY_LABEL[event.actor] : "Tizim"
-  const terms = termsText(event.quantity, event.unit_price)
+  const terms = termsText(event.unit_price)
   switch (event.action) {
     case "offer":
       return `${who} taklif berdi: ${terms}`

@@ -17,7 +17,6 @@ import {
   uploadItemImage,
   createAuction,
   listSellerItems,
-  updateItem,
 } from "@/lib/api/seller"
 import { publishItem } from "@/lib/api/offers"
 import { useAuthStore } from "@/lib/store/auth"
@@ -126,12 +125,6 @@ const schema = z
     dutch_fallback: z.boolean(),
     /** O'sha bosqichning eng past narxi, so'm. */
     dutch_floor: z.number().int().nonnegative(),
-    /** Necha dona (faqat "offer" rejimida; auksion har doim 1 dona). */
-    quantity: z
-      .number({ error: "Miqdorni kiriting." })
-      .int("Butun son kiriting.")
-      .min(1, "Kamida 1 dona.")
-      .max(10_000, "Koʻpi bilan 10 000 dona."),
     starting_price: z.number().int().positive("Narxni kiriting."),
     duration_days: z.enum(DURATIONS),
     region_id: z.string({ error: "Viloyatni tanlang." }).min(1, "Viloyatni tanlang."),
@@ -239,7 +232,6 @@ const DEFAULTS: FormValues = {
   start_at: "",
   dutch_fallback: false,
   dutch_floor: 0,
-  quantity: 1,
   starting_price: 0,
   duration_days: "5",
   region_id: "",
@@ -307,8 +299,6 @@ function SellForm() {
 
   // Qayta urinishda dublikat bo'lmasin: yaratilgan mahsulot va yuklangan rasmlar eslab qolinadi.
   const createdItemId = React.useRef<number | null>(null)
-  // Qoralama qaysi miqdor bilan yaratilgani — qayta urinishda rejim o'zgarsa yangilash uchun.
-  const createdQuantity = React.useRef<number>(1)
   const uploadedImageIds = React.useRef(new Set<string>())
 
   const {
@@ -507,12 +497,11 @@ function SellForm() {
       const offerMode = values.mode === "offer"
       const reserveTiyin =
         !offerMode && values.reserve_price > 0 ? soumToTiyin(values.reserve_price) : undefined
-      const quantity = offerMode ? values.quantity : 1
 
       if (createdItemId.current == null) {
         const item = await createItem({
           title: values.title.trim(),
-          quantity,
+          quantity: 1,
           description: orUndef(values.description),
           category_id: Number(values.category_id),
           condition: values.condition,
@@ -532,11 +521,6 @@ function SellForm() {
           reserve_price: reserveTiyin,
         })
         createdItemId.current = item.id
-        createdQuantity.current = quantity
-      } else if (createdQuantity.current !== quantity) {
-        // Qayta urinishda rejim/miqdor o'zgargan — qoralama hali e'lon qilinmagan, yangilaymiz.
-        await updateItem(createdItemId.current, { quantity })
-        createdQuantity.current = quantity
       }
       const itemId = createdItemId.current
 
@@ -650,7 +634,6 @@ function SellForm() {
         values.mode === "auction" && values.pricing !== "descending" && values.dutch_fallback
           ? values.dutch_floor
           : undefined,
-      quantity: values.mode === "offer" ? values.quantity : 1,
       startingSoum: values.starting_price,
       incrementSoum: effectiveIncrement,
       incrementIsAuto: values.minimum_bid_increment === 0,
@@ -889,7 +872,7 @@ function SellForm() {
                   <span className="font-medium text-foreground">Narx takliflari</span>
                   <span className="text-xs text-muted-foreground">
                     Xaridorlar oʻz narxi va miqdorini taklif qiladi — siz qabul qilasiz, rad
-                    etasiz yoki qarshi taklif berasiz. Bir necha dona sotish mumkin.
+                    etasiz yoki qarshi taklif berasiz.
                   </span>
                 </span>
               </Label>
@@ -1026,35 +1009,11 @@ function SellForm() {
         </div>
       )}
 
-      {isOffer && (
-        <Field>
-          <FieldLabel htmlFor="quantity">Miqdor (dona)</FieldLabel>
-          <Controller
-            control={control}
-            name="quantity"
-            render={({ field }) => (
-              <Input
-                id="quantity"
-                inputMode="numeric"
-                className="max-w-40 tabular-nums"
-                aria-invalid={errors.quantity ? true : undefined}
-                value={field.value > 0 ? String(field.value) : ""}
-                onChange={(e) => field.onChange(Number(e.target.value.replace(/D/g, "").slice(0, 5)) || 0)}
-                onBlur={field.onBlur}
-              />
-            )}
-          />
-          <FieldDescription>
-            Bir xil mahsulotdan nechta bor. Xaridor kerakli miqdorni tanlab, dona narxini taklif qiladi.
-          </FieldDescription>
-          <FieldError>{errors.quantity?.message}</FieldError>
-        </Field>
-      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="starting_price">
-            {isOffer ? "Narx (1 dona uchun)" : "Boshlangʻich narx"}
+            {isOffer ? "Narx" : "Boshlangʻich narx"}
           </FieldLabel>
           <Controller
             control={control}
