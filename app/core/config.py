@@ -75,6 +75,8 @@ class Settings(BaseSettings):
     # "Sotildi" dan keyin xaridor jim tursa (va ochiq shikoyat bo'lmasa) avto-tasdiq.
     deal_auto_confirm_hours: int = 72
     deal_auto_confirm_interval_seconds: int = 300
+    # Keyingi bidderga taklif (E2.10) muddati o'tganini qayd etish va sotuvchiga xabar.
+    next_offer_expiry_interval_seconds: int = 300
     # Bekor qilish cheklovi: oynada shuncha aybli bekor qilish -> shuncha kun bid/taklif taqiqi.
     deal_cancel_limit: int = 3
     deal_cancel_window_days: int = 30

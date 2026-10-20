@@ -12,6 +12,7 @@ import logging
 from app.core.celery_app import celery_app
 from app.db.session import SessionLocal
 from app.services.auction_closer import close_due_auctions
+from app.services.auction_service import AuctionService
 from app.services.deal_service import DealService
 from app.services.ending_soon import notify_ending_soon
 from app.services.offer_service import OfferService
@@ -42,6 +43,19 @@ def auto_confirm_deals_task() -> int:
         if done:
             logger.info("Celery: %s ta kelishuv avtomatik tasdiqlandi", done)
         return done
+    finally:
+        db.close()
+
+
+@celery_app.task(name="app.tasks.scheduled.expire_next_offers_task")
+def expire_next_offers_task() -> int:
+    """Keyingi bidderga takliflar muddati (E2.10). Qayd etilganlar soni."""
+    db = SessionLocal()
+    try:
+        expired = AuctionService(db).expire_next_offers()
+        if expired:
+            logger.info("Celery: %s ta keyingi-bidder taklifi muddati o'tdi", expired)
+        return expired
     finally:
         db.close()
 

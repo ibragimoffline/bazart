@@ -232,3 +232,65 @@ def test_offer_deals_without_auction_are_unaffected(
         assert ok.status_code == 200, ok.text
     deals = client.get("/api/v1/deals/seller", headers=seller.headers).json()
     assert len(deals) == units and all(d["auction_id"] is None for d in deals)
+
+
+def _seller_expiry_notes(db_session: Session, seller_id: int) -> list:
+    from app.models.enums import NotificationType
+    from app.models.notification import Notification
+
+    db_session.expire_all()
+    return [
+        n
+        for n in db_session.scalars(
+            select(Notification).where(
+                Notification.user_id == seller_id,
+                Notification.type == NotificationType.SECOND_CHANCE,
+            )
+        )
+        if (n.payload or {}).get("expired")
+    ]
+
+
+def test_expiry_job_marks_offer_and_notifies_seller_once(
+    client: TestClient, db_session: Session, monkeypatch
+) -> None:
+    seller, _winner, _runner, auction, deal, _ = _setup(client, db_session)
+    _offer(client, seller, deal["id"])
+    # Muddat hali kelmagan — vazifa tegmaydi.
+    assert AuctionService(db_session).expire_next_offers() == 0
+
+    record = db_session.scalar(select(NextBidderOffer))
+    record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+    db_session.commit()
+
+    from app.tasks.scheduled import expire_next_offers_task
+
+    monkeypatch.setattr("app.tasks.scheduled.SessionLocal", lambda: db_session)
+    monkeypatch.setattr(db_session, "close", lambda: None)
+    assert expire_next_offers_task() == 1
+    assert AuctionService(db_session).expire_next_offers() == 0  # qayta ishlamaydi
+
+    db_session.expire_all()
+    assert db_session.scalar(select(NextBidderOffer)).expired_at is not None
+    notes = _seller_expiry_notes(db_session, seller.id)
+    assert len(notes) == 1
+    assert notes[0].payload == {"auction_id": auction["id"], "expired": True}
+
+
+def test_expiry_job_ignores_accepted_offer(client: TestClient, db_session: Session) -> None:
+    seller, _winner, runner, auction, deal, _ = _setup(client, db_session)
+    _offer(client, seller, deal["id"])
+    _accept(client, runner, auction["id"])
+    record = db_session.scalar(select(NextBidderOffer))
+    record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+    db_session.commit()
+    assert AuctionService(db_session).expire_next_offers() == 0
+    assert _seller_expiry_notes(db_session, seller.id) == []
+
+
+def test_expiry_job_is_in_beat_schedule() -> None:
+    from app.core.celery_app import build_beat_schedule
+
+    tasks = {entry["task"] for entry in build_beat_schedule().values()}
+    assert "app.tasks.scheduled.expire_next_offers_task" in tasks
+    assert "app.tasks.scheduled.auto_confirm_deals_task" in tasks

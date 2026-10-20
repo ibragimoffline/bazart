@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -20,6 +22,21 @@ class NextOfferRepository:
             select(NextBidderOffer)
             .where(NextBidderOffer.auction_id == auction_id)
             .order_by(NextBidderOffer.offered_at.desc())
+        )
+        return list(self.db.scalars(statement))
+
+    def lock_due_for_expiry(self, now: datetime) -> list[NextBidderOffer]:
+        """Muddati o'tgan, hali qayd etilmagan takliflar (FOR UPDATE SKIP LOCKED: ikki worker
+        bir taklifni ikki marta qayta ishlamaydi, qabul qilinayotgani tik'dan chetda qoladi)."""
+        statement = (
+            select(NextBidderOffer)
+            .where(
+                NextBidderOffer.accepted_at.is_(None),
+                NextBidderOffer.closed_at.is_(None),
+                NextBidderOffer.expired_at.is_(None),
+                NextBidderOffer.expires_at <= now,
+            )
+            .with_for_update(skip_locked=True)
         )
         return list(self.db.scalars(statement))
 

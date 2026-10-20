@@ -912,5 +912,32 @@ class AuctionService:
         self.db.refresh(deal)
         return deal
 
+    def expire_next_offers(self, now: datetime | None = None) -> int:
+        """Muddati o'tgan keyingi-bidder takliflarini qayd etadi va sotuvchiga xabar beradi.
+
+        Qabul qilish muddatni o'zi tekshiradi; bu vazifa sotuvchi bilmay qolmasligi uchun:
+        u keyingi bidderga yana taklif yuborishi yoki mahsulotni qayta joylashi kerak.
+        Mahsulotni `unsold` ga o'tkazish — E3.4. Har taklif bo'yicha xabar bir marta
+        (`expired_at`). Qayd etilganlar soni.
+        """
+        now = now or datetime.now(UTC)
+        offers = NextOfferRepository(self.db).lock_due_for_expiry(now)
+        notifier = NotificationService(self.db)
+        for offer in offers:
+            offer.expired_at = now
+            self.db.add(offer)
+            notifier.create(
+                user_id=offer.auction.seller_id,
+                type=NotificationType.SECOND_CHANCE,
+                title="Keyingi bidder javob bermadi",
+                body=(
+                    f"«{offer.auction.item.title}»: taklif muddati tugadi. Keyingi bidderga "
+                    "taklif yuboring yoki mahsulotni qayta joylang."
+                ),
+                payload={"auction_id": offer.auction_id, "expired": True},
+            )
+        self.db.commit()
+        return len(offers)
+
 
 AuctionSettlementService = AuctionService

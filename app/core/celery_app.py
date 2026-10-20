@@ -39,9 +39,10 @@ celery_app.conf.update(
     broker_connection_retry_on_startup=True,
 )
 
-# Davriy vazifalar — faqat beat yoqilganda ro'yxatga olinadi (aks holda bo'sh).
-if settings.celery_beat_enabled:
-    celery_app.conf.beat_schedule = {
+
+def build_beat_schedule() -> dict:
+    """Davriy vazifalar jadvali (testda ham shu funksiya tekshiriladi)."""
+    return {
         "close-due-auctions": {
             "task": "app.tasks.scheduled.close_due_auctions_task",
             "schedule": schedule(settings.auction_closer_interval_seconds),
@@ -49,6 +50,10 @@ if settings.celery_beat_enabled:
         "auto-confirm-deals": {
             "task": "app.tasks.scheduled.auto_confirm_deals_task",
             "schedule": schedule(settings.deal_auto_confirm_interval_seconds),
+        },
+        "expire-next-offers": {
+            "task": "app.tasks.scheduled.expire_next_offers_task",
+            "schedule": schedule(settings.next_offer_expiry_interval_seconds),
         },
         "notify-ending-soon": {
             "task": "app.tasks.scheduled.notify_ending_soon_task",
@@ -63,3 +68,8 @@ if settings.celery_beat_enabled:
             "schedule": schedule(settings.offer_expiry_interval_seconds),
         },
     }
+
+
+# Davriy vazifalar — faqat beat yoqilganda ro'yxatga olinadi (aks holda bo'sh).
+if settings.celery_beat_enabled:
+    celery_app.conf.beat_schedule = build_beat_schedule()

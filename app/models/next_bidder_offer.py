@@ -15,8 +15,9 @@ class NextBidderOffer(Base):
     uchun bid tarixi o'zgartirilmaydi. UNIQUE (auction_id, bidder_id): bir bidder bir
     auksionda ko'pi bilan bitta taklif oladi — javob bermagan bidderga ikkinchi marta yo'q.
 
-    Ochiq taklif: `accepted_at`, `closed_at` bo'sh va `expires_at` kelmagan. Muddat o'tishi
-    vaqtdan hisoblanadi (alohida fon vazifasi shart emas). `closed_at` — qayta joylash yoki
+    Ochiq taklif: `accepted_at`, `closed_at` bo'sh va `expires_at` kelmagan — qabul qilish
+    shu bilan tekshiriladi (vaqtdan, fon vazifasini kutmasdan). `expired_at` — fon vazifasi
+    muddat o'tganini qayd etib sotuvchiga xabar bergan vaqt. `closed_at` — qayta joylash yoki
     rad etish yopgan vaqt (E3.6).
     """
 
@@ -37,6 +38,8 @@ class NextBidderOffer(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Muddati o'tgani fon vazifasi qayd etgan vaqt (sotuvchiga xabar bir marta ketadi).
+    expired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deal_id: Mapped[int | None] = mapped_column(ForeignKey("deals.id"), nullable=True)
 
     auction = relationship("Auction")
