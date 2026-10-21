@@ -446,6 +446,9 @@ def _prod_settings(**overrides):
         environment="production",
         secret_key="p" * 48,
         psp_webhook_secret="w" * 48,
+        sms_provider="eskiz",
+        eskiz_email="sms@example.uz",
+        eskiz_password="x",
         **overrides,
     )
 

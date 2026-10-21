@@ -36,6 +36,9 @@ _SCOPE_LIMIT_SETTING: dict[str, str] = {
     # login brute-force hisobiga aralashmaydi.
     "auth": "rate_limit_login_per_minute",
     "bid": "rate_limit_bid_per_minute",
+    # Telefon OTP — alohida va kengroq: mobil operatorlar ko'p foydalanuvchini bitta IP
+    # ortida (CGNAT) chiqaradi. Asosiy himoya — kod/raqam/akkaunt/kunlik limitlar (OtpService).
+    "otp": "rate_limit_otp_per_minute",
 }
 
 

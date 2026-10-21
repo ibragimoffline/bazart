@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -11,14 +12,15 @@ from app.core.auth_cookie import (
 )
 from app.core.config import settings
 from app.core.dependencies import (
+    BearerToken,
     CurrentActiveUser,
     CurrentUser,
     DbSession,
     LoginForm,
-    OptionalUser,
     optional_oauth2_scheme,
 )
 from app.core.rate_limit import RateLimiter
+from app.core.security import decode_access_token
 from app.models.enums import OtpPurpose
 from app.models.user import User
 from app.schemas.auth import (
@@ -205,41 +207,68 @@ def verify_email(payload: VerifyEmailRequest, db: DbSession) -> User:
     return AuthService(db).verify_email(payload.token)
 
 
+def _phone_verify_only(purpose: OtpPurpose) -> None:
+    """Faqat telefon tasdig'i: boshqa maqsadlar (OTP login, OTP bilan parol tiklash) yo'q.
+
+    Ular uchun hech qanday oqim yo'q — anonim istalgan raqamga SMS yuborish imkoni qolmasin.
+    """
+    if purpose != OtpPurpose.PHONE_VERIFY:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported purpose")
+
+
+def _auth_time(token: str) -> datetime | None:
+    """Access token'dagi `auth_time` (sessiya boshi) — qayta autentifikatsiya oynasi uchun."""
+    payload = decode_access_token(token) or {}
+    value = payload.get("auth_time")
+    return datetime.fromtimestamp(value, UTC) if isinstance(value, int) else None
+
+
 @router.post(
     "/otp/request",
     response_model=OtpRequestResponse,
-    dependencies=[Depends(RateLimiter("auth", 60))],
+    dependencies=[Depends(RateLimiter("otp", 60))],
 )
 def request_otp(
     payload: OtpRequestIn,
     request: Request,
+    current_user: CurrentActiveUser,
+    token: BearerToken,
     db: DbSession,
 ) -> OtpRequestResponse:
-    otp, code = OtpService(db).request_otp(payload.phone, payload.purpose, ip=_client_ip(request))
-    # Xom kod FAQAT non-prod muhitda qaytariladi (test/local qulayligi uchun).
-    # Prod'da kod faqat SMS orqali ketadi — javobda hech qachon oshkor bo'lmaydi.
-    debug_code = None if settings.is_production else code
+    """Login qilgan foydalanuvchi raqamiga tasdiqlash kodini yuboradi (docs/AUTH.md).
+
+    Kod akkauntga bog'lanadi — boshqa akkaunt uni ishlata olmaydi. Tasdiqlangan raqamni
+    almashtirishda `password` yoki yaqinda login talab qilinadi (aks holda 403 reauth_required).
+    """
+    _phone_verify_only(payload.purpose)
+    otp, code = OtpService(db).request_phone_code(
+        current_user,
+        payload.phone,
+        ip=_client_ip(request),
+        password=payload.password,
+        auth_time=_auth_time(token),
+    )
+    # Xom kod FAQAT non-prod'da va faqat log provayderida (SMS haqiqatan ketmaganda) qaytadi.
+    show_code = not settings.is_production and settings.sms_provider == "log"
     return OtpRequestResponse(
         message="Tasdiqlash kodi yuborildi",
         expires_at=otp.expires_at,
-        debug_code=debug_code,
+        resend_after_seconds=settings.otp_resend_cooldown_seconds,
+        debug_code=code if show_code else None,
     )
 
 
 @router.post(
     "/otp/verify",
     response_model=OtpVerifyResponse,
-    dependencies=[Depends(RateLimiter("auth", 60))],
+    dependencies=[Depends(RateLimiter("otp", 60))],
 )
 def verify_otp(
-    payload: OtpVerifyIn, db: DbSession, current_user: OptionalUser
+    payload: OtpVerifyIn, current_user: CurrentActiveUser, db: DbSession
 ) -> OtpVerifyResponse:
-    OtpService(db).verify_otp(payload.phone, payload.code, payload.purpose)
-    phone_verified = False
-    if payload.purpose == OtpPurpose.PHONE_VERIFY:
-        phone_verified = AuthService(db).mark_phone_verified(payload.phone, current_user)
+    """Kod to'g'ri bo'lsa raqam shu akkauntga yoziladi va tasdiqlanadi (atomik, bir martalik)."""
+    _phone_verify_only(payload.purpose)
+    OtpService(db).verify_phone_code(current_user, payload.phone, payload.code)
     return OtpVerifyResponse(
-        message="Kod tasdiqlandi",
-        verified=True,
-        phone_verified=phone_verified,
+        message="Telefon raqami tasdiqlandi", verified=True, phone_verified=True
     )

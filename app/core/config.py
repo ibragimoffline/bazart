@@ -10,6 +10,8 @@ INSECURE_DEFAULT_SECRET_KEY = "change-me-in-production-secret-key"
 INSECURE_DEFAULT_WEBHOOK_SECRET = "change-me-webhook-secret"
 
 Environment = Literal["local", "test", "staging", "production"]
+# OTP kodini haqiqatan yetkazadigan provayderlar (app/services/sms_provider.py).
+REAL_SMS_PROVIDERS = frozenset({"eskiz"})
 
 
 class Settings(BaseSettings):
@@ -85,6 +87,7 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = True
     rate_limit_login_per_minute: int = 5
     rate_limit_bid_per_minute: int = 10
+    rate_limit_otp_per_minute: int = 20
 
     # To'lov provayderi webhook imzo kaliti. Bazart savdo to'lovida ishtirok etmaydi
     # (Faza E); kalit hamyon to'ldirish webhook'i uchun saqlanadi (E5).
@@ -155,6 +158,17 @@ class Settings(BaseSettings):
     otp_resend_cooldown_seconds: int = 60  # 1 SMS / 60 soniya
     otp_daily_limit_per_phone: int = 5  # kuniga bir raqamga
     otp_daily_limit_per_ip: int = 20  # kuniga bir IP'ga
+    otp_daily_limit_per_user: int = 10  # kuniga bir akkauntga (bir necha raqam sinab ko'rish)
+    # Tasdiqlangan raqamni almashtirish: joriy parol YOKI shuncha daqiqa ichida login talab
+    # qilinadi (o'g'irlangan sessiya bilan raqamni hujumchinikiga almashtirib bo'lmasin).
+    phone_change_reauth_minutes: int = 15
+    # Eskiz.uz (sms_provider="eskiz"). Hisob ma'lumotlari faqat .env/secret'da.
+    eskiz_base_url: str = "https://notify.eskiz.uz/api"
+    eskiz_email: str = ""
+    eskiz_password: str = ""
+    # Eskiz'da tasdiqlangan jo'natuvchi nomi (alpha-name) yoki qisqa raqam.
+    eskiz_sender: str = "4546"
+    sms_timeout_seconds: float = 10.0
 
     # Google orqali kirish (Google Identity Services ID token). Bo'sh bo'lsa
     # /auth/google o'chiq (503). Qiymat — Google Cloud'dagi OAuth Web Client ID;
@@ -198,6 +212,15 @@ class Settings(BaseSettings):
             raise ValueError("SameSite=None faqat Secure cookie bilan ishlaydi.")
         if self.refresh_session_max_days < self.refresh_token_expire_days:
             raise ValueError("REFRESH_SESSION_MAX_DAYS < REFRESH_TOKEN_EXPIRE_DAYS bo'lmaydi.")
+        if self.is_production and self.otp_enabled:
+            # log/null provayderda kod foydalanuvchiga yetmaydi (yoki log'ga tushadi).
+            if self.sms_provider not in REAL_SMS_PROVIDERS:
+                raise ValueError(
+                    f"SMS_PROVIDER={self.sms_provider!r} prod/staging'da ruxsat etilmaydi. "
+                    f"Haqiqiy provayder kerak: {sorted(REAL_SMS_PROVIDERS)}"
+                )
+            if self.sms_provider == "eskiz" and not (self.eskiz_email and self.eskiz_password):
+                raise ValueError("SMS_PROVIDER=eskiz uchun ESKIZ_EMAIL va ESKIZ_PASSWORD kerak.")
         return self
 
 

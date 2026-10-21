@@ -35,7 +35,9 @@ tug'diradi va UZS'da kasr amalda ishlatilmaydi. Butun tiyin — bir ma'noli.
 |---|---|---|
 | id | int PK | |
 | email | String(320) | unique, index |
-| full_name / phone / bio / avatar_url / location | String | nullable |
+| full_name / bio / avatar_url / location | String | nullable |
+| phone | String(40) | nullable; `+998XXXXXXXXX` (E.164). Faqat SMS kod bilan yoziladi/almashtiriladi |
+| phone_verified_at | datetime | nullable; `uq_users_verified_phone` — qisman UNIQUE (`phone` WHERE tasdiqlangan va o'chirilmagan) |
 | seller_rating | Numeric(3,2) | default 0 — pul emas |
 | seller_rating_count | int | default 0 |
 | hashed_password | String(255) | bcrypt (Google orqali yaratilganda — tasodifiy, noma'lum parol hash'i) |
@@ -46,6 +48,10 @@ tug'diradi va UZS'da kasr amalda ishlatilmaydi. Butun tiyin — bir ma'noli.
 
 Bog'lanishlar: `items`, `auctions` (seller_id), `won_auctions` (winner_id), `bids`,
 `payment_methods`, `orders_as_buyer`, `orders_as_seller`.
+
+**otp_codes** — telefon tasdiqlash kodlari: `user_id` (FK users, kod faqat shu akkauntniki),
+`phone`, `code_hash` (HMAC-SHA256, xom kod yo'q), `purpose`, `attempts`, `expires_at`,
+`consumed_at`, `ip`, `created_at`. Batafsil: `docs/AUTH.md` "Telefon tasdig'i (OTP)".
 
 ## 3. items / item_images
 

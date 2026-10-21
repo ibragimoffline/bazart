@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, Numeric, String
+from sqlalchemy import DateTime, Index, Numeric, String, text
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -11,6 +11,17 @@ from app.models.enums import UserRole
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        # Bitta tasdiqlangan raqam = bitta faol akkaunt. Ilova tekshiruvi poyga va ikki xil
+        # yozuvni ushlamaydi — bu indeks oxirgi himoya (o'chirilgan akkaunt raqamni bo'shatadi,
+        # bloklangani esa yo'q: blokdan yangi akkaunt bilan qochib bo'lmasin).
+        Index(
+            "uq_users_verified_phone",
+            "phone",
+            unique=True,
+            postgresql_where=text("phone_verified_at IS NOT NULL AND deleted_at IS NULL"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)

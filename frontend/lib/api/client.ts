@@ -31,7 +31,12 @@ export function mediaUrl(path: string): string {
  */
 const DETAIL_TEXT: Record<string, string> = {
   phone_verification_required:
-    "Avval telefon raqamingizni tasdiqlang (Profil sahifasi). Kelishuvda raqamingiz ikkinchi tomonga koʻrinadi.",
+    "Avval telefon raqamingizni tasdiqlang. Kelishuvda raqamingiz ikkinchi tomonga koʻrinadi.",
+  phone_taken: "Bu raqam boshqa akkauntda tasdiqlangan.",
+  reauth_required: "Xavfsizlik uchun joriy parolingizni kiriting yoki qaytadan tizimga kiring.",
+  sms_send_failed: "SMS yuborib boʻlmadi. Birozdan keyin qayta urinib koʻring.",
+  phone_change_requires_verification:
+    "Tasdiqlangan raqam faqat SMS kod orqali almashtiriladi (Profil — Telefon tasdigʻi).",
   ascending_auction_disabled:
     "Oʻsuvchi auksion hozircha oʻchirilgan. Pasayuvchi auksion yoki narx taklifi bilan joylang.",
   trading_restricted:
@@ -169,6 +174,24 @@ export async function authFetch(url: string, init: RequestInit = {}): Promise<Re
   return send(getAccessToken());
 }
 
+// --- Telefon tasdig'i talab qilinganda ------------------------------------------
+//
+// Bid, taklif, xarid, e'lon chiqarish tasdiqlanmagan raqamda 403 `phone_verification_required`
+// qaytaradi (server qarori, amal hali bajarilmagan). Ilova bitta handler ro'yxatga oladi
+// (PhoneGateProvider): u tasdiqlash oynasini ochadi va natijani qaytaradi. Tasdiqlansa so'rov
+// BIR MARTA takrorlanadi — foydalanuvchi qayta bosmasdan asl amaliga qaytadi.
+
+const PHONE_VERIFICATION_REQUIRED = "phone_verification_required";
+let phoneVerificationHandler: (() => Promise<boolean>) | null = null;
+
+/** Tasdiqlash oynasini ochuvchi funksiyani ro'yxatga oladi. Obunani bekor qiluvchi qaytaradi. */
+export function setPhoneVerificationHandler(handler: () => Promise<boolean>): () => void {
+  phoneVerificationHandler = handler;
+  return () => {
+    if (phoneVerificationHandler === handler) phoneVerificationHandler = null;
+  };
+}
+
 type FetchOptions = {
   method?: string;
   /** JSON body (obyekt) yoki URLSearchParams (form-urlencoded — login uchun). */
@@ -177,12 +200,15 @@ type FetchOptions = {
   auth?: boolean;
   /** true — cookie yuboriladi/qabul qilinadi (login: refresh cookie o'rnatiladi). */
   withCookies?: boolean;
+  /** Ichki: telefon tasdig'idan keyingi takror (cheksiz aylanmasin). */
+  afterPhoneVerification?: boolean;
 };
 
 export async function apiFetch<T>(
   path: string,
-  { method, body, auth = true, withCookies = false }: FetchOptions = {}
+  options: FetchOptions = {}
 ): Promise<T> {
+  const { method, body, auth = true, withCookies = false } = options;
   const headers: Record<string, string> = {};
   let payload: BodyInit | undefined;
 
@@ -221,6 +247,15 @@ export async function apiFetch<T>(
         detail = data.detail.map((d: { msg?: string }) => d.msg).filter(Boolean).join(", ");
     } catch {
       // JSON emas — statusText qoladi.
+    }
+    if (
+      res.status === 403 &&
+      detail === PHONE_VERIFICATION_REQUIRED &&
+      phoneVerificationHandler &&
+      !options.afterPhoneVerification &&
+      (await phoneVerificationHandler())
+    ) {
+      return apiFetch<T>(path, { ...options, afterPhoneVerification: true });
     }
     throw new ApiError(res.status, DETAIL_TEXT[detail] ?? detail, detail);
   }

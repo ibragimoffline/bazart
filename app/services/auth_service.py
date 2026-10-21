@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -25,6 +24,7 @@ from app.models.user import User
 from app.repositories.auth_session_repository import AuthSessionRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import UserCreate
+from app.schemas.user import UserUpdate
 from app.services.google_identity import verify_google_id_token
 
 logger = logging.getLogger(__name__)
@@ -245,35 +245,21 @@ class AuthService:
         revoke_token(token)
         return verified_user
 
-    def mark_phone_verified(self, phone: str, user: User | None) -> bool:
-        """Telefon OTP tasdig'idan keyin SO'ROVCHI foydalanuvchini tasdiqlangan deb belgilaydi.
+    def update_profile(self, user: User, payload: UserUpdate) -> User:
+        """Profilni yangilaydi. Tasdiqlangan raqam bu yerda almashtirilmaydi va o'chirilmaydi.
 
-        Ilgari raqam bo'yicha istalgan foydalanuvchi topilib belgilanardi: `phone` unique
-        emas, ya'ni boshqa akkaunt shu raqamni profiliga yozib, egasining OTP'si bilan
-        "tasdiqlangan" bo'lib qolishi mumkin edi. Faza E da tasdiqlangan raqam kelishuvda
-        ikkinchi tomonga ochiladi, shuning uchun faqat tizimga kirgan va profilida aynan shu
-        raqam turgan foydalanuvchi belgilanadi. Raqam boshqa akkauntda allaqachon
-        tasdiqlangan bo'lsa — 409 (bitta raqam = bitta tasdiqlangan akkaunt).
-
-        :return: so'rovchi tasdiqlangan bo'lsa True (anonim yoki raqam mos emas — False).
+        Ilgari PATCH raqamni darhol yozib tasdiqni bekor qilardi: yangi raqam hali
+        tasdiqlanmagan bo'lsa ham foydalanuvchi bid/taklifdan uzilardi, ochiq kelishuvda esa
+        telefoni yo'qolardi. Endi almashtirish faqat OTP orqali (yangi raqam tasdiqlangandan
+        keyin, qayta autentifikatsiya bilan) — `OtpService.verify_phone_code`.
         """
-        if user is None or user.phone != phone:
-            return False
-        taken = self.db.scalar(
-            select(User.id).where(
-                User.phone == phone, User.phone_verified_at.is_not(None), User.id != user.id
-            )
-        )
-        if taken is not None:
+        data = payload.model_dump(exclude_unset=True)
+        if "phone" in data and user.phone_verified_at is not None and data["phone"] != user.phone:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Bu raqam boshqa akkauntda tasdiqlangan",
+                detail="phone_change_requires_verification",
             )
-        if user.phone_verified_at is None:
-            user.phone_verified_at = datetime.now(UTC)
-            self.db.add(user)
-            self.db.commit()
-        return True
+        return self.users.update(user, payload)
 
     def login_with_google(self, credential: str) -> SessionTokens:
         """Google ID token bilan kirish yoki ro'yxatdan o'tish (bitta oqim).
@@ -328,7 +314,7 @@ class AuthService:
     @staticmethod
     def _issue(user: User, session: AuthSession) -> SessionTokens:
         return SessionTokens(
-            access_token=create_access_token(subject=str(user.id)),
+            access_token=create_access_token(subject=str(user.id), auth_time=session.created_at),
             refresh_token=create_session_refresh_token(
                 subject=str(user.id),
                 session_id=str(session.id),

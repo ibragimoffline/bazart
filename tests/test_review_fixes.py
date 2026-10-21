@@ -80,6 +80,9 @@ def test_production_forgot_password_hides_token() -> None:
         environment="production",
         secret_key="x" * 48,
         psp_webhook_secret="y" * 48,
+        sms_provider="eskiz",
+        eskiz_email="sms@example.uz",
+        eskiz_password="x",
         _env_file=None,
     )
     assert config.is_production is True

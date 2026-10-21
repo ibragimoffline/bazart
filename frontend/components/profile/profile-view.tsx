@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { UserRoundIcon, MailIcon, PhoneIcon, MapPinIcon } from "lucide-react"
@@ -18,14 +18,13 @@ import { Input } from "@/components/ui/input"
 import { Field, FieldLabel, FieldError, FieldDescription } from "@/components/ui/field"
 import { Skeleton } from "@/components/ui/skeleton"
 import { RatingStars } from "@/components/profile/rating-stars"
-import { PhoneVerification, normalizePhone } from "@/components/profile/phone-verification"
+import { PhoneVerification } from "@/components/profile/phone-verification"
 import { TelegramLink } from "@/components/profile/telegram-link"
 import { LanguagePreference } from "@/components/profile/language-preference"
 import { ConsentList } from "@/components/profile/consent-list"
 
 const schema = z.object({
   full_name: z.string().trim().max(255, "Ism 255 belgidan oshmasin.").optional(),
-  phone: z.string().trim().max(40, "Telefon 40 belgidan oshmasin.").optional(),
   bio: z.string().trim().max(500, "Bio 500 belgidan oshmasin.").optional(),
   location: z.string().trim().max(160, "Manzil 160 belgidan oshmasin.").optional(),
 })
@@ -72,14 +71,12 @@ function ProfileView() {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: "onTouched",
     values: {
       full_name: user?.full_name ?? "",
-      phone: user?.phone ?? "",
       bio: user?.bio ?? "",
       location: user?.location ?? "",
     },
@@ -90,13 +87,11 @@ function ProfileView() {
     try {
       await updateMe({
         full_name: orNull(values.full_name),
-        // Server OTP'da normallashgan raqam bilan qidiradi — shu ko'rinishda saqlaymiz.
-        phone: orNull(normalizePhone(values.phone)),
         bio: orNull(values.bio),
         location: orNull(values.location),
       })
       // Store'ni yangilaymiz — header/boshqa joylar yangi ma'lumotni ko'radi.
-      // Telefon o'zgargan bo'lishi mumkin — tasdiq belgisi server holatidan olinadi.
+      // Telefon bu formada yo'q: u faqat SMS kod bilan yoziladi (Telefon tasdig'i bloki).
       await Promise.all([useAuthStore.getState().loadMe(), refreshMe().catch(() => {})])
       toast.success("Profil yangilandi.")
     } catch (e) {
@@ -106,7 +101,6 @@ function ProfileView() {
     }
   })
 
-  const phoneValue = useWatch({ control, name: "phone" }) ?? ""
 
   // --- Auth gate -------------------------------------------------------
   if (status === "idle") {
@@ -195,19 +189,6 @@ function ProfileView() {
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="phone">Telefon</FieldLabel>
-            <Input
-              id="phone"
-              type="tel"
-              autoComplete="tel"
-              placeholder="+998 90 123 45 67"
-              aria-invalid={errors.phone ? true : undefined}
-              {...register("phone")}
-            />
-            <FieldError>{errors.phone?.message}</FieldError>
-          </Field>
-
-          <Field>
             <FieldLabel htmlFor="location">Manzil</FieldLabel>
             <Input
               id="location"
@@ -252,7 +233,7 @@ function ProfileView() {
         <h2 className="text-lg font-semibold text-foreground">Sozlamalar</h2>
         {me ? (
           <>
-            <PhoneVerification me={me} phone={phoneValue} onRefresh={refreshMe} />
+            <PhoneVerification me={me} onRefresh={refreshMe} />
             <TelegramLink me={me} onChange={setMe} />
             <LanguagePreference me={me} onChange={setMe} />
           </>

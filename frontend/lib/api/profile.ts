@@ -64,12 +64,15 @@ export function updatePreferences(language: "uz" | "ru"): Promise<UserMe> {
 }
 
 // --- Telefon tasdiqlash (OTP) -----------------------------------------------
-// Tartib: avval raqam profilga saqlanadi (updateMe), keyin kod so'raladi va
-// tasdiqlanadi — server foydalanuvchini aynan shu raqam bo'yicha topadi.
+// Kod login qilgan akkauntga bog'lanadi; to'g'ri kod raqamni shu akkauntga yozadi va
+// tasdiqlaydi (profilga oldindan saqlash shart emas). Tasdiqlangan raqamni almashtirishda
+// `password` (yoki yaqinda login) kerak — aks holda 403 `reauth_required`.
 
 export interface OtpRequestResult {
   message: string;
   expires_at: string;
+  /** Qayta yuborishgacha soniya (taymer uchun). */
+  resend_after_seconds: number;
   /** Faqat local/test muhitda keladi (SMS'siz sinash uchun). Prod'da doim null. */
   debug_code: string | null;
 }
@@ -80,10 +83,9 @@ export interface OtpVerifyResult {
   phone_verified: boolean;
 }
 
-export function requestPhoneOtp(phone: string): Promise<OtpRequestResult> {
+export function requestPhoneOtp(phone: string, password?: string): Promise<OtpRequestResult> {
   return apiFetch<OtpRequestResult>("/auth/otp/request", {
-    body: { phone, purpose: "phone_verify" },
-    auth: false,
+    body: { phone, purpose: "phone_verify", ...(password ? { password } : {}) },
   });
 }
 

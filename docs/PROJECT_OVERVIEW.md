@@ -111,7 +111,7 @@ app/
   realtime/manager.py     # WebSocket ConnectionManager
   tasks/                  # Celery vazifalari (scheduled, notifications, email, dispatch)
 alembic/versions/         # 19 migratsiya
-tests/                    # 66 fayl, 448 test
+tests/                    # 66 fayl, 479 test
 scripts/                  # create_superadmin.py, seed_regions.py
 frontend/                 # Next.js 16 ilovasi (23 sahifa, 68 komponent)
 docs/                     # ARCHITECTURE, DOMAIN, AUCTION_ENGINE, PAYMENTS, DESIGN, ROADMAP
@@ -144,7 +144,7 @@ docs/                     # ARCHITECTURE, DOMAIN, AUCTION_ENGINE, PAYMENTS, DESI
 | `watchlists` | Kuzatuv ro'yxati | user_id, auction_id |
 | `regions` / `districts` | O'zbekiston hududlari | name_uz, name_ru, code (unique) |
 | `legal_consents` | Huquqiy roziliklar | user_id, document_type, **version**, accepted_at, ip |
-| `otp_codes` | SMS OTP | phone, **code_hash** (xom kod EMAS), purpose, attempts, expires_at, consumed_at, ip |
+| `otp_codes` | SMS OTP | user_id, phone, **code_hash** (xom kod EMAS), purpose, attempts, expires_at, consumed_at, ip |
 | `audit_log` | O'zgarmas jurnal (INSERT only) | actor_id, action, entity_type, entity_id, old_value/new_value (JSONB), idempotency_key, ip (INET) |
 | `webhook_events` | PSP webhook dedup | provider + event_id (unique), payload, received_at, processed_at |
 
@@ -420,9 +420,12 @@ server yonida qo'lda yaratiladi.
 ### OTP / telefon tasdiqlash (`otp_service.py`)
 - Kod **hash bilan** saqlanadi (`code_hash`), xom kod DB'da yo'q.
 - TTL 5 daqiqa · uzunlik 6 · 5 noto'g'ri urinishdan keyin bloklanadi.
-- Cooldown 1 SMS / 60 soniya · kunlik limit: 5 / telefon, 20 / IP.
-- SMS provayder abstraksiyasi: `LogSmsProvider` (local/test — kod log'ga), real provayder
-  (Eskiz va h.k.) keyin ulanadi.
+- Cooldown 1 SMS / 60 soniya (raqam va akkaunt) · kunlik limit: 5 / telefon, 10 / akkaunt, 20 / IP.
+- Kod akkauntga bog'liq (`otp_codes.user_id`), tekshiruv `FOR UPDATE` — bir martalik va atomik;
+  bitta tasdiqlangan raqam = bitta faol akkaunt (`uq_users_verified_phone`).
+- Progressiv tasdiq: qoralama ochiq; e'lon chiqishi, taklif, bid va xarid — tasdiq bilan
+  (frontend tasdiq oynasini ochib, amalni o'zi takrorlaydi).
+- SMS provayderlari: `log` (local/test, kod niqoblangan), `eskiz` (prod). Batafsil: `docs/AUTH.md`.
 
 ### Rate limiting (`core/rate_limit.py`)
 Redis fixed-window, zaxira in-memory. Scope'lar: `login` (5/daq), `bid` (10/daq),
@@ -678,7 +681,7 @@ Deadline yaqinlashgani sari kuchayadi: **>24 soat** neytral → **≤6 soat** am
 
 ## 21. Testlar
 
-**448 test, 66 fayl.** Barchasi **real Postgres 16** da ishlaydi.
+**479 test, 66 fayl.** Barchasi **real Postgres 16** da ishlaydi.
 
 ### Nega SQLite emas
 SQLite `FOR UPDATE`, native ENUM, BIGINT semantikasi va tranzaksiya izolyatsiyasida
@@ -693,7 +696,7 @@ Muhit `test`: mock to'lov ruxsat etiladi, rate limiting va darajali qadam o'chiq
 | Fayl | Test |
 |---|---|
 | `test_money.py` | 25 |
-| `test_otp.py` | 16 |
+| `test_otp.py` | 50 |
 | `test_telegram.py` | 13 |
 | `test_webhook_verify.py` | 11 |
 | `test_payment_security.py` | 9 |
@@ -712,8 +715,8 @@ Muhit `test`: mock to'lov ruxsat etiladi, rate limiting va darajali qadam o'chiq
 
 ### Holat (2026-09-06)
 - `ruff check .` — **All checks passed**
-- `ruff format --check .` — **251 fayl formatlangan**
-- `pytest --collect-only` — **448 test yig'ildi**
+- `ruff format --check .` — **252 fayl formatlangan**
+- `pytest --collect-only` — **479 test yig'ildi**
 - To'liq `pytest` bu tekshiruvda **ishga tushirilmadi**: Docker daemon o'chiq edi,
   testlar esa real Postgres talab qiladi (`docker compose up -d db`).
 
@@ -858,7 +861,7 @@ Muhim sozlamalar (`.env` orqali):
 | Celery | `CELERY_BROKER_URL` · `CELERY_TASK_ALWAYS_EAGER` · `CELERY_BEAT_ENABLED` | redis_url · False · False |
 | Yuklash | `UPLOAD_MAX_BYTES` · `MAX_IMAGES_PER_ITEM` | 5 000 000 · 10 |
 | Telegram | `TELEGRAM_ENABLED` · `TELEGRAM_BOT_TOKEN` | False · "" |
-| OTP | `OTP_ENABLED` · `SMS_PROVIDER` · `OTP_TTL_SECONDS` · `OTP_MAX_ATTEMPTS` · kunlik limitlar | True · `log` · 300 · 5 · 5/20 |
+| OTP | `OTP_ENABLED` · `SMS_PROVIDER` · `OTP_TTL_SECONDS` · `OTP_MAX_ATTEMPTS` · kunlik limitlar (raqam/akkaunt/IP) · `PHONE_CHANGE_REAUTH_MINUTES` · `ESKIZ_*` | True · `log` (prod: `eskiz`) · 300 · 5 · 5/10/20 · 15 |
 | CORS | `CORS_ORIGINS` | `["http://localhost:3000"]` |
 
 ---
@@ -943,7 +946,7 @@ ruff check . && ruff format --check .
 | Repozitoriylar | 18 |
 | API endpoint'lar | 90 |
 | Alembic migratsiyalar | 19 |
-| Testlar | 448 (66 fayl) + frontend Vitest 25 |
+| Testlar | 479 (66 fayl) + frontend Vitest 46 |
 | Frontend sahifalar | 23 |
 | Frontend komponentlar | 68 |
-| ruff | toza (251 fayl formatlangan) |
+| ruff | toza (252 fayl formatlangan) |

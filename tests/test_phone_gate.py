@@ -5,7 +5,7 @@ bo'lishi mumkin. Bu testlar talabni tasdiqlanmagan foydalanuvchi bilan tekshirad
 (`unverified_phones`); qolgan korpusda foydalanuvchilar avtomatik tasdiqlanadi (conftest).
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,6 +14,13 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import PHONE_VERIFICATION_REQUIRED
 from app.models.user import User
 from tests.conftest import AuthenticatedUser, create_auction, create_item, create_user
+
+DESCENDING = {
+    "pricing_mode": "descending",
+    "price_decrement": "1000000",
+    "price_drop_interval_minutes": 60,
+    "reserve_price": "400000000",
+}
 
 
 def _verify(db_session: Session, user: AuthenticatedUser, phone: str) -> None:
@@ -37,16 +44,40 @@ def parties(client: TestClient, db_session: Session, unverified_phones: None):
     return seller, buyer
 
 
-def test_unverified_user_cannot_create_listing(
-    client: TestClient, db_session: Session, unverified_phones: None
-) -> None:
-    user = create_user(client, db_session, email="u@example.com")
+def _draft(client: TestClient, user: AuthenticatedUser) -> dict:
     response = client.post(
         "/api/v1/items",
         headers=user.headers,
         json={"title": "iPhone 13", "condition": "used", "starting_price": "500000000"},
     )
-    _assert_gated(response)
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def test_unverified_user_can_draft_but_not_publish(
+    client: TestClient, db_session: Session, unverified_phones: None
+) -> None:
+    """Progressiv tasdiq: qoralama ochiq, e'lon chiqishi (publish/auksion) — tasdiq bilan."""
+    user = create_user(client, db_session, email="u@example.com")
+    item = _draft(client, user)
+    _assert_gated(
+        client.post(
+            f"/api/v1/items/{item['id']}/publish", headers=user.headers, json={"duration_days": 5}
+        )
+    )
+    now = datetime.now(UTC)
+    _assert_gated(
+        client.post(
+            "/api/v1/auctions",
+            headers=user.headers,
+            json={
+                "item_id": item["id"],
+                "start_time": (now - timedelta(minutes=1)).isoformat(),
+                "duration_days": 3,
+                **DESCENDING,
+            },
+        )
+    )
 
 
 def test_phone_without_verification_is_not_enough(
@@ -55,12 +86,12 @@ def test_phone_without_verification_is_not_enough(
     """Profilga raqam yozish yetmaydi — OTP tasdig'i kerak."""
     user = create_user(client, db_session, email="u@example.com")
     client.patch("/api/v1/users/me", headers=user.headers, json={"phone": "+998901234567"})
-    response = client.post(
-        "/api/v1/items",
-        headers=user.headers,
-        json={"title": "iPhone 13", "condition": "used", "starting_price": "500000000"},
+    item = _draft(client, user)
+    _assert_gated(
+        client.post(
+            f"/api/v1/items/{item['id']}/publish", headers=user.headers, json={"duration_days": 5}
+        )
     )
-    _assert_gated(response)
 
 
 def test_unverified_user_cannot_bid_or_buy_now(client: TestClient, parties) -> None:

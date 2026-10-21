@@ -29,7 +29,7 @@ PrimaryImageForm = Annotated[bool, Form()]
 
 
 @router.post("", response_model=ItemRead, status_code=status.HTTP_201_CREATED)
-def create_listing(payload: ItemCreate, current_user: CurrentVerifiedUser, db: DbSession) -> Item:
+def create_listing(payload: ItemCreate, current_user: CurrentActiveUser, db: DbSession) -> Item:
     return ItemService(db).create_item(current_user, payload)
 
 

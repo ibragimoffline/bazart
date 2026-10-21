@@ -67,10 +67,16 @@ class VerifyEmailRequest(BaseModel):
 
 
 class OtpRequestIn(BaseModel):
-    """OTP kod so'rash: telefon raqam + maqsad."""
+    """Telefon tasdiqlash kodi so'rash (login qilgan foydalanuvchi uchun).
+
+    `password` — faqat TASDIQLANGAN raqamni almashtirishda (qayta autentifikatsiya; Google
+    foydalanuvchisi o'rniga yaqinda login qilgan bo'lishi mumkin). `purpose` eski klientlar
+    uchun qoldirilgan — faqat `phone_verify` qo'llab-quvvatlanadi.
+    """
 
     phone: str = Field(max_length=40)
     purpose: OtpPurpose = OtpPurpose.PHONE_VERIFY
+    password: str | None = Field(default=None, max_length=128)
 
     @field_validator("phone")
     @classmethod
@@ -82,7 +88,7 @@ class OtpVerifyIn(BaseModel):
     """OTP kod tekshirish: telefon raqam + kod + maqsad."""
 
     phone: str = Field(max_length=40)
-    code: str = Field(min_length=4, max_length=12)
+    code: str = Field(pattern=r"^\d{4,8}$")
     purpose: OtpPurpose = OtpPurpose.PHONE_VERIFY
 
     @field_validator("phone")
@@ -99,6 +105,8 @@ class OtpRequestResponse(MessageResponse):
     """
 
     expires_at: datetime
+    # Shuncha soniyadan keyin qayta yuborish mumkin (UI taymeri uchun).
+    resend_after_seconds: int
     debug_code: str | None = None
 
 

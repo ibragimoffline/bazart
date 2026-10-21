@@ -109,6 +109,7 @@ class NotificationType(StrEnum):
     DEAL_MARKED_SOLD = "deal_marked_sold"  # xaridorga: sotuvchi "Sotildi" belgiladi
     DEAL_COMPLETED = "deal_completed"  # kelishuv yakunlandi (ikkala tomonga)
     DEAL_CANCELLED = "deal_cancelled"  # kelishuv bekor qilindi (sabab bilan)
+    PHONE_CHANGED = "phone_changed"  # tasdiqlangan telefon raqami almashtirildi
 
 
 class DealStatus(StrEnum):

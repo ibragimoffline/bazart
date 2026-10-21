@@ -104,6 +104,10 @@ qilib `end_time` yo'lini olib tashlash) frontend tayyor bo'lganda.
 
 ## Faza E — To'lovsiz kelishuv modeli va soddalashtirish  (JARAYONDA)
 
+- [x] Telefon OTP mustahkamlandi: E.164 raqam, bitta tasdiqlangan raqam = bitta akkaunt (DB indeks),
+      kod akkauntga bog'liq va atomik, xavfsiz raqam almashtirish (qayta autentifikatsiya), Eskiz
+      provayderi, progressiv tasdiq (qoralama ochiq, e'lon chiqishi — tasdiq bilan) — `docs/AUTH.md`
+
 - [x] O'suvchi auksion `FEATURE_ASCENDING_AUCTION` bayrog'i bilan vaqtincha o'chirildi (asosiy auksion —
       pasayuvchi, asosiy sotish usuli — narx taklifi). Dvigatel saqlangan, qayta yoqish — bayroq
       (`docs/AUCTION_ENGINE.md` §14). E3/E4'dagi o'suvchiga oid soddalashtirishlar (Dutch-fallback,
@@ -151,6 +155,10 @@ Kelishuv modeli: `docs/DEALS.md`. Ish branch'i `faza-e`, boshlang'ich teg `pre-f
 
 ## Xavfsizlik backlog (code+security review'dan, hali ochiq)
 
+- [ ] **PROD RELEASE BLOCKER** — Rate limit / OTP: `X-Forwarded-For` faqat ishonchli proxy'dan qabul
+      qilinsin (`TRUSTED_PROXIES`) — hozir mijoz soxtalashtira oladi, IP limitlarini chetlab o'tadi
+- [ ] **PROD RELEASE BLOCKER** — Eskiz SMS integratsiyasi haqiqiy hisobda tekshirilmagan (faqat soxta
+      HTTP bilan sinalgan): shablon tasdig'i + staging'da real SMS (`docs/AUTH.md`)
 - [ ] Auth: `LEGACY_REFRESH_BODY_ENABLED` ni o'chirish (eski localStorage tokenlari 14 kunda eskiradi)
 - [ ] Auth: WS `?token=` query parametrini olib tashlash (yangi klient birinchi `AUTH` xabarini yuboradi)
 - [ ] WS relay: mijoz yuborgan istalgan JSON room'dagi hammaga tarqatiladi — soxta `BID_PLACED`

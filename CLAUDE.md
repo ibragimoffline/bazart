@@ -84,8 +84,8 @@ app/
   repositories/        # DB kirish (select/insert)
   services/            # biznes mantiq: offer_service, bid_service, auction_service, price_schedule, ...
   tasks/               # Celery: scheduled (beat), notifications, email, dispatch
-alembic/versions/      # 29 migratsiya
-tests/                 # 66 fayl, 448 test
+alembic/versions/      # 38 migratsiya
+tests/                 # 66 fayl, 479 test
 ```
 
 Qatlam yo'nalishi: **api → services → repositories → models**. Teskari import TAQIQ.
@@ -172,7 +172,7 @@ Bu qoidalar barcha frontend ishlariga tatbiq etiladi. Buzilishi — code review'
 
 ```bash
 docker compose up -d db redis minio       # testlardan OLDIN — testlar real Postgres talab qiladi
-.venv/Scripts/python.exe -m pytest        # 448 test (~10 daqiqa)
+.venv/Scripts/python.exe -m pytest        # 479 test (~12 daqiqa)
 .venv/Scripts/python.exe -m pytest tests/test_bids.py
 ruff check . && ruff format --check .     # CI shu ikkalasini tekshiradi
 alembic upgrade head                      # toza bazada
@@ -219,6 +219,12 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 - Refresh token faqat HttpOnly cookie'da (`docs/AUTH.md`): javob tanasiga, `localStorage`'ga va log'ga
   tushmaydi. Frontend faqat refresh 401 da chiqaradi — tarmoq/5xx/403 sessiyani buzmaydi.
   Token URL'ga qo'yilmaydi (WS — birinchi `AUTH` xabari). Sessiya holati `auth_sessions` (Postgres).
+- Telefon OTP (`docs/AUTH.md`): kod faqat HMAC, akkauntga bog'liq, tekshiruv `FOR UPDATE`; bitta
+  tasdiqlangan raqam = bitta faol akkaunt (`uq_users_verified_phone`); kod va to'liq raqam log'ga
+  tushmaydi; prod'da `SMS_PROVIDER` haqiqiy provayder bo'lmasa ilova ko'tarilmaydi.
+  Telefon tasdig'i — progressiv: qoralama ochiq, e'lon chiqishi/taklif/bid/xarid — `CurrentVerifiedUser`.
+  **Prod RELEASE BLOCKER'lari** (`docs/AUTH.md`): Eskiz haqiqiy hisobda tekshirilmagan; `X-Forwarded-For`
+  ishonchli proxy bilan cheklanmagan.
 - Secret'lar `.env`da, git'ga tushmaydi.
 
 ## Ish tartibi
@@ -240,7 +246,7 @@ Redis 6379, MinIO 9000 (API) / 9001 (console).
 
 | Fayl | Nima haqida |
 |---|---|
-| `docs/AUTH.md` | Sessiyalar: HttpOnly refresh cookie, rotation/replay, jim yangilash, CSRF |
+| `docs/AUTH.md` | Sessiyalar (HttpOnly refresh cookie, rotation/replay, jim yangilash, CSRF) va telefon OTP |
 | `docs/DEALS.md` | Kelishuv modeli (Faza E): holatlar, kontaktlar, tasdiqlash, bekor qilish, hisoblagichlar |
 | `docs/OFFERS.md` | Taklifli savdo: narx/miqdor taklifi, muzokara, zaxira va poyga himoyasi, API |
 | `docs/AUCTION_ENGINE.md` | Atomik bid, proxy bidding, anti-sniping, tushuvchi narx, closer, state machine |

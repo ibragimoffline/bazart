@@ -6,6 +6,8 @@
 - `GET /users/me` — `phone_verified_at` faqat egaga.
 """
 
+from datetime import UTC, datetime
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -13,7 +15,6 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.region import District, Region
 from app.models.user import User
-from app.services.auth_service import AuthService
 from tests.conftest import create_auction, create_bid, create_item, create_user
 
 
@@ -122,7 +123,7 @@ def test_item_district_must_belong_to_region(client: TestClient, db_session: Ses
 
 
 @pytest.mark.usefixtures("unverified_phones")
-def test_profile_phone_is_normalized_and_change_resets_verification(
+def test_profile_phone_is_normalized_and_verified_phone_is_kept(
     client: TestClient, db_session: Session
 ) -> None:
     user = create_user(client, db_session, email="me@example.com")
@@ -132,15 +133,18 @@ def test_profile_phone_is_normalized_and_change_resets_verification(
     assert response.status_code == 200
     assert response.json()["phone"] == "+998901234567"
 
-    # OTP tasdig'i profil raqamini endi topadi (avval format farqi tufayli topolmasdi).
     owner = db_session.get(User, user.id)
-    assert AuthService(db_session).mark_phone_verified("+998901234567", owner) is True
-    me = client.get("/api/v1/users/me", headers=user.headers).json()
-    assert me["phone_verified_at"] is not None
+    owner.phone_verified_at = datetime.now(UTC)
+    db_session.commit()
 
-    client.patch("/api/v1/users/me", headers=user.headers, json={"phone": "+998 91 000 00 00"})
+    # Tasdiqlangan raqam PATCH bilan almashtirilmaydi (faqat OTP orqali) — tasdiq saqlanadi.
+    swap = client.patch(
+        "/api/v1/users/me", headers=user.headers, json={"phone": "+998 91 000 00 00"}
+    )
+    assert swap.status_code == 409
     me = client.get("/api/v1/users/me", headers=user.headers).json()
-    assert me["phone_verified_at"] is None
+    assert me["phone"] == "+998901234567"
+    assert me["phone_verified_at"] is not None
 
     assert (
         client.patch("/api/v1/users/me", headers=user.headers, json={"phone": "abc"}).status_code

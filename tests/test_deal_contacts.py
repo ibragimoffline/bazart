@@ -82,9 +82,13 @@ def test_lists_bids_and_history_never_carry_phone(client: TestClient, db_session
 
 
 def test_unverified_phone_is_not_revealed(client: TestClient, db_session: Session) -> None:
-    """Raqam kelishuvdan keyin o'zgartirilsa tasdiq bekor — tasdiqlanmagan raqam ochilmaydi."""
+    """Tasdig'i yo'q raqam ochilmaydi. PATCH tasdiqlangan raqamni almashtira olmaydi (409)."""
     deal, seller, buyer, _ = _deal(client, db_session)
-    client.patch("/api/v1/users/me", headers=seller.headers, json={"phone": "+998935550000"})
+    swap = client.patch("/api/v1/users/me", headers=seller.headers, json={"phone": "+998935550000"})
+    assert swap.status_code == 409
+    row = db_session.get(User, seller.id)
+    row.phone_verified_at = None  # masalan, admin tasdiqni bekor qilgan
+    db_session.commit()
     counterparty = client.get(f"/api/v1/deals/{deal['id']}", headers=buyer.headers).json()[
         "counterparty"
     ]

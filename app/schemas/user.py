@@ -6,20 +6,30 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models.enums import UserRole
 
+_PHONE_SEPARATORS = re.compile(r"[\s\-().]")
+UZ_PHONE_ERROR = "Telefon raqam +998 XX XXX XX XX ko'rinishida bo'lishi kerak"
+
 
 def normalize_phone(value: str) -> str:
-    """Telefon raqamdan bo'shliq/ajratgichlarni olib tashlaydi va tekshiradi.
+    """O'zbekiston raqamini E.164 ko'rinishiga keltiradi: `+998XXXXXXXXX`.
 
-    Kirish shakli erkin ("+998 90 123 45 67", "998901234567") bo'lishi mumkin —
-    saqlash va taqqoslash uchun yagona ko'rinishga keltiriladi. Profil va OTP
-    BIR XIL funksiyadan o'tadi: aks holda OTP tasdig'i saqlangan raqamni
-    topolmay, telefon hech qachon tasdiqlanmaydi.
+    Kirish shakli erkin: "+998 90 123-45-67", "998901234567", "00998901234567" yoki
+    mahalliy "90 123 45 67". Hammasi BITTA ko'rinishga keladi — aks holda bir raqam ikki
+    xil yozilib, "bitta tasdiqlangan raqam = bitta akkaunt" qoidasini chetlab o'tardi.
+    Faqat tuzilma tekshiriladi (998 + 9 raqam): raqam faol va egasiniki ekanini faqat
+    SMS kodi isbotlaydi, operator prefiksi emas.
     """
-    cleaned = value.strip().replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
-    digits = cleaned[1:] if cleaned.startswith("+") else cleaned
-    if not digits.isdigit() or not (7 <= len(digits) <= 15):
-        raise ValueError("Telefon raqam noto'g'ri formatda")
-    return cleaned
+    digits = _PHONE_SEPARATORS.sub("", value.strip())
+    digits = digits.removeprefix("+")
+    if digits.startswith("00"):
+        digits = digits[2:]
+    if not digits.isdigit():
+        raise ValueError(UZ_PHONE_ERROR)
+    if len(digits) == 9:
+        digits = "998" + digits
+    if len(digits) != 12 or not digits.startswith("998"):
+        raise ValueError(UZ_PHONE_ERROR)
+    return "+" + digits
 
 
 _TELEGRAM_USERNAME = re.compile(r"^[A-Za-z][A-Za-z0-9_]{4,31}$")

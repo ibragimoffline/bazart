@@ -2,6 +2,7 @@ import { SiteHeader } from "@/components/site/header"
 import { SiteFooter } from "@/components/site/footer"
 import { MobileTabBar } from "@/components/site/mobile-tabbar"
 import { AuthProvider } from "@/components/auth/auth-provider"
+import { PhoneGateProvider } from "@/components/phone/phone-gate"
 import { Toaster } from "@/components/ui/sonner"
 
 export default function ShopLayout({
@@ -18,6 +19,7 @@ export default function ShopLayout({
       <div className="h-16 md:hidden" aria-hidden="true" />
       <MobileTabBar />
       <AuthProvider />
+      <PhoneGateProvider />
       <Toaster />
     </div>
   )

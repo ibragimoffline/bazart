@@ -11,6 +11,7 @@ from app.schemas.user import (
     UserRead,
     UserUpdate,
 )
+from app.services.auth_service import AuthService
 from app.services.trust_service import TrustService
 
 router = APIRouter()
@@ -24,7 +25,7 @@ def read_profile(current_user: CurrentUser) -> User:
 
 @router.patch("/me", response_model=UserRead)
 def update_profile(payload: UserUpdate, current_user: CurrentUser, db: DbSession) -> User:
-    return UserRepository(db).update(current_user, payload)
+    return AuthService(db).update_profile(current_user, payload)
 
 
 @router.post("/me/telegram", response_model=UserMeRead)

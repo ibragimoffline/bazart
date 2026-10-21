@@ -25,22 +25,32 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
-def create_token(subject: str, token_type: str, expires_delta: timedelta) -> str:
+def create_token(
+    subject: str, token_type: str, expires_delta: timedelta, extra: dict | None = None
+) -> str:
     expires_at = datetime.now(UTC) + expires_delta
     payload = {
         "sub": subject,
         "exp": expires_at,
         "type": token_type,
         "jti": str(uuid4()),
+        **(extra or {}),
     }
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
-def create_access_token(subject: str) -> str:
+def create_access_token(subject: str, auth_time: datetime | None = None) -> str:
+    """`auth_time` — foydalanuvchi parol/Google bilan HAQIQATAN kirgan payt (sessiya boshi).
+
+    Jim refresh'da o'zgarmaydi: sezgir amallar (tasdiqlangan telefonni almashtirish)
+    "yaqinda kirgan"ni shundan biladi.
+    """
+    extra = {"auth_time": int(auth_time.timestamp())} if auth_time is not None else None
     return create_token(
         subject=subject,
         token_type=ACCESS_TOKEN_TYPE,
         expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
+        extra=extra,
     )
 
 

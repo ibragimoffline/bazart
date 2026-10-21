@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,6 +24,11 @@ class OtpCode(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     phone: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
+    # Kod so'ragan foydalanuvchi: kodni faqat shu akkaunt tasdiqlay oladi (boshqa akkaunt
+    # birovning kodi bilan raqamni o'ziga yoza olmasin). Eski yozuvlarda NULL.
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True
+    )
     # HMAC-SHA256 hex digest (settings.secret_key kaliti bilan). Xom kod EMAS.
     code_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     purpose: Mapped[OtpPurpose] = mapped_column(
