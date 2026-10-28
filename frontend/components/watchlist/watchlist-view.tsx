@@ -125,7 +125,7 @@ function WatchlistView() {
 
   if (status === "anonymous") {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <HeartIcon className="size-8 text-muted-foreground" aria-hidden="true" />
         <p className="text-base font-medium text-foreground">
           Kuzatuvlaringizni koʻrish uchun kiring
@@ -141,7 +141,7 @@ function WatchlistView() {
 
   if (state === "error") {
     return (
-      <div className="grid place-items-center gap-2 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-2 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <p role="alert" className="text-base font-medium text-foreground">
           {error}
         </p>
@@ -154,7 +154,7 @@ function WatchlistView() {
 
   if (lots.length === 0) {
     return (
-      <Empty className="rounded-xl border border-border bg-card">
+      <Empty className="rounded-lg border border-border bg-card">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <HeartIcon aria-hidden="true" />

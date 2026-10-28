@@ -25,7 +25,7 @@ function LotRail({
   if (entries.length === 0) return null
 
   return (
-    <section aria-label={title} className="mx-auto max-w-6xl px-4 pt-10 sm:px-6 md:pt-14">
+    <section aria-label={title} className="mx-auto max-w-page px-4 pt-10 sm:px-6 md:pt-14">
       <SectionHeading
         title={title}
         href={href}

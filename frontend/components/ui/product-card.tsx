@@ -53,14 +53,14 @@ function ProductCard({
     <div
       data-slot="product-card"
       className={cn(
-        "group/card flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs transition-shadow duration-200 hover:shadow-md",
+        "group/card flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-xs transition-shadow duration-200 hover:shadow-md",
         className
       )}
     >
       <a
         href={href}
         aria-label={title}
-        className="relative block aspect-square overflow-hidden rounded-t-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="relative block aspect-square overflow-hidden rounded-t-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         {image ? (
           <Image

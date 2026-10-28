@@ -126,7 +126,7 @@ function OfferCard({
     <article
       ref={ref}
       className={cn(
-        "grid gap-3 rounded-xl border bg-card p-4",
+        "grid gap-3 rounded-lg border bg-card p-4",
         highlight ? "border-primary" : "border-border"
       )}
     >
@@ -202,7 +202,7 @@ function OfferCard({
       )}
 
       {countering && (
-        <div className="rounded-lg border border-border p-3">
+        <div className="rounded-md border border-border p-3">
           <OfferForm
             idPrefix={`counter-${offer.id}`}
             askingTiyin={askingTiyin}

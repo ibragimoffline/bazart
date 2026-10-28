@@ -60,7 +60,7 @@ function BuyerPanel({ item, onItemChanged }: { item: Item; onItemChanged: () => 
     onItemChanged()
   }
 
-  if (offers === null || !consent.ready) return <Skeleton className="h-64 w-full rounded-xl" />
+  if (offers === null || !consent.ready) return <Skeleton className="h-64 w-full rounded-lg" />
 
   const open = offers.find((o) => o.status === "pending")
   const past = offers.filter((o) => o !== open).slice(0, 3)
@@ -77,7 +77,7 @@ function BuyerPanel({ item, onItemChanged }: { item: Item; onItemChanged: () => 
       ) : (
         <section
           aria-labelledby="make-offer-heading"
-          className="grid gap-4 rounded-xl border border-border bg-card p-4"
+          className="grid gap-4 rounded-lg border border-border bg-card p-4"
         >
           <div className="grid gap-1">
             <h2 id="make-offer-heading" className="font-heading text-base font-semibold text-foreground">
@@ -104,7 +104,7 @@ function BuyerPanel({ item, onItemChanged }: { item: Item; onItemChanged: () => 
         </section>
       )}
       {past.length > 0 && (
-        <details className="rounded-xl border border-border bg-card p-4">
+        <details className="rounded-lg border border-border bg-card p-4">
           <summary className="cursor-pointer rounded-sm text-sm font-medium text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
             Oldingi takliflarim ({past.length})
           </summary>
@@ -146,7 +146,7 @@ function SellerPanel({ item, onItemChanged }: { item: Item; onItemChanged: () =>
     onItemChanged()
   }
 
-  if (offers === null) return <Skeleton className="h-48 w-full rounded-xl" />
+  if (offers === null) return <Skeleton className="h-48 w-full rounded-lg" />
 
   const rank = (o: Offer) => (o.status !== "pending" ? 2 : o.awaiting === "seller" ? 0 : 1)
   const sorted = [...offers].sort((a, b) => rank(a) - rank(b))
@@ -161,7 +161,7 @@ function SellerPanel({ item, onItemChanged }: { item: Item; onItemChanged: () =>
         {waiting > 0 && <Badge variant="warning">{waiting} ta javob kutmoqda</Badge>}
       </div>
       {sorted.length === 0 ? (
-        <div className="grid place-items-center gap-2 rounded-xl border border-border bg-card px-6 py-10 text-center">
+        <div className="grid place-items-center gap-2 rounded-lg border border-border bg-card px-6 py-10 text-center">
           <InboxIcon className="size-6 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm text-muted-foreground">
             Hozircha taklif yoʻq. Xaridorlar narx taklif qilganda shu yerda koʻrasiz.
@@ -214,10 +214,10 @@ function OfferListingDetail({ itemId }: { itemId: number }) {
   if (loading) {
     return (
       <div className="grid gap-8 md:grid-cols-2">
-        <Skeleton className="aspect-square w-full rounded-xl" />
+        <Skeleton className="aspect-square w-full rounded-lg" />
         <div className="grid gap-4">
           <Skeleton className="h-8 w-3/4" />
-          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-40 w-full rounded-lg" />
         </div>
       </div>
     )
@@ -225,7 +225,7 @@ function OfferListingDetail({ itemId }: { itemId: number }) {
 
   if (error || !item || item.listing_type !== "offer") {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <PackageIcon className="size-8 text-muted-foreground" aria-hidden="true" />
         <p className="text-base font-medium text-foreground">
           {error ?? (item ? "Bu mahsulot auksion orqali sotiladi." : "Mahsulot topilmadi")}
@@ -279,7 +279,7 @@ function OfferListingDetail({ itemId }: { itemId: number }) {
             </div>
           </div>
 
-          <div className="grid gap-1 rounded-xl border border-border bg-card p-4">
+          <div className="grid gap-1 rounded-lg border border-border bg-card p-4">
             <span className="text-sm text-muted-foreground">Sotuvchi narxi</span>
             <span className="font-heading text-2xl font-semibold tabular-nums text-foreground">
               {formatTiyin(item.starting_price)}
@@ -292,15 +292,15 @@ function OfferListingDetail({ itemId }: { itemId: number }) {
           {status === "authenticated" && isSeller ? (
             <SellerPanel item={item} onItemChanged={reload} />
           ) : !active ? (
-            <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+            <p className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
               {CLOSED_TEXT[item.status] ?? "Eʼlon yopilgan."} Yangi taklif qabul qilinmaydi.
             </p>
           ) : status === "authenticated" ? (
             <BuyerPanel item={item} onItemChanged={reload} />
           ) : status === "idle" ? (
-            <Skeleton className="h-40 w-full rounded-xl" />
+            <Skeleton className="h-40 w-full rounded-lg" />
           ) : (
-            <div className="grid gap-3 rounded-xl border border-border bg-card p-4">
+            <div className="grid gap-3 rounded-lg border border-border bg-card p-4">
               <p className="text-sm text-muted-foreground">
                 Narx taklif qilish uchun hisobingizga kiring.
               </p>

@@ -18,7 +18,7 @@ export default async function CategoryPage({
   const { category } = await params
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-page px-4 py-6 sm:px-6">
       <Breadcrumb className="mb-4">
         <BreadcrumbList>
           <BreadcrumbItem>

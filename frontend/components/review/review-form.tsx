@@ -68,12 +68,12 @@ function ReviewForm({ orderId }: { orderId: number }) {
 
   // --- Auth gate -------------------------------------------------------
   if (status === "idle") {
-    return <Skeleton className="h-64 w-full rounded-xl" />
+    return <Skeleton className="h-64 w-full rounded-lg" />
   }
 
   if (status === "anonymous") {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <StarIcon className="size-8 text-muted-foreground" aria-hidden="true" />
         <p className="text-base font-medium text-foreground">
           Sharh qoldirish uchun kiring
@@ -117,7 +117,7 @@ function ReviewForm({ orderId }: { orderId: number }) {
             rows={4}
             aria-invalid={errors.text ? true : undefined}
             placeholder="Muomala, tovar holati va topshirish qanday kechdi?"
-            className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20"
+            className="w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20"
             {...register("text")}
           />
           <FieldDescription>

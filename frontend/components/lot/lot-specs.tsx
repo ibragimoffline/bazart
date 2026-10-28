@@ -110,7 +110,7 @@ function LotSpecs({ item, auction }: { item: Item; auction?: Auction }) {
                 )}
               >
                 {s.tone === "notice" ? (
-                  <span className="flex items-start gap-1.5 rounded-lg border border-warning/40 bg-warning/10 px-2.5 py-2">
+                  <span className="flex items-start gap-1.5 rounded-md border border-warning/40 bg-warning/10 px-2.5 py-2">
                     <TriangleAlertIcon
                       className="mt-0.5 size-4 shrink-0 text-warning"
                       aria-hidden="true"

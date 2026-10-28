@@ -1,25 +1,13 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-// Matn (body) — o'qishga qulay, neytral grotesk.
+// Yagona shrift — Inter: sarlavha, matn, narx va taymer o'lcham va qalinlik bilan
+// ajraladi. U+02BB (oʻ, gʻ) "latin" to'plamida bor.
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
-  display: "swap",
-});
-
-// Sarlavha (heading) — xarakterli, matndan aniq ajralib turadi.
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-heading",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-// Raqamlar/kod uchun monospace (narx ustunlarini tekislashda ham asqotadi).
-const geistMono = Geist_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -35,10 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="uz"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="uz" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

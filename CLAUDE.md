@@ -97,7 +97,7 @@ Frontend `frontend/` papkasida, backend'dan alohida Node loyihasi.
 
 Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 (CSS-first, `@theme` — `tailwind.config.js` YO'Q) ·
 shadcn/ui (radix base, `components.json`) · **lucide-react** (yagona ikonka manbasi) ·
-`next/font/google` (Inter — matn, Space Grotesk — sarlavha, Geist Mono — raqam/kod).
+`next/font/google` (Inter — yagona shrift: sarlavha, matn, narx, taymer).
 
 ```
 frontend/
@@ -128,20 +128,25 @@ Bu qoidalar barcha frontend ishlariga tatbiq etiladi. Buzilishi — code review'
    - gradient matnlar, gradient tugmalar, glassmorphism, keraksiz blur;
    - har bo'limda `01/02/03` raqamli markerlar;
    - "Lorem ipsum" — barcha kontent real mahsulot nomlari, narxlar va tavsiflar bilan yoziladi.
-3. **Rang tizimi — "lajuvard bloklar, siyoh tugmalar":** iliq qog'oz fon `#F4F2EE`, oq sirt,
-   siyoh matn `#1B1A18`. Brend = **lajuvard** `#1F4E9D` (`--brand`, och fon `--brand-soft #E6EBF5`)
-   — KATTA bloklarda ishlatiladi (bosh banner, kategoriya plitkalari, foto o'rni, faol tab), kichik
-   tugmalarda emas. Asosiy tugmalar — **siyoh** (`--primary #1B1A18`). Semantik ranglar faqat holat
-   uchun (`--success #0E7A46`, `--warning #E1900B`, `--error #C4362C`). Matn havolalari — siyoh +
-   doimiy yumshoq tagchiziq. Shakllar: `--radius` 14px, tugma/chip/qidiruv `rounded-full`;
-   bo'lim sarlavhalari — qalin, BOSH HARF (`SectionHeading`); mahsulot kartasi — plitka + chegarali
-   teg, quti emas.
-   Hammasi `app/globals.css` da CSS token sifatida e'lon qilinadi (batafsil: `docs/DESIGN.md`).
-   **Komponentlarda hardcode rang TAQIQ** — faqat token orqali (`bg-primary`, `text-muted-foreground`,
-   `text-success` …). warning'ga oq matn qo'yilmaydi — quyuq matn (`--warning-foreground`).
-4. **Tipografika — ikki rol:** sarlavha uchun `font-heading` (Space Grotesk), matn uchun `font-sans`
-   (Inter). Type scale FAQAT: **12 / 14 / 16 / 18 / 24 / 32 / 48px** (`text-xs`…`text-3xl`).
-   Spacing 4px asosida (Tailwind step = `0.25rem`). Ixtiyoriy o'lcham TAQIQ.
+3. **Rang tizimi (v2) — "oq asos + bitta aksent":** sahifa foni oq `#FFFFFF`, kartalar oq +
+   `border` chizig'i (`#ECECEA`) + `shadow-xs`; botiq maydonlar (qidiruv, chip, ikkilamchi tugma) —
+   deyarli oq `--muted #F7F7F5`. Matn siyoh `#1B1A18`. Brend = **majolika ko'ki** `#12659E`
+   (`--brand` = `--primary`, hover `--brand-hover`, tonal juftlik `--brand-subtle`/`-foreground`) —
+   ekrandagi BITTA asosiy harakat, faol navigatsiya, havola, tanlov. Semantik ranglar faqat holat
+   uchun: solid (`--success/--warning/--error`) va tonal (`*-subtle` + `*-subtle-foreground`);
+   belgilar sukut bo'yicha tonal. Boshqaruv chegaralari `--border-strong` (3:1). Shakllar:
+   tugma/input `rounded-md` (12px), karta/foto `rounded-lg` (16px), sheet/dialog/hero `rounded-xl`
+   (24px), chip/pill/avatar `rounded-full`. Mahsulot kartasi — ramkasiz, foto kartaning o'zi.
+   Hammasi `app/globals.css` da CSS token sifatida e'lon qilinadi (batafsil: `docs/DESIGN.md`,
+   to'liq tizim: claude.ai/artifact/KiK5no39Ky7rR2UnahX3HD — undagi escrow/nizo qismlari qurilmaydi).
+   **Komponentlarda hardcode rang TAQIQ** — faqat token orqali (`bg-brand`, `text-muted-foreground`,
+   `bg-success-subtle` …). warning'ga oq matn qo'yilmaydi — quyuq matn (`--warning-foreground`);
+   och fonda amber matn TAQIQ (`--warning-subtle-foreground` ishlatiladi).
+4. **Tipografika — bitta oila (Inter):** `font-heading`, `font-sans`, `font-mono` hammasi Inter;
+   sarlavhalar o'lcham va qalinlik bilan ajraladi (heading-1 32/700, heading-2 24/600), oddiy
+   registrda — BOSH HARF faqat `overline` uslubida. Type scale FAQAT: **12 / 14 / 16 / 18 / 24 /
+   32 / 48px** (`text-xs`…`text-3xl`). Narx va taymer `tabular-nums`. Spacing 4px asosida
+   (Tailwind step = `0.25rem`). Ixtiyoriy o'lcham TAQIQ.
 5. **Har komponent 4 holatga ega:** `hover`, `focus-visible`, `disabled`, `loading`.
    Klaviatura fokusi **ko'rinadigan** bo'lishi shart (`:focus-visible` global ring belgilangan) —
    `outline: none` ni fokus almashtiruvisiz o'chirish TAQIQ.

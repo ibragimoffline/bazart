@@ -26,14 +26,14 @@ function CollapsibleSection({
   const expanded = open || Boolean(forceOpen)
 
   return (
-    <section className="rounded-xl border border-border bg-card">
+    <section className="rounded-lg border border-border bg-card">
       <h2>
         <button
           type="button"
           aria-expanded={expanded}
           aria-controls={contentId}
           onClick={() => setOpen((v) => !v)}
-          className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left outline-none transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left outline-none transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <span className="grid gap-0.5">
             <span className="text-base font-semibold text-foreground">{title}</span>

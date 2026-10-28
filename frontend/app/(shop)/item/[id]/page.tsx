@@ -12,7 +12,7 @@ export default async function OfferListingPage({
   if (!Number.isInteger(itemId) || itemId <= 0) notFound()
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-page px-4 py-6 sm:px-6">
       <OfferListingDetail itemId={itemId} />
     </div>
   )

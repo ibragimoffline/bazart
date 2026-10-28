@@ -65,7 +65,7 @@ function ListingPreview({
 
   return (
     <div className="grid gap-6">
-      <div className="flex items-start gap-2 rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
+      <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
         <InfoIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <p>
           Mahsulot xaridorlarga shunday koʻrinadi.{" "}
@@ -82,7 +82,7 @@ function ListingPreview({
             <img
               src={primary.url}
               alt={data.title}
-              className="aspect-square w-full rounded-xl border border-border object-cover"
+              className="aspect-square w-full rounded-lg border border-border object-cover"
             />
           )}
           {rest.length > 0 && (
@@ -93,7 +93,7 @@ function ListingPreview({
                   key={img.id}
                   src={img.url}
                   alt={`${data.title} — ${i + 2}-rasm`}
-                  className="aspect-square w-full rounded-lg border border-border object-cover"
+                  className="aspect-square w-full rounded-md border border-border object-cover"
                 />
               ))}
             </div>
@@ -109,7 +109,7 @@ function ListingPreview({
             </div>
           </div>
 
-          <div className="grid gap-1 rounded-xl border border-border bg-card p-4">
+          <div className="grid gap-1 rounded-lg border border-border bg-card p-4">
             <span className="text-sm text-muted-foreground">
               {data.mode === "offer" ? "Narx (1 dona) — xaridorlar oʻz narxini taklif qiladi" : "Boshlangʻich narx"}
             </span>
@@ -130,7 +130,7 @@ function ListingPreview({
         </div>
       </div>
 
-      <dl className="rounded-xl border border-border bg-card px-4">
+      <dl className="rounded-lg border border-border bg-card px-4">
         {data.description && <Row label="Tavsif">{data.description}</Row>}
         {data.defects && <Row label="Nuqsonlar">{data.defects}</Row>}
         {data.year && <Row label="Ishlab chiqarilgan yili">{data.year}</Row>}

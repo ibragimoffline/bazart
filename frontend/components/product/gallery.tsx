@@ -34,7 +34,7 @@ function Gallery({ title, images = [] }: { title: string; images?: string[] }) {
   // Rasm yo'q — bitta neytral placeholder (soxta hisob ko'rsatilmaydi).
   if (!hasImages) {
     return (
-      <div className="grid aspect-square w-full place-items-center rounded-xl bg-brand-soft">
+      <div className="grid aspect-square w-full place-items-center rounded-lg bg-brand-subtle">
         <div className="flex flex-col items-center gap-2 p-6 text-center text-muted-foreground">
           <ImageIcon className="size-12 text-brand/30" aria-hidden="true" />
           <span className="text-xs">Rasm qoʻshilmagan</span>
@@ -48,7 +48,7 @@ function Gallery({ title, images = [] }: { title: string; images?: string[] }) {
       <div
         ref={trackRef}
         onScroll={onScroll}
-        className="flex snap-x snap-mandatory overflow-x-auto rounded-xl border border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x snap-mandatory overflow-x-auto rounded-lg border border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {images.map((src, i) => (
           <div
@@ -78,7 +78,7 @@ function Gallery({ title, images = [] }: { title: string; images?: string[] }) {
               aria-current={active === i ? "true" : undefined}
               onClick={() => goTo(i)}
               className={cn(
-                "aspect-square w-16 shrink-0 overflow-hidden rounded-lg border bg-muted outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50",
+                "aspect-square w-16 shrink-0 overflow-hidden rounded-md border bg-muted outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50",
                 active === i ? "border-primary" : "border-border hover:border-foreground/30"
               )}
             >

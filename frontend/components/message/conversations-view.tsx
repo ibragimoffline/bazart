@@ -61,7 +61,7 @@ function ConversationsView() {
 
   if (authStatus === "anonymous") {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <MessageSquareIcon className="size-8 text-muted-foreground" aria-hidden="true" />
         <p className="text-base font-medium text-foreground">
           Xabarlaringizni koʻrish uchun hisobingizga kiring.
@@ -87,7 +87,7 @@ function ConversationsView() {
       {showLoading ? (
         <ConversationsSkeleton />
       ) : error ? (
-        <div className="rounded-xl border border-border bg-card px-6 py-12 text-center">
+        <div className="rounded-lg border border-border bg-card px-6 py-12 text-center">
           <p className="text-sm font-medium text-destructive">{error}</p>
         </div>
       ) : items && items.length > 0 ? (
@@ -99,7 +99,7 @@ function ConversationsView() {
           ))}
         </ul>
       ) : (
-        <div className="grid place-items-center gap-2 rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
+        <div className="grid place-items-center gap-2 rounded-lg border border-dashed border-border bg-card px-6 py-16 text-center">
           <MessageSquareIcon className="size-8 text-muted-foreground" aria-hidden="true" />
           <p className="text-base font-medium text-foreground">Hali xabar yoʻq</p>
           <p className="text-sm text-muted-foreground">
@@ -121,9 +121,9 @@ function ConversationRow({
   return (
     <Link
       href={`/messages/${conv.id}`}
-      className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors outline-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors outline-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
     >
-      <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+      <div className="grid size-11 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
         <MessageSquareIcon className="size-5" aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
@@ -151,7 +151,7 @@ function ConversationsSkeleton() {
   return (
     <div className="grid gap-3">
       {[0, 1, 2].map((i) => (
-        <Skeleton key={i} className="h-[76px] w-full rounded-xl" />
+        <Skeleton key={i} className="h-[76px] w-full rounded-lg" />
       ))}
     </div>
   )

@@ -52,14 +52,14 @@ function NotificationBell({ className }: { className?: string }) {
           : "Bildirishnomalar"
       }
       className={cn(
-        "relative inline-flex size-10 items-center justify-center rounded-lg text-foreground outline-none transition-colors hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+        "relative inline-flex size-11 shrink-0 items-center justify-center rounded-full text-foreground outline-none transition-colors duration-150 hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         className
       )}
     >
-      <BellIcon className="size-5" aria-hidden="true" />
+      <BellIcon className="size-5.5" aria-hidden="true" />
       {hasUnread && (
         <span
-          className="absolute top-0.5 right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-xs font-semibold text-destructive-foreground tabular-nums"
+          className="absolute top-1 right-1 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-error px-1 text-xs font-bold text-error-foreground tabular-nums ring-2 ring-card"
           aria-hidden="true"
         >
           {badgeText}

@@ -103,7 +103,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 
   if (status === "idle" || status === "anonymous") {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-page px-4 py-8 sm:px-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="mt-4 h-10 w-full" />
         <Skeleton className="mt-6 h-64 w-full" />
@@ -130,7 +130,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-full">
       <header className="sticky top-0 z-30 border-b border-border bg-background">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-6">
+        <div className="mx-auto flex max-w-page items-center gap-3 px-4 py-2.5 sm:px-6">
           <Link
             href="/admin"
             className="flex items-center gap-2 rounded-md font-heading text-lg font-semibold tracking-tight text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -163,11 +163,11 @@ function AdminShell({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         </div>
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mx-auto max-w-page px-4 sm:px-6">
           <NavTabs />
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-page px-4 py-6 sm:px-6">{children}</main>
     </div>
   )
 }

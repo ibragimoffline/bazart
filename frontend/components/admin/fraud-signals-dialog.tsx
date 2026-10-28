@@ -36,7 +36,7 @@ const linkClass =
 
 function Metric({ value, label, hint }: { value: number; label: string; hint: string }) {
   return (
-    <div className="grid gap-0.5 rounded-lg border border-border p-3">
+    <div className="grid gap-0.5 rounded-md border border-border p-3">
       <span className="text-lg font-semibold tabular-nums text-foreground">{value}</span>
       <span className="text-sm font-medium text-foreground">{label}</span>
       <span className="text-xs text-muted-foreground">{hint}</span>
@@ -74,7 +74,7 @@ function SignalsBody({ signals }: { signals: FraudSignals }) {
       <div className="grid gap-2">
         <span className="text-sm font-medium text-foreground">Xavf bayroqlari</span>
         {signals.risk_flags.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-lg border border-border p-3 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 rounded-md border border-border p-3 text-sm text-muted-foreground">
             <ShieldCheckIcon className="size-4 text-success" aria-hidden="true" />
             Signal topilmadi
           </div>
@@ -179,7 +179,7 @@ function FraudSignalsDialog({
               </DialogDescription>
             </DialogHeader>
 
-            <p className="flex items-start gap-2 rounded-lg bg-muted p-3 text-sm text-foreground">
+            <p className="flex items-start gap-2 rounded-md bg-muted p-3 text-sm text-foreground">
               <InfoIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               Signal — hukm emas, qoʻlda tekshirish uchun.
             </p>

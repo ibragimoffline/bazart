@@ -26,7 +26,7 @@ const DROP_INTERVAL_MINUTES = 60
 
 /** Radio "kartochka" — sell-form'dagi muddat tanlovi bilan bir xil ko'rinish. */
 const choiceClass =
-  "flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-normal transition-colors hover:border-foreground/30 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50"
+  "flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-2.5 text-sm font-normal transition-colors hover:border-foreground/30 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50"
 
 /**
  * Sotilmagan lotni qayta joylash oynasi. Narx oldindan tavsiya bilan to'ldiriladi

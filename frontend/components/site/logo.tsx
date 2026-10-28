@@ -13,13 +13,13 @@ function Logo({ className, size = "md" }: { className?: string; size?: "sm" | "m
       href="/"
       aria-label="Bazart — bosh sahifa"
       className={cn(
-        "inline-flex shrink-0 items-center gap-2 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        "inline-flex shrink-0 items-center gap-2 rounded-md outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         className
       )}
     >
       <span
         className={cn(
-          "grid place-items-center rounded-lg bg-brand text-brand-foreground",
+          "grid place-items-center rounded-sm bg-brand text-brand-foreground",
           size === "md" ? "size-8" : "size-7"
         )}
         aria-hidden="true"
@@ -28,7 +28,7 @@ function Logo({ className, size = "md" }: { className?: string; size?: "sm" | "m
       </span>
       <span
         className={cn(
-          "font-heading font-semibold tracking-tight text-foreground",
+          "font-heading font-bold tracking-tight text-foreground",
           size === "md" ? "text-xl" : "text-lg"
         )}
       >

@@ -267,7 +267,7 @@ function orUndef(v: string | undefined): string | undefined {
 
 /** Radio "kartochka" — butun maydon bosiladi, tanlangani brend rangida. */
 const choiceClass =
-  "flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-normal transition-colors hover:border-foreground/30 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50"
+  "flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-2.5 text-sm font-normal transition-colors hover:border-foreground/30 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50"
 
 /**
  * Mahsulot joylash: tahrirlash -> ko'rib chiqish -> joylash.
@@ -675,7 +675,7 @@ function SellForm() {
   return (
     <form onSubmit={toPreview} noValidate className="grid gap-6">
       {restoredDraft && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm">
           <span className="text-muted-foreground">
             Saqlangan qoralama tiklandi. Rasmlar qoralamada saqlanmaydi — ularni qayta qoʻshing.
           </span>

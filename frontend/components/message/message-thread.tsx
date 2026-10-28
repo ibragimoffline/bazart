@@ -131,7 +131,7 @@ function MessageThread({ conversationId }: { conversationId: number }) {
 
   if (authStatus === "anonymous") {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <MessageSquareIcon className="size-8 text-muted-foreground" aria-hidden="true" />
         <p className="text-base font-medium text-foreground">
           Suhbatni koʻrish uchun hisobingizga kiring.
@@ -149,7 +149,7 @@ function MessageThread({ conversationId }: { conversationId: number }) {
 
   if (error || !conv) {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <p className="text-base font-medium text-foreground">
           {error ?? "Suhbat topilmadi"}
         </p>
@@ -183,7 +183,7 @@ function MessageThread({ conversationId }: { conversationId: number }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-lg border border-border bg-card p-4">
         {conv.messages.length === 0 ? (
           <div className="grid place-items-center gap-2 py-12 text-center">
             <MessageSquareIcon
@@ -217,7 +217,7 @@ function MessageThread({ conversationId }: { conversationId: number }) {
           rows={3}
           placeholder="Xabar yozing…"
           disabled={sending}
-          className="w-full min-w-0 resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 md:text-sm dark:bg-input/30"
+          className="w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-3 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 md:text-sm dark:bg-input/30"
         />
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs text-muted-foreground tabular-nums">
@@ -238,7 +238,7 @@ function MessageBubble({ message, own }: { message: Message; own: boolean }) {
     <div className={own ? "flex justify-end" : "flex justify-start"}>
       <div
         className={
-          "max-w-[80%] rounded-xl px-3 py-2 " +
+          "max-w-[80%] rounded-lg px-3 py-2 " +
           (own
             ? "bg-primary text-primary-foreground"
             : "bg-muted text-foreground")
@@ -262,12 +262,12 @@ function ThreadSkeleton() {
   return (
     <div className="grid gap-4">
       <Skeleton className="h-8 w-40" />
-      <div className="grid gap-3 rounded-xl border border-border bg-card p-4">
-        <Skeleton className="h-12 w-2/3 rounded-xl" />
-        <Skeleton className="h-12 w-1/2 justify-self-end rounded-xl" />
-        <Skeleton className="h-12 w-3/5 rounded-xl" />
+      <div className="grid gap-3 rounded-lg border border-border bg-card p-4">
+        <Skeleton className="h-12 w-2/3 rounded-lg" />
+        <Skeleton className="h-12 w-1/2 justify-self-end rounded-lg" />
+        <Skeleton className="h-12 w-3/5 rounded-lg" />
       </div>
-      <Skeleton className="h-24 w-full rounded-lg" />
+      <Skeleton className="h-24 w-full rounded-md" />
     </div>
   )
 }

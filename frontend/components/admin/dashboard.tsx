@@ -25,7 +25,7 @@ function StatCard({
   children: React.ReactNode
 }) {
   return (
-    <div className="grid gap-2 rounded-xl border border-border bg-card p-4">
+    <div className="grid gap-2 rounded-lg border border-border bg-card p-4">
       <div className="flex items-center gap-2 text-muted-foreground">
         <Icon className="size-4" aria-hidden="true" />
         <span className="text-sm">{label}</span>
@@ -42,7 +42,7 @@ function AdminDashboard() {
     return (
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          <Skeleton key={i} className="h-24 w-full rounded-lg" />
         ))}
       </div>
     )

@@ -118,12 +118,12 @@ function BidHistory({
 
       {state === "loading" ? (
         <div className="grid gap-2" aria-busy="true">
-          <Skeleton className="h-14 w-full rounded-xl" />
-          <Skeleton className="h-14 w-full rounded-xl" />
-          <Skeleton className="h-14 w-full rounded-xl" />
+          <Skeleton className="h-14 w-full rounded-lg" />
+          <Skeleton className="h-14 w-full rounded-lg" />
+          <Skeleton className="h-14 w-full rounded-lg" />
         </div>
       ) : state === "error" ? (
-        <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-10 text-center">
+        <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground">Takliflar tarixini yuklab boʻlmadi.</p>
           <Button
             variant="outline"
@@ -137,7 +137,7 @@ function BidHistory({
           </Button>
         </div>
       ) : bids.length === 0 ? (
-        <div className="grid place-items-center gap-2 rounded-xl border border-dashed border-border bg-card px-6 py-10 text-center">
+        <div className="grid place-items-center gap-2 rounded-lg border border-dashed border-border bg-card px-6 py-10 text-center">
           <GavelIcon className="size-7 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm font-medium text-foreground">Hali takliflar yoʻq.</p>
           <p className="text-sm text-muted-foreground">
@@ -145,7 +145,7 @@ function BidHistory({
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-card">
+        <ul className="divide-y divide-border rounded-lg border border-border bg-card">
           {bids.map((bid) => {
             const mine = user != null && bid.bidder_id === user.id
             const voidLabel = VOID_LABEL[bid.status]

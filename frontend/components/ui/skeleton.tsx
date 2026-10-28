@@ -39,18 +39,17 @@ function ProductCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       data-slot="product-card-skeleton"
-      className={cn(
-        "flex flex-col overflow-hidden rounded-xl border border-border bg-card",
-        className
-      )}
+      className={cn("grid content-start gap-3", className)}
       aria-hidden="true"
     >
-      <Skeleton className="aspect-square w-full rounded-none" />
-      <div className="grid gap-2 p-3">
+      {/* Shakli foto-karta bilan bir xil (kvadrat + 2 qator nom + narx + meta) —
+          ma'lumot kelganda sahifa siljimaydi. */}
+      <Skeleton className="aspect-square w-full rounded-lg" />
+      <div className="grid gap-1.5 px-0.5">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-4 w-1/3" />
-        <Skeleton className="mt-1 h-9 w-full" />
+        <Skeleton className="mt-1 h-6 w-1/2" />
+        <Skeleton className="h-3 w-2/3" />
       </div>
     </div>
   )

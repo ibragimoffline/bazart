@@ -119,7 +119,7 @@ function BidPanel({
 
   if (ended) {
     return (
-      <div className="rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
+      <div className="rounded-lg border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
         Bu auksion yakunlangan — yangi taklif qabul qilinmaydi.
       </div>
     )
@@ -127,7 +127,7 @@ function BidPanel({
 
   if (status !== "authenticated") {
     return (
-      <div className="grid gap-3 rounded-xl border border-border bg-card p-4">
+      <div className="grid gap-3 rounded-lg border border-border bg-card p-4">
         <p className="text-sm text-muted-foreground">
           Taklif berish uchun hisobingizga kiring.
         </p>
@@ -140,7 +140,7 @@ function BidPanel({
 
   if (isSeller) {
     return (
-      <div className="rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
+      <div className="rounded-lg border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
         Oʻz mahsulotingizga taklif bera olmaysiz.
       </div>
     )
@@ -245,7 +245,7 @@ function BidPanel({
   const showBuyNow = auction.buy_now_available && auction.buy_now_price != null
 
   return (
-    <div className="grid gap-3 rounded-xl border border-border bg-card p-4">
+    <div className="grid gap-3 rounded-lg border border-border bg-card p-4">
       {showBuyNow && auction.buy_now_price != null && (
         <div className="grid gap-2 border-b border-border pb-3">
           <div className="flex items-baseline justify-between gap-3">

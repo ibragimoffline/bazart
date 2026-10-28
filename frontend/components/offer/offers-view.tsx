@@ -69,10 +69,10 @@ function OffersView() {
     }
   }, [status, role, focus, router])
 
-  if (status === "idle") return <Skeleton className="h-64 w-full rounded-xl" />
+  if (status === "idle") return <Skeleton className="h-64 w-full rounded-lg" />
   if (status !== "authenticated") {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <p className="text-base font-medium text-foreground">Takliflaringizni koʻrish uchun kiring</p>
         <Button asChild size="lg">
           <Link href={`/login?next=${encodeURIComponent(pathname)}`}>Kirish</Link>
@@ -120,9 +120,9 @@ function OffersView() {
 
       <div role="tabpanel" className="grid gap-3">
         {offers === null ? (
-          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)
+          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-lg" />)
         ) : offers.length === 0 ? (
-          <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-14 text-center">
+          <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-14 text-center">
             <current.Icon className="size-7 text-muted-foreground" aria-hidden="true" />
             <p className="max-w-md text-sm text-muted-foreground">{current.empty}</p>
             {role === "buyer" && (

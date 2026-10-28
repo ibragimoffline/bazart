@@ -5,16 +5,18 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ==========================================================================
-   Bazart dizayn tokenlari — YAGONA manba.
+   Bazart dizayn tokenlari (v2) — YAGONA manba.
    Komponentlarda hardcode rang/o'lcham TAQIQ. Faqat shu tokenlardan foydalan.
-   Rang tizimi: neytral asos + BITTA brend aksenti + semantik ranglar.
+   Rang tizimi: oq asos + BITTA brend aksenti + semantik ranglar (solid va tonal).
+   Tamoyil: fotolar — qahramon, interfeys — sahna.
    ========================================================================== */
 
 @theme inline {
-  /* Shriftlar: ikki rol — sarlavha (heading) va matn (sans). */
+  /* Shrift: BITTA oila — Inter. Sarlavha, matn, narx va taymer faqat o'lcham va
+     qalinlik bilan ajraladi (font-heading / font-mono ham Inter'ga boradi). */
   --font-sans: var(--font-sans);
-  --font-heading: var(--font-heading);
-  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+  --font-mono: var(--font-sans);
 
   /* Type scale: 12 / 14 / 16 / 18 / 24 / 32 / 48px (faqat shular). */
   --text-xs: 0.75rem; /* 12 */
@@ -35,6 +37,9 @@
   /* Spacing scale: 4px asosida (Tailwind step = 0.25rem). */
   --spacing: 0.25rem;
 
+  /* Sahifa konteyneri: 1240px (max-w-page). */
+  --container-page: 77.5rem;
+
   /* Motion: faqat 150–250ms funksional o'tishlar. */
   --duration-fast: 150ms;
   --duration-base: 200ms;
@@ -53,6 +58,7 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
@@ -60,8 +66,10 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
   --color-brand-foreground: var(--brand-foreground);
-  --color-brand-soft: var(--brand-soft);
+  --color-brand-subtle: var(--brand-subtle);
+  --color-brand-subtle-foreground: var(--brand-subtle-foreground);
 
   /* Ikkilamchi/urg'u yuzalari (neytral). */
   --color-secondary: var(--secondary);
@@ -69,15 +77,31 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
 
-  /* Semantik ranglar: success / warning / error. */
+  /* Semantik ranglar: to'liq (solid) va tonal (subtle) juftliklar. */
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-subtle-foreground: var(--success-subtle-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-subtle-foreground: var(--warning-subtle-foreground);
   --color-error: var(--error);
   --color-error-foreground: var(--error-foreground);
+  --color-error-subtle: var(--error-subtle);
+  --color-error-subtle-foreground: var(--error-subtle-foreground);
   --color-destructive: var(--error); /* shadcn komponentlari uchun alias */
   --color-destructive-foreground: var(--error-foreground);
+
+  /* Foto ustidagi qoramtir qatlam (taymer chipi) va foto o'rni fonlari. */
+  --color-scrim: var(--scrim);
+  --color-scrim-foreground: var(--scrim-foreground);
+  --color-photo-1: var(--photo-1);
+  --color-photo-2: var(--photo-2);
+  --color-photo-3: var(--photo-3);
+  --color-photo-4: var(--photo-4);
+  --color-photo-5: var(--photo-5);
+  --color-photo-6: var(--photo-6);
 
   /* Grafiklar (brend + semantikadan olingan). */
   --color-chart-1: var(--chart-1);
@@ -86,105 +110,158 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Shakllar: xs 6 · sm 8 · md 12 (tugma, maydon) · lg 16 (karta, foto)
+     · xl 24 (sheet, dialog, hero) · full (chip, pill, avatar). */
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* Soyalar: tekis — xs tinch karta, sm foto ustidagi chip, md hover/menyu,
+     lg faqat dialog va sheet. */
+  --shadow-xs: var(--elev-xs);
+  --shadow-sm: var(--elev-sm);
+  --shadow-md: var(--elev-md);
+  --shadow-lg: var(--elev-lg);
 }
 
 /* --- Yorug' rejim (default) ---------------------------------------------
    Barcha qiymatlar WCAG AA bo'yicha tekshirilgan (docs/DESIGN.md).
    -------------------------------------------------------------------------- */
 :root {
-  /* Yumshoq, kamtarona shakllar: kartalar 18px, maydonlar 14px. */
-  --radius: 0.875rem;
+  --radius: 0.75rem;
 
-  /* "Siyoh va qog'oz": iliq qog'oz fon, oq sirt, siyoh matn.
-     Interfeys rangsiz va jim — rang faqat tovar fotolarida va holat belgilarida. */
-  --background: #f4f2ee; /* qog'oz */
-  --foreground: #1b1a18; /* siyoh · fon ustida 15.5:1 */
+  /* Oq asos. Kartalar border chizig'i va shadow-xs bilan ajraladi, botiq maydonlar
+     (qidiruv, chip, ikkilamchi tugma, jadval sarlavhasi) — deyarli oq muted bilan.
+     Yorug' rejimda o'rta kulrang fon YO'Q. */
+  --background: #ffffff;
+  --foreground: #1b1a18; /* oq ustida 16:1 */
   --card: #ffffff;
   --card-foreground: #1b1a18;
   --popover: #ffffff;
   --popover-foreground: #1b1a18;
-  --muted: #ebe8e3; /* foto o'rni, chip foni */
-  --muted-foreground: #66625c; /* 2-daraja matn · fon ustida 5.4:1, oq ustida 6.1:1 */
-  --border: #e3dfd8;
-  --input: #ddd9d1;
+  --muted: #f7f7f5;
+  --muted-foreground: #6b6863; /* oq ustida 5.55:1, muted ustida 5.3:1 */
+  --border: #ececea; /* dekorativ chiziq — boshqaruv chegarasi emas */
+  --border-strong: #8f8a82; /* input/checkbox/switch chegarasi, oq ustida 3:1 */
+  --input: #8f8a82;
 
-  /* Brend — lajuvard (Samarqand koshinlari ko'ki). Kichik tugmalarda emas, KATTA
-     bloklarda ishlatiladi: bosh sahifa banneri, kategoriya plitkalari, faol holat.
-     Oq matn 8.0:1, qog'oz ustida matn sifatida 7.1:1. brand-soft — och fon (siyoh 14.6:1). */
-  --brand: #1f4e9d;
+  /* Brend — majolika ko'ki (Samarqand/Buxoro koshinlari). Yagona aksent:
+     ekrandagi bitta asosiy harakat, faol navigatsiya, havola, tanlov. */
+  --brand: #12659e;
+  --brand-hover: #0f5687; /* oq matn 7.8:1 */
   --brand-foreground: #ffffff;
-  --brand-soft: #e6ebf5;
+  --brand-subtle: #e8f1f8; /* tanlangan chip, info eslatma, faol filtr */
+  --brand-subtle-foreground: #0d4f7d; /* brand-subtle ustida 7.5:1 */
 
-  /* Asosiy tugmalar — siyoh (matni qog'oz rangida, 15.5:1). Brend bloklari rangli,
-     harakat tugmalari neytral — ular bir-biri bilan raqobatlashmaydi. */
-  --primary: #1b1a18;
-  --primary-foreground: #f4f2ee;
-  --ring: #1b1a18;
+  --primary: #12659e;
+  --primary-foreground: #ffffff;
+  --ring: #12659e; /* card ustida 5.75:1 */
 
   /* Neytral ikkilamchi yuzalar. */
-  --secondary: #ebe8e3;
+  --secondary: #f7f7f5;
   --secondary-foreground: #1b1a18;
-  --accent: #ebe8e3;
+  --accent: #f7f7f5;
   --accent-foreground: #1b1a18;
 
-  /* Semantik ranglar. warning — amber, DOIM quyuq matn bilan (oq matn emas). */
+  /* Semantik ranglar. Belgilar va eslatmalar tonal (*-subtle). warning — amber,
+     DOIM quyuq matn bilan; och fonda amber matn TAQIQ (2.4:1). */
   --success: #0e7a46; /* oq matn 5.4:1 */
   --success-foreground: #ffffff;
-  --warning: #e1900b; /* ink matn 6.79:1 */
+  --success-subtle: #e6f4ec;
+  --success-subtle-foreground: #0b6239;
+  --warning: #e1900b; /* ink matn 6.8:1 */
   --warning-foreground: #1b1a18;
+  --warning-subtle: #fdf1dc;
+  --warning-subtle-foreground: #8a5300;
   --error: #c4362c; /* oq matn 5.37:1 */
   --error-foreground: #ffffff;
+  --error-subtle: #fbe9e7;
+  --error-subtle-foreground: #a42a21;
 
-  --chart-1: #1f4e9d;
+  --scrim: rgba(23, 22, 20, 0.72); /* oq matn har qanday foto ustida >= 7:1 */
+  --scrim-foreground: #ffffff;
+  --photo-1: #f8f5f0;
+  --photo-2: #f2f6f3;
+  --photo-3: #f8f2ee;
+  --photo-4: #f1f4f7;
+  --photo-5: #f8f5ec;
+  --photo-6: #f4f2f6;
+
+  --chart-1: #12659e;
   --chart-2: #0e7a46;
   --chart-3: #e1900b;
   --chart-4: #c4362c;
-  --chart-5: #66625c;
+  --chart-5: #6b6863;
+
+  --elev-xs: 0 1px 2px rgba(27, 26, 24, 0.05);
+  --elev-sm: 0 1px 3px rgba(27, 26, 24, 0.06), 0 1px 2px rgba(27, 26, 24, 0.04);
+  --elev-md: 0 6px 16px -4px rgba(27, 26, 24, 0.1), 0 2px 4px rgba(27, 26, 24, 0.04);
+  --elev-lg: 0 24px 48px -12px rgba(27, 26, 24, 0.18);
 }
 
 /* --- Qorong'u rejim ------------------------------------------------------ */
 .dark {
   --background: #171614;
-  --foreground: #f4f3f0; /* fon ustida 16.3:1 */
+  --foreground: #f4f3f0;
   --card: #1e1d1b;
   --card-foreground: #f4f3f0;
-  --popover: #1e1d1b;
+  --popover: #24221f; /* card'dan bir pog'ona yuqori */
   --popover-foreground: #f4f3f0;
   --muted: #26241f;
-  --muted-foreground: #a8a49d; /* fon ustida 7.29:1 */
+  --muted-foreground: #a8a49d; /* fon ustida 6.25:1+ */
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border-strong: #77736c;
+  --input: #77736c;
 
-  /* Dark: lajuvard blok ozroq ochroq (oq matn 6.5:1); asosiy tugma qog'oz rangida. */
-  --brand: #2d5aab;
+  --brand: #1f72ad;
+  --brand-hover: #1a659b;
   --brand-foreground: #ffffff;
-  --brand-soft: #1c2436;
-  --primary: #f4f3f0;
-  --primary-foreground: #171614;
-  --ring: #f4f3f0;
+  --brand-subtle: #142837;
+  --brand-subtle-foreground: #8cc3ea;
+  --primary: #1f72ad;
+  --primary-foreground: #ffffff;
+  --ring: #5aa6dc;
 
   --secondary: #26241f;
   --secondary-foreground: #f4f3f0;
   --accent: #26241f;
   --accent-foreground: #f4f3f0;
 
-  /* success/error yorug' rejim qiymatini saqlaydi — ular dark fonda ham AA. */
+  /* Qorong'uda holat matni *-subtle-foreground bilan yoziladi, solid fill bilan emas. */
   --success: #0e7a46;
   --success-foreground: #ffffff;
-  --warning: #f0a420; /* dark'da yorqinroq amber · ink matn 8.64:1 */
+  --success-subtle: #12291d;
+  --success-subtle-foreground: #6fd39d;
+  --warning: #f0a420;
   --warning-foreground: #171614;
+  --warning-subtle: #2e2310;
+  --warning-subtle-foreground: #f5c063;
   --error: #c4362c;
   --error-foreground: #ffffff;
+  --error-subtle: #331816;
+  --error-subtle-foreground: #f2958c;
 
-  --chart-1: #7fa2e0;
+  --scrim: rgba(10, 10, 9, 0.78);
+  --scrim-foreground: #ffffff;
+  --photo-1: #2a2620;
+  --photo-2: #222a25;
+  --photo-3: #2d241f;
+  --photo-4: #22272e;
+  --photo-5: #2b2719;
+  --photo-6: #27242b;
+
+  --chart-1: #1f72ad;
   --chart-2: #16a45c;
   --chart-3: #f0a420;
   --chart-4: #d64a3d;
   --chart-5: #a8a49d;
+
+  --elev-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --elev-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --elev-md: 0 8px 20px -4px rgba(0, 0, 0, 0.6);
+  --elev-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
 }
 
 @layer base {
@@ -194,14 +271,14 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
-  /* Sarlavhalar xarakterli shriftda. */
+  /* Sarlavhalar o'lcham va qalinlik bilan ajraladi, ozgina manfiy tracking. */
   h1,
   h2,
   h3,
   h4 {
-    @apply font-heading;
+    @apply font-heading tracking-tight;
   }
-  /* Klaviatura fokusi HAR DOIM ko'rinadigan bo'lishi shart. */
+  /* Klaviatura fokusi HAR DOIM ko'rinadigan bo'lishi shart: 2px ring + 2px offset. */
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
   }

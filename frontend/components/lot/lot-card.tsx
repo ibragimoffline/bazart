@@ -1,11 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { ImageIcon } from "lucide-react"
+import { GavelIcon, ImageIcon, TrendingDownIcon, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { formatTiyin } from "@/lib/format"
-import type { Lot, ItemCondition } from "@/lib/api/types"
+import type { Item, ItemCondition, Lot } from "@/lib/api/types"
 import { heroImage } from "@/lib/item-image"
 import { Badge } from "@/components/ui/badge"
 import { DeadlineBar } from "@/components/ui/deadline-bar"
@@ -16,41 +16,65 @@ const CONDITION_LABEL: Record<ItemCondition, string> = {
   refurbished: "Tiklangan",
 }
 
-/** "Auksion · 3 ta taklif" — narx ostidagi bir qator jim tafsilot. */
-function detailLine(lot: Lot): string {
-  const { auction } = lot
-  const descending = auction.pricing_mode === "descending"
-  return [
-    descending ? "Narxi pasaymoqda" : "Auksion",
-    descending ? null : auction.bid_count > 0 ? `${auction.bid_count} ta taklif` : "Taklif yoʻq",
-  ]
-    .filter(Boolean)
-    .join(" · ")
+/** Foto o'rni fonlari — rasmsiz e'lonlar bir xil kulrang devor bo'lib qolmasin. */
+const PHOTO_GROUNDS = [
+  "bg-photo-1",
+  "bg-photo-2",
+  "bg-photo-3",
+  "bg-photo-4",
+  "bg-photo-5",
+  "bg-photo-6",
+] as const
+
+/** Mahsulot joylashuvi (karta meta qatori uchun). */
+function placeOf(item: Item): string | null {
+  return item.item_location || item.location || null
 }
 
 /**
- * Mahsulot kartochkasi (do'kon katalogi uslubi): yumshoq plitka ustida foto,
- * burchakda ingichka chegarali teg (holat · daraja), muddat "pill"i; ostida qalin
- * nom va narx. Butun karta — bitta havola, telefonda katta bosish maydoni.
+ * Mahsulot kartochkasi (v2): ramka yo'q — FOTO kartaning o'zi. Kvadrat foto
+ * (holat belgisi chapda tepada, muddat chizig'i pastda) -> nom (2 qator) -> narx
+ * -> jim meta qatori (ikonka + tafsilot · joy). Butun karta — bitta havola.
  */
-function LotCard({ lot, className }: { lot: Lot; className?: string }) {
-  const { auction, item } = lot
-  const ended = auction.status !== "active"
+function ProductTile({
+  href,
+  item,
+  price,
+  meta,
+  MetaIcon,
+  ended,
+  endedLabel,
+  endsAt,
+  windowDays,
+  className,
+}: {
+  href: string
+  item: Item
+  /** Narx, tiyin (string). */
+  price: string
+  meta: string
+  MetaIcon: LucideIcon
+  ended: boolean
+  endedLabel: string
+  endsAt: string | null
+  windowDays: number | null
+  className?: string
+}) {
   const hero = heroImage(item)
-  const tag = CONDITION_LABEL[item.condition]
+  const place = placeOf(item)
 
   return (
     <Link
-      href={`/lot/${auction.id}`}
+      href={href}
       className={cn(
-        "group flex flex-col gap-3 rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-offset-4 focus-visible:ring-offset-background",
+        "group grid min-w-0 content-start gap-3 rounded-lg outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
         className
       )}
     >
       <div
         className={cn(
-          "relative aspect-4/5 overflow-hidden rounded-xl",
-          hero ? "bg-muted" : "bg-brand-soft"
+          "relative grid aspect-square place-items-center overflow-hidden rounded-lg transition-shadow duration-200 group-hover:shadow-md",
+          PHOTO_GROUNDS[item.id % PHOTO_GROUNDS.length]
         )}
       >
         {hero ? (
@@ -61,40 +85,74 @@ function LotCard({ lot, className }: { lot: Lot; className?: string }) {
             src={hero}
             alt={item.title}
             loading="lazy"
-            className="absolute inset-0 size-full object-cover transition-transform duration-200 group-hover:scale-105"
+            className="absolute inset-0 size-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 grid place-items-center">
-            <ImageIcon className="size-10 text-brand/30" aria-hidden="true" />
-          </div>
+          <ImageIcon className="size-2/5 text-foreground/30" strokeWidth={1.25} aria-hidden="true" />
         )}
 
-        <span className="pointer-events-none absolute top-2.5 left-2.5 rounded-md border border-foreground/70 bg-card px-1.5 py-0.5 text-xs font-semibold tracking-wide text-foreground uppercase">
-          {tag}
-        </span>
+        <div className="pointer-events-none absolute top-2.5 left-2.5">
+          <Badge variant="on-photo">{CONDITION_LABEL[item.condition]}</Badge>
+        </div>
 
-        {ended ? (
-          <div className="absolute inset-0 grid place-items-center bg-background/60">
-            <Badge variant="neutral" className="h-6 px-3 text-sm">
-              Tugagan
-            </Badge>
+        {ended || !endsAt ? (
+          <div className="absolute inset-0 grid place-items-center bg-background/55">
+            <Badge variant="neutral">{endedLabel}</Badge>
           </div>
         ) : (
-          <DeadlineBar endsAt={auction.end_time} />
+          <DeadlineBar
+            endsAt={endsAt}
+            windowMinutes={windowDays ? windowDays * 1440 : undefined}
+          />
         )}
       </div>
 
       <div className="grid gap-1 px-0.5">
-        <h3 className="line-clamp-2 text-sm font-semibold text-foreground underline-offset-2 group-hover:underline">
+        <h3 className="line-clamp-2 min-h-10 text-sm font-medium break-words text-foreground underline-offset-2 group-hover:underline">
           {item.title}
         </h3>
-        <p className="text-lg font-bold tabular-nums text-foreground">
-          {formatTiyin(auction.current_price)}
+        <p className="text-lg font-bold tracking-tight break-words tabular-nums text-foreground">
+          {formatTiyin(price)}
         </p>
-        <p className="truncate text-xs text-muted-foreground">{detailLine(lot)}</p>
+        <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground">
+          <MetaIcon className="size-3 shrink-0" aria-hidden="true" />
+          <span>{meta}</span>
+          {place && (
+            <>
+              <span className="size-0.75 shrink-0 rounded-full bg-current" aria-hidden="true" />
+              <span className="min-w-0 truncate">{place}</span>
+            </>
+          )}
+        </p>
       </div>
     </Link>
   )
 }
 
-export { LotCard }
+/** Auksion loti: o'suvchi auksionda bid soni, pasayuvchida "Narxi pasaymoqda". */
+function LotCard({ lot, className }: { lot: Lot; className?: string }) {
+  const { auction, item } = lot
+  const descending = auction.pricing_mode === "descending"
+  const meta = descending
+    ? "Narxi pasaymoqda"
+    : auction.bid_count > 0
+      ? `${auction.bid_count} ta taklif`
+      : "Taklif yoʻq"
+
+  return (
+    <ProductTile
+      href={`/lot/${auction.id}`}
+      item={item}
+      price={auction.current_price}
+      meta={meta}
+      MetaIcon={descending ? TrendingDownIcon : GavelIcon}
+      ended={auction.status !== "active"}
+      endedLabel="Tugagan"
+      endsAt={auction.end_time}
+      windowDays={auction.duration_days}
+      className={className}
+    />
+  )
+}
+
+export { LotCard, ProductTile, CONDITION_LABEL }

@@ -33,7 +33,7 @@ function PhoneVerification({ me, onRefresh }: Props) {
   }
 
   return (
-    <section className="grid gap-4 rounded-xl border border-border bg-card p-5">
+    <section className="grid gap-4 rounded-lg border border-border bg-card p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-base font-semibold text-foreground">Telefon tasdigʻi</h2>

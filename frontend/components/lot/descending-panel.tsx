@@ -125,7 +125,7 @@ function DescendingPanel({
   }
 
   return (
-    <div className="grid gap-3 rounded-xl border border-border bg-card p-4">
+    <div className="grid gap-3 rounded-lg border border-border bg-card p-4">
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         <TrendingDownIcon className="size-4 shrink-0 text-brand" aria-hidden="true" />
         Pasayuvchi auksion
@@ -168,7 +168,7 @@ function DescendingPanel({
       )}
 
       {active && (
-        <div className="flex items-baseline justify-between gap-3 rounded-lg bg-muted px-3 py-2.5 text-sm">
+        <div className="flex items-baseline justify-between gap-3 rounded-md bg-muted px-3 py-2.5 text-sm">
           {msToDrop != null ? (
             <>
               <span className="text-muted-foreground">Keyingi pasayishgacha</span>

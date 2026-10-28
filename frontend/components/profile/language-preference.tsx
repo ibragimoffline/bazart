@@ -40,7 +40,7 @@ function LanguagePreference({ me, onChange }: { me: UserMe; onChange: (me: UserM
   }
 
   return (
-    <section className="grid gap-4 rounded-xl border border-border bg-card p-5">
+    <section className="grid gap-4 rounded-lg border border-border bg-card p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id="lang_heading" className="text-base font-semibold text-foreground">
@@ -64,7 +64,7 @@ function LanguagePreference({ me, onChange }: { me: UserMe; onChange: (me: UserM
           <Label
             key={o.value}
             htmlFor={`lang_${o.value}`}
-            className="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-border px-3 text-sm font-normal transition-colors hover:bg-muted has-data-[state=checked]:border-primary has-disabled:cursor-not-allowed has-disabled:opacity-50"
+            className="flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-sm font-normal transition-colors hover:bg-muted has-data-[state=checked]:border-primary has-disabled:cursor-not-allowed has-disabled:opacity-50"
           >
             <RadioGroupItem
               id={`lang_${o.value}`}

@@ -56,7 +56,7 @@ function PublicProfile({ userId }: { userId: number }) {
 
   if (error) {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <UserRoundIcon className="size-8 text-muted-foreground" aria-hidden="true" />
         <p className="text-base font-medium text-destructive">{error}</p>
         <Button asChild variant="outline" size="sm">
@@ -69,8 +69,8 @@ function PublicProfile({ userId }: { userId: number }) {
   if (!data) {
     return (
       <div className="grid gap-6">
-        <Skeleton className="h-24 w-full rounded-xl" />
-        <Skeleton className="h-40 w-full rounded-xl" />
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-40 w-full rounded-lg" />
       </div>
     )
   }
@@ -87,7 +87,7 @@ function PublicProfile({ userId }: { userId: number }) {
 
   return (
     <div className="grid gap-8">
-      <section className="flex items-start gap-4 rounded-xl border border-border bg-card p-5">
+      <section className="flex items-start gap-4 rounded-lg border border-border bg-card p-5">
         <div className="grid size-14 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
           <UserRoundIcon className="size-7" aria-hidden="true" />
         </div>
@@ -122,7 +122,7 @@ function PublicProfile({ userId }: { userId: number }) {
         </h2>
 
         {reviews.length === 0 ? (
-          <div className="grid place-items-center gap-2 rounded-xl border border-dashed border-border bg-card px-6 py-12 text-center">
+          <div className="grid place-items-center gap-2 rounded-lg border border-dashed border-border bg-card px-6 py-12 text-center">
             <MessageSquareIcon className="size-7 text-muted-foreground" aria-hidden="true" />
             <p className="text-sm font-medium text-foreground">Hali sharhlar yoʻq.</p>
             <p className="text-sm text-muted-foreground">
@@ -134,7 +134,7 @@ function PublicProfile({ userId }: { userId: number }) {
             {reviews.map((review) => (
               <li
                 key={review.id}
-                className="grid gap-2 rounded-xl border border-border bg-card p-4"
+                className="grid gap-2 rounded-lg border border-border bg-card p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <RatingStars value={review.stars} />

@@ -90,7 +90,7 @@ function Section({
 function Swatch({ label, className }: { label: string; className: string }) {
   return (
     <div className="grid gap-1.5 text-xs">
-      <div className={`h-14 rounded-lg border border-border ${className}`} />
+      <div className={`h-14 rounded-md border border-border ${className}`} />
       <span className="text-muted-foreground">{label}</span>
     </div>
   )

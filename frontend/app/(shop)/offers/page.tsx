@@ -12,7 +12,7 @@ export default function OffersPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <div className="mb-6">
-        <h1 className="font-heading text-xl font-bold tracking-tight text-foreground uppercase md:text-2xl">
+        <h1 className="font-heading text-xl font-bold tracking-tight text-foreground md:text-2xl">
           Takliflar
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -20,7 +20,7 @@ export default function OffersPage() {
         </p>
       </div>
       {/* useSearchParams — Suspense chegarasi talab qilinadi (statik prerender). */}
-      <Suspense fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
+      <Suspense fallback={<Skeleton className="h-64 w-full rounded-lg" />}>
         <OffersView />
       </Suspense>
     </div>

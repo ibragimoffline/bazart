@@ -54,7 +54,7 @@ function SecondChanceCard({
   }
 
   return (
-    <section className="grid gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+    <section className="grid gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
       <div className="flex items-center gap-2">
         <HandCoinsIcon className="size-5 shrink-0 text-primary" aria-hidden="true" />
         <h2 className="text-base font-semibold text-foreground">

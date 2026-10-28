@@ -104,11 +104,11 @@ function LotDetail({ auctionId }: { auctionId: number }) {
   if (loading) {
     return (
       <div className="grid gap-8 md:grid-cols-2">
-        <Skeleton className="aspect-square w-full rounded-xl" />
+        <Skeleton className="aspect-square w-full rounded-lg" />
         <div className="grid gap-4">
           <Skeleton className="h-8 w-3/4" />
           <Skeleton className="h-6 w-1/2" />
-          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-40 w-full rounded-lg" />
         </div>
       </div>
     )
@@ -116,7 +116,7 @@ function LotDetail({ auctionId }: { auctionId: number }) {
 
   if (error || !lot) {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <p className="text-base font-medium text-foreground">
           {error ?? "Mahsulot topilmadi"}
         </p>
@@ -158,7 +158,7 @@ function LotDetail({ auctionId }: { auctionId: number }) {
       </Breadcrumb>
 
       {auction.continued_as_auction_id != null && (
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-brand-soft px-4 py-3">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-brand-subtle px-4 py-3">
           <p className="flex items-center gap-2 text-sm text-foreground">
             <TrendingDownIcon className="size-4 shrink-0 text-brand" aria-hidden="true" />
             Taklif tushmadi — lot pasayuvchi auksionda davom etmoqda.
@@ -191,7 +191,7 @@ function LotDetail({ auctionId }: { auctionId: number }) {
             </div>
           </div>
 
-          <div id="price-card" className="grid gap-1 rounded-xl border border-border bg-card p-4">
+          <div id="price-card" className="grid gap-1 rounded-lg border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm text-muted-foreground">
                 {auction.status === "scheduled"

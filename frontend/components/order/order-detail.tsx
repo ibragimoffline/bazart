@@ -69,7 +69,7 @@ function OrderDetail({ orderId }: { orderId: number }) {
 
   if (authStatus === "anonymous") {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <p className="text-base font-medium text-foreground">
           Buyurtmani koʻrish uchun hisobingizga kiring.
         </p>
@@ -85,7 +85,7 @@ function OrderDetail({ orderId }: { orderId: number }) {
 
   if (error || !data) {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <p className="text-base font-medium text-foreground">
           {error ?? "Buyurtma topilmadi"}
         </p>
@@ -128,7 +128,7 @@ function OrderDetail({ orderId }: { orderId: number }) {
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem] lg:items-start">
         <OrderPanel order={order} role={role} onChanged={refetch} />
 
-        <aside className="grid gap-3 rounded-xl border border-border bg-card p-4">
+        <aside className="grid gap-3 rounded-lg border border-border bg-card p-4">
           <h2 className="text-sm font-semibold text-foreground">Xulosa</h2>
           <dl className="grid gap-2 text-sm">
             <Row label="Mahsulot">#{order.item_id}</Row>
@@ -186,8 +186,8 @@ function DetailSkeleton() {
       <Skeleton className="h-5 w-48" />
       <Skeleton className="h-8 w-56" />
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
-        <Skeleton className="h-56 w-full rounded-xl" />
-        <Skeleton className="h-56 w-full rounded-xl" />
+        <Skeleton className="h-56 w-full rounded-lg" />
+        <Skeleton className="h-56 w-full rounded-lg" />
       </div>
     </div>
   )

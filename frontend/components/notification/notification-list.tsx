@@ -85,7 +85,7 @@ function NotificationRow({
   return (
     <li
       className={cn(
-        "flex items-start gap-3 rounded-xl border border-border p-4 transition-colors",
+        "flex items-start gap-3 rounded-lg border border-border p-4 transition-colors",
         item.is_read ? "bg-card" : "bg-muted/40"
       )}
     >
@@ -226,15 +226,15 @@ function NotificationList() {
   if (status === "idle") {
     return (
       <div className="grid gap-3">
-        <Skeleton className="h-20 w-full rounded-xl" />
-        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-20 w-full rounded-lg" />
+        <Skeleton className="h-20 w-full rounded-lg" />
       </div>
     )
   }
 
   if (status === "anonymous") {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <BellIcon className="size-8 text-muted-foreground" aria-hidden="true" />
         <p className="text-base font-medium text-foreground">
           Bildirishnomalarni koʻrish uchun kiring
@@ -252,7 +252,7 @@ function NotificationList() {
     <div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h1 className="font-heading text-xl font-bold tracking-tight text-foreground uppercase md:text-2xl">Bildirishnomalar</h1>
+          <h1 className="font-heading text-xl font-bold tracking-tight text-foreground md:text-2xl">Bildirishnomalar</h1>
           {refetching && <Spinner className="text-muted-foreground" />}
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -289,20 +289,20 @@ function NotificationList() {
 
       {state === "loading" && (
         <div className="grid gap-3">
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-lg" />
+          <Skeleton className="h-24 w-full rounded-lg" />
+          <Skeleton className="h-24 w-full rounded-lg" />
         </div>
       )}
 
       {state === "error" && (
-        <div className="grid place-items-center gap-2 rounded-xl border border-border bg-card px-6 py-16 text-center">
+        <div className="grid place-items-center gap-2 rounded-lg border border-border bg-card px-6 py-16 text-center">
           <p className="text-base font-medium text-foreground">{error}</p>
         </div>
       )}
 
       {state === "ready" && items.length === 0 && (
-        <Empty className="rounded-xl border border-border bg-card">
+        <Empty className="rounded-lg border border-border bg-card">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <BellIcon aria-hidden="true" />

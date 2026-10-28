@@ -45,7 +45,7 @@ function ConsentList() {
   }, [])
 
   return (
-    <section className="grid gap-3 rounded-xl border border-border bg-card p-5">
+    <section className="grid gap-3 rounded-lg border border-border bg-card p-5">
       <h2 className="text-base font-semibold text-foreground">Qabul qilingan hujjatlar</h2>
 
       {failed ? (

@@ -78,7 +78,7 @@ export function useAdminList<T>(
  */
 export function TableFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
       <Table className="min-w-[640px]">{children}</Table>
     </div>
   )
@@ -122,7 +122,7 @@ export function Td({
 
 export function TableSkeleton({ rows = 6, cols = 5 }: { rows?: number; cols?: number }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="grid gap-3">
         {Array.from({ length: rows }).map((_, r) => (
           <div key={r} className="flex items-center gap-4">

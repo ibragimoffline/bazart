@@ -18,9 +18,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 type Tab = { href: string; label: string; icon: LucideIcon; match: string }
 
+// Anonim tashrifchi ham markazda "Sotish"ni ko'radi: u kirishga olib boradi va
+// kirgandan keyin sotish sahifasiga qaytaradi (`next`).
 const ANON: Tab[] = [
   { href: "/", label: "Bosh sahifa", icon: HouseIcon, match: "/" },
   { href: "/catalog/hammasi", label: "Katalog", icon: LayoutGridIcon, match: "/catalog" },
+  { href: "/login?next=%2Fsell", label: "Sotish", icon: PlusIcon, match: "/sell" },
+  { href: "/offers", label: "Takliflar", icon: HandshakeIcon, match: "/offers" },
   { href: "/login", label: "Kirish", icon: LogInIcon, match: "/login" },
 ]
 
@@ -37,24 +41,27 @@ function MobileTabBar() {
   const pathname = usePathname()
   const status = useAuthStore((s) => s.status)
   // Sessiya tiklanayotganda "Kirish" ko'rsatilmaydi — o'rnida joy egallovchi turadi.
+  // "Sotish" esa /sell ga boradi: sahifaning o'zi sessiya holatini kutadi.
   const restoring = status === "idle"
-  const tabs = status === "authenticated" ? AUTHED : restoring ? ANON.slice(0, 2) : ANON
-  const columns = restoring ? 3 : tabs.length
+  const tabs =
+    status === "authenticated" ? AUTHED : restoring ? [...AUTHED.slice(0, 3), AUTHED[3]] : ANON
+  const columns = restoring ? 5 : tabs.length
 
   return (
     <nav
       aria-label="Asosiy navigatsiya"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul
         className={cn(
-          "mx-auto grid max-w-md",
+          "mx-auto grid max-w-md px-1 pt-1.5 pb-2.5",
           columns === 5 ? "grid-cols-5" : columns === 4 ? "grid-cols-4" : "grid-cols-3"
         )}
       >
         {tabs.map((tab) => {
           const active =
             tab.match === "/" ? pathname === "/" : pathname.startsWith(tab.match)
+          const sell = tab.match === "/sell"
           const Icon = tab.icon
           return (
             <li key={tab.href}>
@@ -62,17 +69,24 @@ function MobileTabBar() {
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "group flex flex-col items-center gap-1 px-1 pt-2 pb-2.5 text-center text-xs outline-none transition-colors duration-150 focus-visible:bg-muted",
-                  active ? "font-semibold text-brand" : "text-muted-foreground hover:text-foreground"
+                  "group grid justify-items-center gap-0.5 px-1 py-1 text-center text-xs outline-none transition-colors duration-150 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                  active || sell
+                    ? "font-semibold text-brand"
+                    : "font-medium text-muted-foreground hover:text-foreground"
                 )}
               >
+                {/* Ikonka 52x30 "pill" ichida; "Sotish" — doim to'ldirilgan brend pill. */}
                 <span
                   className={cn(
-                    "grid h-7 w-12 place-items-center rounded-full transition-colors duration-150",
-                    active ? "bg-brand-soft" : "group-hover:bg-muted"
+                    "grid h-7.5 w-13 place-items-center rounded-full transition-colors duration-150",
+                    sell
+                      ? "bg-brand text-brand-foreground group-hover:bg-brand-hover"
+                      : active
+                        ? "bg-brand-subtle"
+                        : "group-hover:bg-accent"
                   )}
                 >
-                  <Icon className="size-5" aria-hidden="true" />
+                  <Icon className="size-5.5" aria-hidden="true" />
                 </span>
                 {tab.label}
               </Link>
@@ -80,8 +94,8 @@ function MobileTabBar() {
           )
         })}
         {restoring && (
-          <li aria-hidden="true" className="flex flex-col items-center gap-1 px-1 pt-2 pb-2.5">
-            <Skeleton className="h-7 w-12 rounded-full" />
+          <li aria-hidden="true" className="grid justify-items-center gap-0.5 px-1 py-1">
+            <Skeleton className="h-7.5 w-13 rounded-full" />
             <Skeleton className="h-3 w-10" />
           </li>
         )}

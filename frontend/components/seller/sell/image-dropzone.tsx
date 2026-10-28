@@ -112,7 +112,7 @@ function ImageDropzone({
           if (!full) add(Array.from(e.dataTransfer.files))
         }}
         className={cn(
-          "flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-input bg-card px-4 py-8 text-center outline-none transition-colors",
+          "flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input bg-card px-4 py-8 text-center outline-none transition-colors",
           "hover:border-primary hover:bg-primary/5 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
           "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-input disabled:hover:bg-card",
           dragging && "border-primary bg-primary/5",
@@ -139,7 +139,7 @@ function ImageDropzone({
           {images.map((img, index) => (
             <li
               key={img.id}
-              className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted"
+              className="group relative aspect-square overflow-hidden rounded-md border border-border bg-muted"
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- lokal blob URL, next/image optimallashtira olmaydi */}
               <img src={img.url} alt={`Rasm ${index + 1}`} className="size-full object-cover" />

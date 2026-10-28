@@ -59,7 +59,7 @@ function OrdersView() {
 
   if (authStatus === "anonymous") {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <PackageIcon className="size-8 text-muted-foreground" aria-hidden="true" />
         <p className="text-base font-medium text-foreground">
           Buyurtmalaringizni koʻrish uchun hisobingizga kiring.
@@ -76,7 +76,7 @@ function OrdersView() {
   return (
     <div className="grid gap-6">
       <div>
-        <h1 className="font-heading text-xl font-bold tracking-tight text-foreground uppercase md:text-2xl">
+        <h1 className="font-heading text-xl font-bold tracking-tight text-foreground md:text-2xl">
           Buyurtmalarim
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -87,7 +87,7 @@ function OrdersView() {
       <div
         role="tablist"
         aria-label="Buyurtma turlari"
-        className="inline-flex w-fit gap-1 rounded-lg border border-border bg-muted/40 p-1"
+        className="inline-flex w-fit gap-1 rounded-md border border-border bg-muted/40 p-1"
       >
         <TabButton active={tab === "buyer"} onClick={() => setTab("buyer")}>
           Xaridlarim
@@ -100,7 +100,7 @@ function OrdersView() {
       {showLoading ? (
         <OrdersSkeleton />
       ) : error ? (
-        <div className="rounded-xl border border-border bg-card px-6 py-12 text-center">
+        <div className="rounded-lg border border-border bg-card px-6 py-12 text-center">
           <p className="text-sm font-medium text-destructive">{error}</p>
         </div>
       ) : orders && orders.length > 0 ? (
@@ -112,7 +112,7 @@ function OrdersView() {
           ))}
         </ul>
       ) : (
-        <div className="grid place-items-center gap-2 rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
+        <div className="grid place-items-center gap-2 rounded-lg border border-dashed border-border bg-card px-6 py-16 text-center">
           <PackageIcon className="size-8 text-muted-foreground" aria-hidden="true" />
           <p className="text-base font-medium text-foreground">
             {tab === "buyer"
@@ -161,9 +161,9 @@ function OrderRow({ order, role }: { order: Order; role: Tab }) {
   return (
     <Link
       href={`/orders/${order.id}`}
-      className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors outline-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors outline-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
     >
-      <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+      <div className="grid size-11 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
         <PackageIcon className="size-5" aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
@@ -193,7 +193,7 @@ function OrdersSkeleton() {
   return (
     <div className="grid gap-3">
       {[0, 1, 2].map((i) => (
-        <Skeleton key={i} className="h-[76px] w-full rounded-xl" />
+        <Skeleton key={i} className="h-[76px] w-full rounded-lg" />
       ))}
     </div>
   )

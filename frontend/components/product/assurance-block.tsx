@@ -25,12 +25,12 @@ const ROWS: { icon: LucideIcon; title: string; text: string }[] = [
 
 function AssuranceBlock() {
   return (
-    <div className="grid gap-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+    <div className="grid gap-4 rounded-lg border border-border bg-card p-4 sm:p-5">
       {ROWS.map((r) => {
         const Icon = r.icon
         return (
           <div key={r.title} className="flex gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-foreground">
+            <span className="grid size-9 shrink-0 place-items-center rounded-md bg-muted text-foreground">
               <Icon className="size-5" aria-hidden="true" />
             </span>
             <div className="grid gap-0.5">

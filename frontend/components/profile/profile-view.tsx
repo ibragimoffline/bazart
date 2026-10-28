@@ -106,15 +106,15 @@ function ProfileView() {
   if (status === "idle") {
     return (
       <div className="grid gap-6">
-        <Skeleton className="h-24 w-full rounded-xl" />
-        <Skeleton className="h-80 w-full rounded-xl" />
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-80 w-full rounded-lg" />
       </div>
     )
   }
 
   if (status === "anonymous" || !user) {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <UserRoundIcon className="size-8 text-muted-foreground" aria-hidden="true" />
         <p className="text-base font-medium text-foreground">
           Profilni koʻrish uchun hisobingizga kiring.
@@ -136,7 +136,7 @@ function ProfileView() {
       </div>
 
       {/* Xulosa kartasi */}
-      <section className="grid gap-4 rounded-xl border border-border bg-card p-5">
+      <section className="grid gap-4 rounded-lg border border-border bg-card p-5">
         <div className="flex items-start gap-4">
           <div className="grid size-14 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
             <UserRoundIcon className="size-7" aria-hidden="true" />
@@ -207,7 +207,7 @@ function ProfileView() {
               rows={4}
               aria-invalid={errors.bio ? true : undefined}
               placeholder="Oʻzingiz va sotadigan mahsulotlaringiz haqida qisqacha."
-              className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20"
+              className="w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20"
               {...register("bio")}
             />
             <FieldDescription>Ixtiyoriy — profilingizda koʻrinadi.</FieldDescription>
@@ -243,9 +243,9 @@ function ProfileView() {
           </p>
         ) : (
           <>
-            <Skeleton className="h-36 w-full rounded-xl" />
-            <Skeleton className="h-36 w-full rounded-xl" />
-            <Skeleton className="h-28 w-full rounded-xl" />
+            <Skeleton className="h-36 w-full rounded-lg" />
+            <Skeleton className="h-36 w-full rounded-lg" />
+            <Skeleton className="h-28 w-full rounded-lg" />
           </>
         )}
         <ConsentList />

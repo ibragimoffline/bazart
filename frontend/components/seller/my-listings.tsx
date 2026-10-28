@@ -79,7 +79,7 @@ function formatExpiry(iso: string): string {
 
 function SecondChanceNotice({ auction }: { auction: Auction }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-warning bg-warning/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-md border border-warning bg-warning/10 p-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 gap-2">
         <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-foreground" aria-hidden="true" />
         <div className="grid gap-0.5">
@@ -180,7 +180,7 @@ function RepublishDialog({
           <Label
             key={d}
             htmlFor={`republish-${item.id}-${d}`}
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-normal transition-colors hover:border-foreground/30 has-[[data-state=checked]]:border-primary has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50"
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-2.5 text-sm font-normal transition-colors hover:border-foreground/30 has-[[data-state=checked]]:border-primary has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50"
           >
             <RadioGroupItem id={`republish-${item.id}-${d}`} value={String(d)} />
             {d} kun
@@ -248,7 +248,7 @@ function ListingCard({
   }
 
   return (
-    <div className="grid gap-3 rounded-xl border border-border bg-card p-4">
+    <div className="grid gap-3 rounded-lg border border-border bg-card p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="grid min-w-0 gap-1.5">
           <h3 className="truncate text-base font-medium text-foreground">{item.title}</h3>
@@ -395,7 +395,7 @@ function ListingSkeletons() {
   return (
     <div className="grid gap-3">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4">
+        <div key={i} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
           <div className="grid flex-1 gap-2">
             <Skeleton className="h-5 w-2/3" />
             <Skeleton className="h-4 w-24" />
@@ -495,7 +495,7 @@ function MyListings() {
 
   if (status !== "authenticated") {
     return (
-      <div className="grid place-items-center gap-3 rounded-xl border border-border bg-card px-6 py-16 text-center">
+      <div className="grid place-items-center gap-3 rounded-lg border border-border bg-card px-6 py-16 text-center">
         <p className="text-base font-medium text-foreground">Mahsulotlaringizni koʻrish uchun kiring</p>
         <Button asChild size="lg">
           <Link href={`/login?next=${encodeURIComponent(pathname)}`}>Kirish</Link>
@@ -510,7 +510,7 @@ function MyListings() {
 
   if (items.length === 0) {
     return (
-      <Empty className="rounded-xl border border-border bg-card">
+      <Empty className="rounded-lg border border-border bg-card">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <PackageOpenIcon aria-hidden="true" />

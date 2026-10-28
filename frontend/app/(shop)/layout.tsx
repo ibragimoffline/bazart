@@ -16,7 +16,7 @@ export default function ShopLayout({
       <main className="flex-1">{children}</main>
       <SiteFooter />
       {/* Mobil tab-bar ostidagi joy. */}
-      <div className="h-16 md:hidden" aria-hidden="true" />
+      <div className="h-18 md:hidden" aria-hidden="true" />
       <MobileTabBar />
       <AuthProvider />
       <PhoneGateProvider />
